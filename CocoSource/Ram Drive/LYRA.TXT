@@ -1,0 +1,20 @@
+       ORG   $7000
+PUTVAL FDB   0
+* WAIT FOR A ONE
+EXEC   LDX   #0
+       LDA   $FF22
+       ANDA  #$01
+       BEQ   EXEC
+* WAIT FOR A ZERO
+EX010  LDA   $FF22
+       ANDA  #$01
+       BNE   EX010
+* COUNT LENGTH OF ZERO
+EX020  LEAX  +1,X
+       LDA   $FF22
+       ANDA  #$01
+       BEQ   EX020
+       STX   PUTVAL
+       RTS
+       END   EXEC
+

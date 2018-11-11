@@ -1,0 +1,59 @@
+*ENTRY:
+* U ^ CRC
+* X ^ BYTES TO CRC
+* Y = # OF BYTES TO CRC
+*ALL REGISTERS PRESERVED
+* THE CRC AT U IS MODIFIED
+CRC    PSHS  D,X,Y
+A@     LDA   ,X+
+CRCA   EORA  ,U
+       PSHS  A
+       LDD   1,U
+       STD   ,U
+       CLRA
+       LDB   ,S
+       LSLB
+       ROLA
+       EORA  1,U
+       STD   1,U
+       CLRB
+       LDA   ,S
+       LSRA
+       RORB
+       LSRA
+       RORB
+       EORA  1,U
+       EORB  2,U
+       STD   1,U
+       LDA   ,S
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       EORA  ,S+
+       BPL   E@
+       LDD   #$8021
+       EORA  ,U
+       STA   ,U
+       EORB  2,U
+       STB   2,U
+E@
+*CRC END
+       LEAY  -1,Y
+       BNE   A@
+R@     PULS  D,Y,X,PC
+
+
+
+
+
+
+
+

@@ -1,0 +1,367 @@
+EVAL   PSHS  U
+       JSR   EVALU
+       PULS  U,PC
+
+OROP   LEAY  +2,Y
+       LBSR  GETFAC
+       ORA   ,S
+       ORB   +1,S
+       STD   ,S
+       BRA   GETER2
+
+MULTOP LEAY  +1,Y
+       LBSR  GETFAC
+       LEAS  -4,S
+       STD   +2,S
+       LDA   +5,S
+       MUL
+       STD   ,S
+       LDA   +5,S
+       LDB   +2,S
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   +4,S
+       LDB   +3,S
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   ,S
+       LEAS  +4,S
+       STD   ,S
+       BRA   GETER2
+
+LSROP  LEAY  +2,Y
+       LBSR  GETFAC
+       SUBD  #0
+       BEQ   GETER2
+       CMPD  #16
+       BLS   A@
+       LDB   #16
+A@     LSR   ,S
+       ROR   +1,S
+       DECB
+       BNE   A@
+       BRA   GETER2
+
+EVALU  CLR   ,-S
+       LEAU  ,S
+       LDX   #0
+GETTER BSR   GETFAC *GET FACTOR
+       PSHS  D
+GETER2 LDA   ,Y
+       CMPA  #'*
+       BEQ   MULTOP
+       CMPA  #'/
+       BNE   A@
+       LBRA  DIVOP
+A@     CMPA  #'^
+       BNE   B@
+       LBRA  EXPOP
+B@     CMPA  #'!
+       BNE   O@
+       LDA   +1,Y
+       CMPA  #'+
+       BEQ   OROP
+       CMPA  #'*
+       BEQ   ANDOP
+       CMPA  #'.
+       BEQ   ANDOP
+       CMPA  #'X
+       BEQ   XOROP
+       CMPA  #'>
+       BEQ   LSROP
+       CMPA  #'R
+       BEQ   LSROP
+       CMPA  #'<
+       BEQ   LSLOP
+       CMPA  #'L
+       BEQ   LSLOP
+O@     PULS  D
+       LEAX  D,X
+       LDA   ,Y
+       CMPA  #'+
+       BEQ   GETTER
+       CMPA  #'-
+       BEQ   GETTER
+       LDB   ,S+
+       RTS
+
+LSLOP  LEAY  +2,Y
+       BSR   GETFAC
+       SUBD  #0
+       BEQ   GETER2
+       CMPD  #16
+       BLS   A@
+       LDB   #16
+A@     LSL   +1,S
+       ROL   ,S
+       DECB
+       BNE   A@
+       BRA   GETER2
+
+ANDOP  LEAY  +2,Y
+       BSR   GETFAC
+       ANDA  ,S
+       ANDB  +1,S
+       STD   ,S
+       BRA   GETER2
+
+XOROP  LEAY  +2,Y
+       BSR   GETFAC
+       EORA  ,S
+       EORB  +1,S
+       STD   ,S
+       BRA   GETER2
+
+GETFAC LDA   ,Y+
+       CMPA  #'+
+       BNE   A@
+       BRA   GETFAC
+A@     CMPA  #'-
+       BNE   B@
+       BSR   GETFAC
+       NEGD
+       RTS
+B@     CMPA  #'$
+       BNE   G@
+       LEAS  -2,S
+       LDD   #0
+C@     STB   +1,S
+       LDB   ,Y+
+       CMPB  #'A
+       BLO   D@
+       SUBB  #'A-10
+       CMPB  #$F
+       BLS   F@
+E@     LEAY  -1,Y
+       LDB   +1,S
+       LEAS  +2,S
+       RTS
+D@     SUBB  #'0
+       CMPB  #10
+       BHS   E@
+F@     STB   ,S
+       LDB   +1,S
+       LSLD
+       LSLD
+       LSLD
+       LSLD
+       ORB   ,S
+       BRA   C@
+G@     CMPA  #'%
+       BNE   J@
+       LDD   #0
+       PSHS  B
+H@     LDB   ,Y+
+       SUBB  #'0
+       CMPB  #1
+       BLS   I@
+       LEAY  -1,Y
+       LDB   ,S+
+       RTS
+I@     LSRB
+       ROL   ,S
+       ROLA
+       BRA   H@
+J@     CMPA  #''
+       BNE   P@
+       LDB   ,Y+
+       CMPB  #32
+       BHS   K@
+       LDB   #32
+L@     LEAY  -1,Y
+M@     CLRA
+       RTS
+K@     LDA   ,Y+
+       CMPA  #''
+       BEQ   M@
+       CMPA  #'0
+       BLO   L@
+       CMPA  #'Z
+       BHI   L@
+       CMPA  #'9
+       BLS   N@
+       CMPA  #'A
+       BLO   L@
+N@     EXG   A,B
+       PSHS  A
+       LDA   ,Y
+       CMPA  #''
+       BNE   O@
+       LEAY  +1,Y
+O@     PULS  A,PC
+P@     CMPA  #'0
+       BLO   T@
+       CMPA  #'9
+       BHI   T@
+       LDD   #0
+       PSHS  D
+       LEAY  -1,Y
+Q@     LDB   ,Y+
+       SUBB  #'0
+       CMPB  #9
+       BLS   R@
+S@     LEAY  -1,Y
+       PULS  D,PC
+R@     LEAS  -3,S
+       STB   +2,S
+       LDA   #10
+       LDB   +4,S
+       MUL
+       STD   ,S
+       LDA   #10
+       LDB   +3,S
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDB   +2,S
+       CLRA
+       ADDD  ,S
+       LEAS  +3,S
+       STD   ,S
+       BRA   Q@
+T@     CMPA  #'(
+       BNE   V@
+       PSHS  X,U
+       LBSR  EVALU
+*AN UN-DEFINED SYMBOL
+*CAUSES AN INTERUPT
+       LDU   +2,S
+       ORB   ,U *PASS ERRORS
+       STB   ,U
+       LDA   ,Y+
+       CMPA  #')
+       BNE   U@
+       TFR   X,D
+       PULS  X,U,PC
+*MISSING )
+U@     LEAY  -1,Y
+       LDA   #$80 *ERROR
+       ORA   ,U
+       STA   ,U
+       PULS  X,U,PC
+V@     CMPA  #'*
+       BNE   W@
+       LDD   STARVL
+       RTS
+W@     CMPA  #'A
+       BLO   Z@
+       CMPA  #'Z
+       BHI   Z@
+       LEAY  -1,Y *Y ^ LABLE
+       PSHS  X,U
+       LBSR  LABVAL
+       BEQ   X@
+*UNDEFINED SYMBOL
+       PULS  X,U
+       LDA   #2 *ERROR CODE
+       ORA   ,U
+       STA   ,U
+       LDD   #0
+       RTS
+Z@     LEAY  -1,Y
+       LDD   #0
+       RTS
+*LABLE FOUND
+X@     LDU   +2,S
+       LDA   -3,X
+       ORA   #%00001000 *USED
+       STA   -3,X
+       ANDA  #1 *DEFINED ON
+       ORA   ,U *PASS 1
+       STA   ,U
+       LDD   -2,X
+       PULS  X,U,PC
+
+*DIVOP LOCAL VARS
+DIVIN  SET   6 *DIVIDE INTO
+DIVOUT SET   0 *DIVIDE BY
+DANS   SET   2 *ANSWER
+ORING  SET   4 *MISCELANEOUS
+DIVOP  LEAY  +1,Y
+       LBSR  GETFAC
+       CMPD  #0
+       BNE   C@
+       LDB   #$80 *ERROR
+       ORB   ,U
+       STB   ,U
+       LBRA  GETER2
+C@     LEAS  -6,S
+       STD   DIVOUT,S
+       LDD   #$0001
+       STD   ORING,S
+       CLRB
+       STD   DANS,S
+D@     LSL   ORING+1,S
+       ROL   ORING,S
+       LSL   DIVOUT+1,S
+       ROL   DIVOUT,S
+       BCC   D@
+       ROR   DIVOUT,S
+       ROR   DIVOUT+1,S
+       LSR   ORING,S
+       ROR   ORING+1,S
+A@     LDD   DIVOUT,S
+       CMPD  DIVIN,S
+       BHI   B@
+       LDD   DIVIN,S
+       SUBD  DIVOUT,S
+       STD   DIVIN,S
+       LDD   DANS,S
+       ORA   ORING,S
+       ORB   ORING+1,S
+       STD   DANS,S
+B@     LSR   DIVOUT,S
+       ROR   DIVOUT+1,S
+       LSR   ORING,S
+       ROR   ORING+1,S
+       BCC   A@
+       LDD   DANS,S
+       LEAS  +6,S
+       STD   ,S
+       LBRA  GETER2
+
+*EXPOP LOVAL VARS
+EXPOP  LEAY  +1,Y
+       LBSR  GETFAC
+       CMPD  #0
+       BNE   A@
+       LDD   #1
+       STD   ,S
+       LBRA  GETER2
+A@     CMPD  #16
+       BLO   E@
+*OVERFLOW ERROR
+       LDB   #$80
+       ORB   ,U
+       STB   ,U
+       LBRA  GETER2
+E@     PSHS  X,U
+       TFR   D,X
+       LDD   #1
+       LDU   +4,S
+B@     LEAS  -6,S
+       STU   +2,S
+C@     STD   +4,S
+       LDA   +5,S
+       LDB   +3,S
+       MUL
+       STD   ,S
+       LDA   +5,S
+       LDB   +2,S
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   +4,S
+       LDB   +3,S
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   ,S
+       LEAX  -1,X
+       BNE   C@
+       LEAS  +6,S
+       PULS  X,U
+       STD   ,S
+       LBRA  GETER2

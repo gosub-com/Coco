@@ -1,0 +1,468 @@
+BOMBCOLORS
+ FDB GREYBOMB,REDBOMB
+ FDB BLUEBOMB,GREENBOMB
+
+FIRESMOKE
+       LDA   #255
+       STA   BOMB.SMOKE,Y
+       JSR   ARB
+       CMPA  #-16
+       BLO   NF@
+       LDA   #10
+       STA   BOMB.SMOKE,Y
+NF@
+
+
+       LDD   NEWPOS,Y
+       STA   BOMB.Y,Y
+       STB   BOMB.X,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       JSR   ARB
+       ORA   #%11111000
+       DECA
+       STD   BOMB.VEL.Y,Y
+       JSR   ARB
+       SEX
+       TST   BOMB.ERASE,Y
+       BEQ   B@
+       LSLD
+       LSLD
+B@     STD   BOMB.VEL.X,Y
+
+       JSR   ARB
+       ANDA  #%00000110
+       LDX   #BOMBCOLORS
+       LDD   A,X
+       STD   BOMB.COLOR,Y
+
+       LDD   #A@
+       STD   TRKDRV,Y
+***MAIN SMOKE ROUGHTEEN
+A@     LDA   BOMB.SMOKE,Y
+       BMI   N@
+       DECA
+       BNE   C@
+*MAKE EXPLOSIOAN
+*MBLOWNS TESTS FOR ELST=#ELSE
+       LDD   NEWPOS,Y
+       JSR   MBLOWNS
+NF@    LDA   #11
+C@     STA   BOMB.SMOKE,Y
+N@     LDX   REPRINT
+       CMPX  #MAXRASTER
+       BHS   NR@
+       RASTER
+NR@    LDD   EBLOCK,Y
+       STD   $FFA0
+       LDA   BOMB.ERASE,Y
+       BEQ   ER@
+       LDA   NEWPOS,Y
+       CMPA  #150
+       LBLO  NE@
+       JMP   TBLOWNS
+ER@    LDX   BOMB.VEL.Y,Y
+       CMPX  #2*256
+       BLT   ERA@
+       JMP   TBLOWNS
+ERA@
+ LDX   EPOS,Y
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF2,X
+ STA  $FFF4,X
+ ABX
+ STU  $FFF2,X
+ STU  $FFF4,X
+ ABX
+ STU  $FFF3,X
+ STU  $FFF5,X
+ STA  $FFF7,X
+ ABX
+ STU  $FFF4,X
+ STU  $FFF6,X
+ STA  $FFF8,X
+ ABX
+ STU  $FFF5,X
+ STU  $FFF7,X
+ STA  $FFF9,X
+ ABX
+ STU  $FFF6,X
+ STU  $FFF8,X
+ STA  $FFFA,X
+ ABX
+ STU  $FFF7,X
+ STU  $FFF9,X
+ ABX
+ STU  $FFF9,X
+ STA  $FFFB,X
+*BYTES: $0037
+*CYCLES: $0092
+NE@
+*RANDOM CHANCE OF BLOWING UP
+       LDA   BOMB.VEL.Y,Y
+       BNE   NB@
+       JSR   ARB
+       CMPA  #16
+       BHI   NB@
+       LDD   #$0302
+       STD   BLOW.ATS
+       LDD   NEWPOS,Y
+       ADDA  #10
+       JSR   MBLOWNS
+       LDD   NEWPOS,Y
+       SUBA  #10
+       JSR   MBLOWNS
+       LDD   NEWPOS,Y
+       ADDB  #10
+       JSR   MBLOWNS
+       LDD   NEWPOS,Y
+       SUBB  #10
+       JSR   MBLOWNS
+       LDB   NEWPOS,Y
+       CMPB  #125
+       BHI   NZ@
+       LDA   #1
+       LDU   NEWPOS,Y
+       JSR   DOFIREWORK
+       JSR   DOFIREWORK
+       JSR   DOFIREWORK
+       JSR   DOFIREWORK
+       JSR   DOFIREWORK
+       JSR   DOFIREWORK
+       JSR   DOFIREWORK
+NZ@    JMP   TRKEND
+NB@
+
+*CALCULATE MOVEMENT
+***VELOCITY.X
+       LDD   BOMB.VEL.X,Y
+       ADDD  BOMB.X,Y
+       STD   BOMB.X,Y
+**ACCLELERATION.Y
+       LDD   #29 *ACCELERATION
+       ADDD  BOMB.VEL.Y,Y
+       STD   BOMB.VEL.Y,Y
+***VELOCITY.Y
+       ADDD  BOMB.Y,Y
+       STD   BOMB.Y,Y
+*A=Y POS
+       LDB   BOMB.X,Y
+*D=NEWPOS
+       STD   NEWPOS,Y
+       CMPB  #40
+       BHI   B@
+DIE@   JMP   TRKEND
+B@     CMPB  #255-40
+       BHI   DIE@
+       CMPA  #178
+       BHI   DIE@
+*      CMPA  IS.BOMB
+*      BHI   C@
+*      STA   IS.BOMB
+C@     ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       TFR   D,X
+       JMP   [BOMB.COLOR,Y]
+
+
+FIREWORKS
+       INC   SUPRESSLINE
+       LDD   #WORKS@
+       STD   TRKDRV,Y
+       BRA   DOFIREWORK
+WORKS@ LDA   LEVELON
+       LDB   #16
+       MUL
+       ADDB  #26
+       PSHS  B
+       JSR   ARB
+       CMPA  ,S+
+       BHI   ?RTS
+*CALCULATE NEWPOS
+       JSR   ARB
+       EXG   A,B
+       LDA   #177
+       LSRB
+       ADDB  #64
+       TFR   D,U
+       CLRA
+*ENTRY: A=ERASE?
+*       U=NEWPOS
+DOFIREWORK
+       LDX   ELST
+       CMPX  #ELSE
+       BEQ   ?RTS
+       PSHS  U,Y,A
+       JSR   NEWLINK
+       LDU   +3,S
+       STU   NEWPOS,Y
+       STA   BOMB.ERASE,Y
+       LDD   #FIRESMOKE
+       STD   TRKDRV,Y
+       PULS  U,Y,A,PC
+
+
+
+
+
+
+
+
+GREYBOMB
+ LDA   BOMB.X+1,Y
+ BMI   OBOMB@
+ LDD  #$DDDD
+ STD  $0001,X
+ STD  $0701,X
+ LDD  #$0DEE
+ STD  $0100,X
+ STD  $0600,X
+ LDD  #$EED0
+ STD  $0102,X
+ STD  $0602,X
+ LDD  #$DEEF
+ STD  $0200,X
+ STD  $0500,X
+ LDB  #$FF
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$FEED
+ STD  $0202,X
+ STD  $0502,X
+ INCA
+ STD  $0302,X
+ STD  $0402,X
+*BYTES: $0048
+*CYCLES: $008E
+ RETURN
+OBOMB@
+ LDD  #$0DDD
+ STD  $0001,X
+ STD  $0701,X
+ LDB  #$EE
+ STD  $0200,X
+ STD  $0500,X
+ INCB
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$DEEE
+ STD  $0101,X
+ STD  $0601,X
+ LDA  #$FF
+ STD  $0202,X
+ STD  $0502,X
+ LDB  #$FE
+ STD  $0302,X
+ STD  $0402,X
+ LDB  #$D0
+ STB  $0003,X
+ STB  $0204,X
+ STB  $0304,X
+ STB  $0404,X
+ STB  $0504,X
+ STB  $0703,X
+ LDB  #$ED
+ STB  $0103,X
+ STB  $0603,X
+*BYTES: $005D
+*CYCLES: $00B8
+ RTS
+
+
+
+REDBOMB
+ LDA   BOMB.X+1,Y
+ BMI   OBOMB@
+ LDD  #$AAAA
+ STD  $0001,X
+ STD  $0701,X
+ LDD  #$0ABB
+ STD  $0100,X
+ STD  $0600,X
+ LDD  #$BBA0
+ STD  $0102,X
+ STD  $0602,X
+ LDD  #$ABBC
+ STD  $0200,X
+ STD  $0500,X
+ LDB  #$CC
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$CBBA
+ STD  $0202,X
+ STD  $0502,X
+ INCA
+ STD  $0302,X
+ STD  $0402,X
+*BYTES: $0048
+*CYCLES: $008E
+ RETURN
+OBOMB@
+ LDD  #$0AAA
+ STD  $0001,X
+ STD  $0701,X
+ LDB  #$BB
+ STD  $0200,X
+ STD  $0500,X
+ INCB
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$ABBB
+ STD  $0101,X
+ STD  $0601,X
+ LDA  #$CC
+ STD  $0202,X
+ STD  $0502,X
+ LDB  #$CB
+ STD  $0302,X
+ STD  $0402,X
+ LDB  #$A0
+ STB  $0003,X
+ STB  $0204,X
+ STB  $0304,X
+ STB  $0404,X
+ STB  $0504,X
+ STB  $0703,X
+ LDB  #$BA
+ STB  $0103,X
+ STB  $0603,X
+*BYTES: $005D
+*CYCLES: $00B8
+ RTS
+
+
+
+
+
+
+
+
+GREENBOMB
+ LDA   BOMB.X+1,Y
+ BMI   OBOMB@
+ LDD  #$7777
+ STD  $0001,X
+ STD  $0701,X
+ LDD  #$0788
+ STD  $0100,X
+ STD  $0600,X
+ LDD  #$8870
+ STD  $0102,X
+ STD  $0602,X
+ LDD  #$7889
+ STD  $0200,X
+ STD  $0500,X
+ LDB  #$99
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$9887
+ STD  $0202,X
+ STD  $0502,X
+ INCA
+ STD  $0302,X
+ STD  $0402,X
+*BYTES: $0048
+*CYCLES: $008E
+ RETURN
+OBOMB@
+ LDD  #$0777
+ STD  $0001,X
+ STD  $0701,X
+ LDB  #$88
+ STD  $0200,X
+ STD  $0500,X
+ INCB
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$7888
+ STD  $0101,X
+ STD  $0601,X
+ LDA  #$99
+ STD  $0202,X
+ STD  $0502,X
+ LDB  #$98
+ STD  $0302,X
+ STD  $0402,X
+ LDB  #$70
+ STB  $0003,X
+ STB  $0204,X
+ STB  $0304,X
+ STB  $0404,X
+ STB  $0504,X
+ STB  $0703,X
+ LDB  #$87
+ STB  $0103,X
+ STB  $0603,X
+*BYTES: $005D
+*CYCLES: $00B8
+ RTS
+
+
+
+BLUEBOMB
+ LDA   BOMB.X+1,Y
+ BMI   OBOMB@
+ LDD  #$4444
+ STD  $0001,X
+ STD  $0701,X
+ LDD  #$0455
+ STD  $0100,X
+ STD  $0600,X
+ LDD  #$5540
+ STD  $0102,X
+ STD  $0602,X
+ LDD  #$4556
+ STD  $0200,X
+ STD  $0500,X
+ LDB  #$66
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$6554
+ STD  $0202,X
+ STD  $0502,X
+ INCA
+ STD  $0302,X
+ STD  $0402,X
+*BYTES: $0048
+*CYCLES: $008E
+ RETURN
+OBOMB@
+ LDD  #$0444
+ STD  $0001,X
+ STD  $0701,X
+ LDB  #$55
+ STD  $0200,X
+ STD  $0500,X
+ INCB
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$4555
+ STD  $0101,X
+ STD  $0601,X
+ LDA  #$66
+ STD  $0202,X
+ STD  $0502,X
+ LDB  #$65
+ STD  $0302,X
+ STD  $0402,X
+ LDB  #$40
+ STB  $0003,X
+ STB  $0204,X
+ STB  $0304,X
+ STB  $0404,X
+ STB  $0504,X
+ STB  $0703,X
+ LDB  #$54
+ STB  $0103,X
+ STB  $0603,X
+*BYTES: $005D
+*CYCLES: $00B8
+ RTS
+

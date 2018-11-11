@@ -1,0 +1,15 @@
+       ORG   $2000
+       INCL  RBUG1:0
+       INCL  RCBUG
+       INCL  OBUG1
+       INCL  OCBUG
+       INCL  BBCOLOR
+       INCL  BBUG1:1
+       INCL  FASTBUG1
+       INCL  FASTBUG2
+       INCL  FASTBUG3
+       INCL  FASTBUG4
+       INCL  BBUG2
+       INCL  CBBUG
+
+

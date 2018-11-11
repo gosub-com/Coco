@@ -1,0 +1,147 @@
+       ORG   $E00
+       BSZ   200
+STACK  FDB   0
+       FDB   0
+
+INITIT MACR
+       LDY   #$2F
+       CLR   $FFA1
+       ENDM
+
+CLS    LDX   #$400
+       LDD   #$6060
+A@     STD   ,X++
+       CMPX  #$600
+       BLO   A@
+       RTS
+
+PRINT  PSHS  DP,CC,X
+       LDU   #$400
+       CLRA
+       TFR   A,DP
+       CLR   $FFDE
+       LDX   +4,S
+       LDA   ,X+
+A@     ORA   #64
+       STA   ,U+
+       LDA   ,X+
+       BNE   A@
+       LDD   #$6060
+       STD   ,U++
+       STD   ,U++
+       STD   ,U++
+       STX   +4,S
+       CLR   $FFDF
+       PULS  DP,CC,X,PC
+
+HITKEY PSHS  DP,CC
+       CLRA
+       TFR   A,DP
+       CLR   $FFDE
+A@     JSR   [$A000]
+       BEQ   A@
+       ORCC  #$50
+       CLR   $FFDF
+       PULS  CC,DP,PC
+
+EXEC   ORCC  #$50
+       SETDP $FF
+       LDA   #$FF
+       TFR   A,DP
+       LDS   #STACK
+       LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       CLR   65497
+       JSR   CLS
+
+R@     JSR   PRINT
+ FCC "STOPPED...",0
+T@     BSR   HITKEY
+       CMPA  #'P
+       BNE   A@
+       JSR   SPLAY
+       BRA   R@
+A@     CMPA  #'R
+       BNE   B@
+       JSR   RECORD
+       BRA   R@
+B@     CMPA  #'L
+       BNE   T@
+       JSR   LISTEN
+       BRA   R@
+
+
+
+
+RECORD JSR   PRINT
+ FCC "RECORDING...",0
+
+       LDD   #$0100
+       STD   $FF7E
+       INITIT
+       LDX   #$2000
+B@     STB   $FF20
+       NOP
+       TFR   A,A
+F@     LDD   $FF7C *
+       STB   ,X+  *
+       LDA   #1    *
+       STA   $FF7E *
+       CMPX  #$4000
+       BLO   B@
+       INC   $FFA1
+       LDX   #$2000
+       LEAY  -1,Y
+       BNE   F@
+       RTS
+
+LISTEN JSR   PRINT
+ FCC "LISTENING...",0
+
+       LDD   #$0100
+       STD   $FF7E
+       EXG   A,A
+       EXG   A,A
+       EXG   A,A
+A@     LDD   $FF7C
+       STB   $FF20
+       LDA   #1
+       STA   $FF7E
+*TEST FOR BREAK
+       TFR   A,A
+       LDA   #%11111011
+       STA   $FF02
+       LDA   $FF00
+       BITA  #%01000000
+       BNE   A@
+       RTS
+
+
+SPLAY  JSR   PRINT
+ FCC "PLAYING...",0
+       INITIT
+       LDA   #$00
+       STA   $FFA1
+       LDX   #$2000
+G@     TFR   A,A
+       TFR   A,A
+H@     LDD   $FF50 *TIMING
+       LDB   ,X+
+       STB   $FF20
+       LDA   #1
+       CMPX  #$4000
+       BLO   G@
+       INC   $FFA1
+       LDX   #$2000
+       LEAY  -1,Y
+       BNE   H@
+       RTS
+
+ MSG "EOP AT ",*
+
+       END   EXEC
+

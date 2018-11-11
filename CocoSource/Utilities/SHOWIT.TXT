@@ -1,0 +1,23 @@
+       ORG   $E00
+
+SHOWIT LBRA  EXEC
+
+EXEC   CLR   113
+       CLR   $FEED
+       ORCC  #$50
+       LDD   #$3031
+       STD   $FFA4
+       LDD   #$3233
+       STD   $FFA6
+       LDU   #$8000+50
+       LEAX  ,U
+       JSR   Q@
+A@     BRA   A@
+Q@
+       INCL  CSHIP
+       END   EXEC
+
+
+
+
+

@@ -1,0 +1,4 @@
+ST     CLRA
+       BEQ   ST
+
+

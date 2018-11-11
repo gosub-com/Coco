@@ -1,0 +1,633 @@
+JOYBIT MACR
+       \1B   #\0
+       STB   <$20
+       TST   D,X
+       LDA   <$00
+       BMI   B@
+       ANDB  #\0!X$FF
+B@
+       ENDM
+
+JOYTAB
+ FDB -512,-439,-366,-292,-219
+ FDB -146,-73,0,0,73,146,219
+ FDB 292,366,439,512
+
+JOYSTK MACR
+       JOYBIT 128,LD
+       JOYBIT 64,OR
+       JOYBIT 32,OR
+       JOYBIT 16,OR
+       ENDM
+
+*ENTRY:X ^ PLACE TO STORE X POS
+*EXIT:^X = X POS
+*      B = Y POS
+JOYSTK PSHS  CC,DP
+       LDD   #%1111111100110100
+       CWAI  #$FF
+       ORCC  #$50
+       TFR   A,DP
+       STA   <$02
+       LDA   <$00
+       STA   >BUTPRESS
+       LDA   <$20
+       STA   SND@+1 *SAVE SOUND
+       STB   <$23 *DISENABLE SND
+       JOYSTK
+       STB   ,X *SAVE XPOS
+       LDA   #%00111100
+       STA   <$01 *JOYSTK 1
+       JOYSTK
+SND@   LDA   #0
+       STA   <$20 *RESTORE SND
+       LDA   #%00110100
+       STA   <$01
+       LDA   #%00111100
+       STA   <$23 *ENABLE SND
+       PULS  DP,CC,PC
+
+FIREBULET
+       PSHS  X
+       NEWLINK NOFIREBUL
+       LDX   #BULGO
+       STX   TRKDRV,Y
+       STB   ANGLE,Y
+       STA   BULARMOR,Y
+       CLR   STATUS,Y
+       PULS  X
+       STX   NEWPOS,Y
+NOFIREBUL RTS
+
+DIE@   PULS  D,Y,PC
+DOSHIP
+*SHOOT
+       LDD   #0
+       STB   STATUS,Y
+       STA   DEAD
+       STD   ADDSHIPX,Y
+       STD   ADDSHIPY,Y
+       LDA   #$81
+       STD   IPOS,Y
+       STD   SHIPX,Y
+       LDA   #200
+       STD   SHIPY,Y
+       LDX   #$3A3B
+       STX   IBLOCK,Y
+       LDX   #A@
+       STX   TRKDRV,Y
+A@     LDA   BUTPRESS
+       ANDA  #1
+       BNE   E@
+       LDB   BUTGO
+       BEQ   E@
+       LDB   BULLETSINAIR
+       CMPB  #10
+       BHS   E@
+       LDB   MAYISHOOT
+       BEQ   E@
+*FIRE BULLET(S)!!!
+       PSHS  A
+       BPL   RS@ *REGULAR SHOOT
+*SPECIAL SHOOT
+       NEWLINK YOUWON,L
+       LDA   #1
+       STA   STATUS,Y
+       LDD   #LASER
+       STD   TRKDRV,Y
+       CLR   MAYISHOOT
+       BRA   LOTS@
+RS@    LDB   FXP1+1
+       BMI   NS@ *NO SOUND
+       LDD   #$C240 *WAVE/PITCH
+       STA   FXA1+1 *WAVE
+       STB   FXP1+1 *PITCH
+NS@    LDA   #1 *YELLOW
+       LDX   REDBUL
+       BEQ   ARMOR@
+       CLRA     *RED BULLET
+ARMOR@ CLRB     *NO ANGLE
+       LDX   #0
+       JSR   FIREBULET
+*SINGLE BULLET FIRED
+       LDU   YELBUL
+       BEQ   LOTS@
+       INCB
+       LDX   #+11*256+4
+       JSR   FIREBULET
+       LDB   #-1
+       LDX   #+11*256-4
+       JSR   FIREBULET
+LOTS@  PULS  A
+*** !'A' MUST BE PRESERVED! ***
+E@     STA   BUTGO
+       CLR   BULLETSINAIR
+       LDY   +2,S *GET Y BACK
+       LDD   #$3334
+       STD   $FFA0
+       LDA   OFRAME
+       BMI   MOVE@
+       LDX   #XPOS@+1
+       JSR   JOYSTK
+*VERTICLE FIRST
+DEF@   LDX   #JOYTAB
+       LSRB
+       LSRB
+       LSRB
+       LDD   B,X
+       STD   ADDSHIPY,Y
+*NOW HORIZONTAL
+XPOS@  LDA   #0
+       LSRA
+       LSRA
+       LSRA
+       LDD   A,X
+       STD   ADDSHIPX,Y
+MOVE@
+**************
+       LDD   ADDSHIPY,Y
+       ADDD  SHIPY,Y
+       CMPA  #200-60+8
+       BHI   H@
+       LDA   #200-60+8
+H@     CMPA  #199
+       BLO   I@
+       LDA   #199
+I@     STD   SHIPY,Y
+       STA   SHIPOS
+**************
+       LDD   ADDSHIPX,Y
+       ADDD  SHIPX,Y
+       CMPA  #128+80-7
+       BLS   D@
+       LDA   #128+80-7
+D@     CMPA  #128-80+7
+       BHS   B@
+       LDA   #128-80+7
+B@     STD   SHIPX,Y
+       STA   SHIPOS+1
+
+       SKIP2
+DR@    PSHS  Y,D
+       LDA   SHIPOS
+       LDB   #58
+       MUL
+       SUBA  <HLINE
+       CMPA  #6
+       BHS   DRYSHIP
+       LDX   FIFOP
+       STY   ,X++
+       LDD   #DR@
+       STD   ,X++
+       STX   FIFOP
+       PULS  Y,D,PC
+
+DRYSHIP
+       LDD   IBLOCK,Y
+       STD   $FFA4
+       LDU   IPOS,Y
+       LEAX  +13,U
+       LDD   #255
+       LDU   #$0
+       STA   -13,X
+       ABX   *X=1
+       STA   -12,X
+       ABX   *X=2
+       STA   -12,X
+       STU   -11,X
+       ABX   *X=3
+       STA   -11,X
+       STU   -10,X
+       ABX   *X=4
+       STA   -10,X
+       STU   -9,X
+       ABX   *X=5
+       STA   -9,X
+       STU   -8,X
+       ABX   *X=6
+       STA   -8,X
+       STU   -7,X
+       ABX   *X=7
+       STA   -7,X
+       STU   -6,X
+       ABX   *X=8
+       STA   -6,X
+       STU   -5,X
+       ABX   *X=9
+       STA   -6,X
+       STU   -5,X
+       STU   -3,X
+       ABX   *X=10
+       STU   -7,X
+       STU   -5,X
+       STU   -3,X
+       STA   -1,X
+       STU   ,X
+       ABX   *X=11
+       STU   -6,X
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STA   +2,X
+       ABX   *X=12
+       STA   -5,X
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX   *X=13
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX   *X=14
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       ABX   *X=15
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       STU   +6,X
+       ABX   *X=16
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       STU   +6,X
+       STA   +8,X
+       ABX   *X=17
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       STU   +6,X
+       STU   +8,X
+       STA   +10,X
+       ABX   *X=18
+       STA   -1,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       STU   +6,X
+       STU   +8,X
+       STU   +10,X
+       ABX   *X=19
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       STU   +6,X
+       STU   +8,X
+       STU   +10,X
+       STA   +12,X
+       ABX   *X=20
+       STU   +4,X
+       STU   +9,X
+       ABX   *X=21
+       STU   +5,X
+       STU   +10,X
+*544 CYCLES
+
+       LDA   DEAD
+       BEQ   A@
+       LDX   #D@
+       STX   TRKDRV,Y
+D@     PULS  Y,D,PC
+A@
+
+*THIS DRAWS YOUR SHIP
+       LDD   SHIPOS
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ANDA  #%00001110
+       LDU   #GRBLK
+       LDU   A,U
+       STU   $FFA4
+       STU   IBLOCK,Y
+       LDA   SHIPOS
+       ANDA  #%00011111
+       ADDA  #$81
+       TFR   D,U
+       STU   IPOS,Y
+       LDA   SHIPX+1,Y
+       LBPL  DRSHPO
+
+DRSHP
+       LEAX  +13,U
+       LDD   #$08FF
+       LDU   #$8880
+       STA   -13,X
+       ABX   *X=1
+       STA   -12,X
+       ABX   *X=2
+       STU   -11,X
+       ABX   *X=3
+       LDU   #$8688
+       STA   -11,X
+       STU   -10,X
+       ABX   *X=4
+       LDU   #$6668
+       STA   -10,X
+       STU   -9,X
+       ABX   *X=5
+       STA   -9,X
+       STU   -8,X
+       ABX   *X=6
+       LDU   #$8888
+       STA   -8,X
+       STU   -7,X
+       ABX   *X=7
+       STA   -7,X
+       STU   -6,X
+       ABX   *X=8
+       STA   -6,X
+       LDU   #$8988
+       STU   -5,X
+       ABX   *X=9
+       LDU   #$9880
+       STU   -3,X
+       LDU   #$889F
+       STU   -5,X
+       ABX   *X=10
+       STU   -4,X
+       LDU   #$9880
+       STU   -2,X
+       LDA   #$60
+       STA   -6,X
+       STA   +1,X
+       ABX   *X=11
+       LDY   #$789F
+       LDU   #$9879
+       STA   +2,X
+       STY   -3,X
+       STU   -1,X
+       LDU   #$6009
+       STU   -5,X
+       ABX   *X=12
+       LDU   #$9878
+       STU   -3,X
+       STU   ,X
+       LDD   #$9055
+       STD   +2,X
+       LDA   #$9F
+       STA   -1,X
+       LDD   #$0550
+       STD   -5,X
+       LDB   #$FF
+       ABX   *X=13
+       STY   -1,X
+       STU   +1,X
+       LDB   #$59
+       STD   -4,X
+       LDD   #$8955
+       STD   +3,X
+       LDD   #$88FF
+       STA   -2,X
+       ABX   *X=14
+       STY   ,X
+       STU   +2,X
+       LDU   #$8969
+       STU   +4,X
+       LDU   #$0969
+       STU   -3,X
+       DECA
+       STA   -1,X
+       ABX   *X=15
+       LDU   #$7778
+       STU   ,X
+       STU   +4,X
+       LDD   #$9F98
+       STD   +2,X
+       LDD   #$6660
+       STD   +6,X
+       LDB   #$68
+       STD   -2,X
+       LDB   #$FF
+       ABX   *X=16
+       STU   +5,X
+       INCA
+       STA   ,X
+       LDU   #$8987
+       STU   +3,X
+       LDU   #$6556
+       STU   +7,X
+       LDU   #$0655
+       STU   -2,X
+       LDD   #$7777
+       STD   +1,X
+       LDB   #$FF
+       ABX   *X=17
+       LDB   #$77
+       STD   +3,X
+       LDB   #$72
+       STD   +5,X
+       LDD   #$1244
+       STD   +7,X
+       LDA   #$65
+       STD   -1,X
+       LDD   #$4560
+       STD   +9,X
+       LDD   #$4212
+       STD   +1,X
+       LDB   #$FF
+       ABX   *X=18
+       LDU   #$3212
+       STU   +2,X
+       STU   +7,X
+       LDD   #$5404
+       STD   ,X
+       LDA   #$34
+       STD   +9,X
+       LDD   #$3777
+       STD   +4,X
+       STB   +6,X
+       LDD   #$56FF
+       STA   +11,X
+       LDA   #$06
+       STA   -1,X
+       ABX   *X=19
+       STU   +3,X
+       STU   +8,X
+       LDD   #$0440
+       STD   ,X
+       LDD   #$3077
+       STD   +5,X
+       STA   +10,X
+       LDD   #$70FF
+       STA   +7,X
+       LDA   #$44
+       STA   +12,X
+       ABX   *X=20
+       LDU   #$0323
+       STU   +4,X
+       STU   +9,X
+       ABX   *X=21
+       LDA   #$30
+       STA   +6,X
+       STA   +11,X
+       PULS  Y,D,PC
+*645 CYCLES
+
+DRSHPO
+       LEAX  +13,U
+       LDD   #$80FF
+       LDU   #$0888
+       STA   -13,X
+       ABX   *X=1
+       STA   -12,X
+       ABX   *X=2
+       STU   -12,X
+       ABX   *X=3
+       LDU   #$8868
+       STU   -11,X
+       STA   -9,X
+       ABX   *X=4
+       LDU   #$8666
+       STU   -10,X
+       STA   -8,X
+       ABX   *X=5
+       STU   -9,X
+       STA   -7,X
+       ABX   *X=6
+       LDU   #$8888
+       STU   -8,X
+       STA   -6,X
+       ABX   *X=7
+       STU   -7,X
+       STA   -5,X
+       ABX   *X=8
+       LDU   #$8898
+       STU   -6,X
+       STA   -4,X
+       ABX   *X=9
+       LDU   #$0889
+       LDY   #$F988
+       STU   -6,X
+       STY   -4,X
+       ABX   *X=10
+       LDA   #$06
+       STA   -7,X
+       STA   ,X
+       STU   -5,X
+       STY   -3,X
+       ABX   *X=11
+       STA   -6,X
+       LDU   #$9789
+       STU   -4,X
+       LDU   #$9006
+       STU   ,X
+       LDU   #$F987
+       STU   -2,X
+       ABX   *X=12
+       LDD   #$0550
+       STD   +2,X
+       LDD   #$8789
+       STD   -3,X
+       STB   +1,X
+       LDD   #$5509
+       STD   -5,X
+       STU   -1,X
+       LDB   #$FF
+       ABX   *X=13
+       LDB   #$98
+       STD   -4,X
+       LDD   #$8789
+       STD   -2,X
+       LDD   #$9550
+       STD   +3,X
+       STU   ,X
+       LDD   #$88FF
+       STA   +2,X
+       ABX   *X=14
+       LDD   #$9690
+       STD   +4,X
+       LDB   #$98
+       STD   -3,X
+       LDD   #$7789
+       STD   -1,X
+       STU   +1,X
+       LDD   #$78FF
+       STA   +3,X
+       ABX   *X=15
+       LDD   #$8766
+       STA   -1,X
+       STB   +6,X
+       LDA   #$06
+       STD   -3,X
+       LDD   #$7789
+       STD   ,X
+       LDB   #$86
+       STD   +4,X
+       STU   +2,X
+       LDB   #$FF
+       ABX   *X=16
+       LDB   #$76
+       STD   +5,X
+       INCB
+       STD   ,X
+       LDA   #$98
+       STD   +3,X
+       LDD   #$6556
+       STD   -2,X
+       LDD   #$5560
+       STD   +7,X
+       LDD   #$78FF
+       STA   +2,X
+       ABX   *X=17
+       LDD   #$2777
+       STD   +2,X
+       LDA   #$77
+       STD   +4,X
+       LDD   #$4456
+       STD   +8,X
+       LDB   #$21
+       STD   ,X
+       LDD   #$0654
+       STD   -2,X
+       LDD   #$2124
+       STD   +6,X
+       LDB   #$FF
+       ABX   *X=18
+       LDD   #$6540
+       STD   -1,X
+       LDA   #$23
+       STD   +8,X
+       LDB   #$77
+       STD   +3,X
+       LDD   #$4560
+       STD   +10,X
+       LDD   #$4321
+       STD   +1,X
+       LDA   #$73
+       STD   +6,X
+       LDD   #$77FF
+       STA   +5,X
+       ABX   *X=19
+       LDU   #$0440
+       STU   +11,X
+       LDU   #$0777
+       STU   +5,X
+       LDD   #$2123
+       STD   +3,X
+       STD   +8,X
+       LDD   #$0344
+       STA   +2,X
+       STA   +7,X
+       STB   ,X
+       LDB   #$FF
+       ABX   *X=20
+       LDU   #$3230
+       STU   +4,X
+       STU   +9,X
+       ABX   *X=21
+       STA   +5,X
+       STA   +10,X
+       PULS  Y,D,PC
+*648 CYCLES

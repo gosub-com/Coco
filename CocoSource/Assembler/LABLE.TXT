@@ -1,0 +1,204 @@
+*COPIES LABLE FROM Y TO U
+C@     STA   ,U+
+LCOPY  LDA   ,Y+
+       CMPA  #'0
+       BLO   N@ *END OF LABLE?
+       CMPA  #'9
+       BLS   C@ *KEEP COPYING
+       CMPA  #'@
+       BEQ   A@
+       BLO   E@ *END OF LABLE
+       CMPA  #'Z
+       BLS   C@ *KEEP COPYING
+*FINISHED
+E@     LEAY  -1,Y
+       CLR   ,U
+       RTS
+D@     CMPA  #'$
+       BEQ   C@
+       CMPA  #'.
+       BNE   E@
+       BRA   C@
+P@     CMPA  #'%
+       BNE   D@
+       LDX   LOCVAR
+       LEAX  PERLOC,X
+       LDA   #$10
+       BRA   G@
+N@     CMPA  #'#
+       BNE   P@
+       LDX   LOCVAR
+       LEAX  NUMLOC,X
+       LDA   #$70
+       BRA   G@
+A@     LDX   LOCVAR
+       LEAX  ATLOC,X
+       LDA   #$60
+G@     PSHS  A
+       LDA   ,X
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ADDA  ,S+
+       STA   ,U+
+       LDD   ,X
+       LSLD
+       LSLD
+       ANDA  #%00111111
+       LSRB
+       LSRB
+       ADDD  #'@*256+'@
+       STD   ,U++
+       BRA   LCOPY
+
+LABVAL LEAS  -MAXLL-2,S
+       LEAU  ,S
+       BSR   LCOPY
+       STY   +MAXLL,S
+       LEAY  ,S
+       BSR   FNDLAB
+       LEAS  MAXLL,S
+       PULS  Y,PC
+
+*Y ^ LABLE (ON STACK)
+INSLAB BSR   FNDLAB
+       BNE   D@
+       RTS
+*U ^ TABLE (WLSB)
+D@     PSHS  U
+       LDX   PLTB
+       LDD   ,X
+       SUBD  #2
+       STD   ,X
+       LDX   PLTE
+       LEAX  -2,X
+       STX   PLTE
+       CMPX  ,S
+       BHS   E@
+A@     LDD   ,X++
+       STD   -4,X
+       CMPX  ,S
+       BLO   A@
+E@     LDD   ,X
+       STD   -2,X
+B@     LDU   NXTLIM
+       STU   ,X
+       LEAU  +3,U
+       PSHS  U
+*LABLE ENTERED INTO TABLE
+*NOW STORE IT IN MEMORY
+       LDA   ,Y+
+*LABLES ARE AT LEAST 1 BYTE!!!
+C@     STA   ,U+
+       LDA   ,Y+
+       BNE   C@
+       STU   NXTLIM
+       LDA   -1,U
+       ORA   #$80
+       STA   -1,U
+       PULS  X,U,PC
+
+
+*Y ^ LABLE (ON STACK)
+*ON EXIT: U ^ LABLE PTR
+*         X ^ LABLE (ITSELF)
+*BEQ IF FOUND
+FNDLAB LDU   PLTB
+       LDD   ,U
+       BNE   A@
+       LEAU  -2,U
+       LDA   #1 *SET FLAGS
+       RTS
+*D IS A NEGATIVE NUMBER
+A@     LEAU  D,U *U ^ TABLE
+*THE FOLLOWING 5 COMMANDS WERE:
+*NEGD, LSRA, RORB, SUBD #1
+       NEGD
+       LSRA
+       RORB
+       SUBD  #1
+       LEAS  -6,S
+       BEQ   E@
+       STD   +4,S
+       LDD   #0
+       STD   +2,S
+B@     LDD   +4,S
+       ADDD  +2,S
+       LSRA
+       RORB
+       STD   ,S
+       LSLB
+       ROLA
+       LDX   D,U *X ^ LABLE
+       LEAX  +3,X *SKIP INFO
+       BSR   LABCMP
+       BHI   C@
+       BLO   D@
+H@     LDD   ,S
+       LSLB
+       ROLA
+       LEAU  D,U
+       LEAS  +6,S
+       CLRA  *SET FLAGS
+       RTS
+*MOVE HIGH POINTER DOWN
+C@     LDD   ,S
+       SUBD  #1
+       STD   +4,S
+       CMPD  +2,S
+       BGT   B@
+       BEQ   E@
+       LSLB
+       ROLA
+       LEAU  D,U
+       LEAS  +6,S
+       LDA   #1 *SET FLAGS
+       RTS
+*MOVE LOW POINTER UP
+D@     LDD   ,S
+       ADDD  #1
+       STD   +2,S
+       CMPD  +4,S
+       BLO   B@
+       BEQ   E@
+F@     LDD   ,S
+G@     LSLB
+       ROLA
+       LEAU  D,U
+       LEAS  +6,S
+       LDA   #1 *SET FLAGA
+       RTS
+E@     STD   ,S
+       LSLB
+       ROLA
+       LDX   D,U
+       LEAX  +3,X
+       BSR   LABCMP
+       BEQ   H@
+       BLO   F@
+       LDD   ,S
+       SUBD  #1
+       BRA   G@
+
+*X ^ LABLE IN LABLE TABLE
+*Y ^ LABLE ON LINE (OR STACK)
+*MINUS ENDS LINE FOR U
+*ZERO ENDS LABLE FOR X
+*ON EXIT:
+*   BLO IF [X] < [Y]
+*   BHI IF [X] > [Y]
+*   BEQ IF [X] = [Y]
+LABCMP PSHS  X,Y
+A@     LDB   ,X+
+       BMI   M@
+       CMPB  ,Y+
+       BEQ   A@
+O@     PULS  X,Y,PC
+M@     ANDB  #$7F
+       CMPB  ,Y+
+       BNE   O@
+       CLRB
+       CMPB  ,Y
+       PULS  X,Y,PC
+

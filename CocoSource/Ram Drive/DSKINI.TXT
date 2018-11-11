@@ -1,0 +1,174 @@
+SR     EQU   0 *STEP RATE
+
+TIMER  EQU   $985
+IOTEST EQU   1
+RAMIM  EQU   $986
+
+       ORG   $EA
+DSKOP  RMB   1
+DSKDRV RMB   1
+DSKTRK RMB   1
+DSKSEC RMB   1
+DSKBUF RMB   2
+DSKSTA RMB   1
+ MSG "DSKSTA = $",DSKSTA
+       RMB   2 *NO US  FCB   0
+MOFF   RMB   1
+REALTRACK RMB 1
+SLOW   RMB    1
+
+       ORG   $7000
+
+READY  EXG   A,A
+       EXG   A,A
+       LDY   #0
+R@     LEAY  -1,Y
+       BEQ   FRCINT
+       LDA   $FF48
+       BITA  #1
+       BNE   R@
+       RTS
+FRCINT LDA   #$D0
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       LDA   $FF48
+       LDA   #$80
+       STA   DSKSTA
+       RTS
+
+*VTRACK LDD   #$600
+*      STD   DSKBUF
+*      LDA   #2 *READ
+*      STA   DSKOP
+*      LDU   #LST1
+*      LDA   ,U+
+*A@     STA   DSKSEC
+*      JSR   DSKGO
+*      LDA   DSKSTA
+*      BNE   Z@
+*      LDA   ,U+
+*      BNE   A@
+*Z@     RTS
+
+LST1   FCB   1,12,5,16
+       FCB   9,2,13,6
+       FCB   17,10,3,14
+       FCB   7,18,11,4
+       FCB   15,8,0
+
+SECLIST FCB 1,2,3,4,5,6,7,8
+ FCB 9,10,11,12,13,14,15,16,17
+ FCB 18
+
+DSKINI
+       LDB   #2
+       STB   DSKDRV
+D@     COM   $95C
+       LDS   #$800
+       CLR   DSKTRK
+*LOOP BACK HERE
+F@     LDA   #4 *SEEKIT
+       STA   DSKOP
+       JSR   [$C004] *SEEK
+       CLR   65496
+       CLR   $985
+       LDA   RAMIM
+       STA   $FF40
+       CLR   65497
+       BSR   BUILD
+       CLR   65496
+       LDY   #$FF4B
+       ORCC  #$50
+       LDX   #DSNNMI
+       STX   $983
+       LDX   #$989
+       LDA   $FF48
+       LDA   #$FF
+       STA   $982
+       LDA   RAMIM
+       ORA   #$80
+       LDB   #$F4
+       STB   $FF48
+       STA   $FF40
+L@     LDB   ,X+
+       STB   ,Y
+       BRA   L@
+DSNNMI LDA   $FF48
+       ANDCC #$AF
+       ANDA  #$44
+       STA   DSKSTA
+       BNE   ERROR@
+*      JSR   VTRACK
+*      JSR   DSKERR
+       INC   DSKTRK
+       LDA   DSKTRK
+       CMPA  #35
+       BLO   F@
+       JMP   $D2CD
+ERROR@ JMP   $A619
+
+BUILD  LDX   #$989
+       LDD   #$204E
+       BSR   WAB
+       CLRB
+A@     PSHS  B
+       LDU   #SECLIST
+       LDB   B,U
+       STB   $ED
+       LDU   #FORMAT
+       LDB   ,U+
+       BSR   WAX
+       LDA   REALTRACK
+       STA   ,X+
+*WHICH SIDE?
+       LDA   RAMIM
+       ROLA
+       ROLA
+       ROLA
+       ANDA  #1
+       STA   ,X+
+       LDA   $ED
+       STA   ,X+
+       LDB   ,U+
+       BSR   WAX
+       PULS  B
+       INCB
+       CMPB  #8
+       BLO   A@
+       LDD   #$C84E
+WAB    STB   ,X+
+       DECA
+       BNE   WAB
+       RTS
+WAX    PSHS  B
+       LDD   ,U++
+       BSR   WAB
+       PULS  B
+       DECB
+       BNE   WAX
+       RTS
+
+FORMAT
+       FCB   3 *DO 3
+       FCB   8,0
+       FCB   3,$F5
+       FCB   1,$FE
+*TRACK, SIDE, SECTOR
+       FCB  12 *DO 10
+       FCB   1,3
+       FCB   1,$F7
+       FCB   22,$4E
+       FCB   12,0
+       FCB   3,$F5
+       FCB   1,$FB
+
+       FCB   0,$FF
+       FCB   0,$FF
+       FCB   0,$FF
+       FCB   0,$FF
+
+       FCB   1,$F7
+       FCB   24,$4E
+
+       END   DSKINI

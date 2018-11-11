@@ -1,0 +1,55 @@
+       ORG   $2700
+EXEC   ORCC  #$50
+       CLR   65497
+       LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       CLR   $FF20
+E@     LDX   #$A85C
+       LDB   #19
+A@     LDA   ,X+
+       STA   $FF20
+       DECB
+       BNE   A@
+       LDD   #$0100
+       STD   $FF7E
+       LDX   #$E00+6144-512
+       LDA   #0
+       PSHS  A
+B@     LDD   $FF7C
+       LDA   #1
+       STA   $FF7E
+       STB   ,X++
+       TFR   A,A
+       DEC   ,S
+       BNE   B@
+       PULS  A
+       LDU   #$E00+6144-512
+       LDA   #128
+       LDB   #32
+       LDY   #$E00
+H@     PSHS  D
+       LDX   -512,U
+       CLR   ,X
+       LDA   ,U++
+       LSRA
+       LDB   #32
+       MUL
+       LEAX  D,Y
+       LDA   ,X
+       ORA   ,S
+       STA   ,X
+       STX   -514,U
+       PULS  D
+       LSRA
+       BCC   H@
+       RORA
+       LEAY  +1,Y
+       DECB
+       BNE   H@
+       BRA   E@
+
+       END   EXEC

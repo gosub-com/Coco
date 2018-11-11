@@ -1,0 +1,413 @@
+       ORG   $C00
+
+LSRD   MACR
+       LSRA
+       RORB
+       ENDM
+
+LSLD   MACR
+       LSLB
+       ROLA
+       ENDM
+
+BUFFER BSZ   256
+BLOCKPOINTERS
+       BSZ   64*2*8
+
+
+*U ^ SECTOR
+*A,B = TRACK
+*USE DRIVE 2
+DISKREAD STU $EE *BUFFER
+       STD   $EC *TRACK, SECT
+       PSHS  D
+       LDD   #$0202 *READ
+       STD   $EA
+       PULS  D
+       JSR   [$C004]
+       TST   $F0
+A@     BNE   A@
+       RTS
+
+DISKWRITE STU $EE *BUFFER
+       STD   $EC *TRACK, SECT
+       PSHS  D
+       LDD   #$0302 *WRITE
+       STD   $EA
+       PULS  D
+       JSR   [$C004]
+       TST   $F0
+A@     BNE   A@
+       RTS
+
+GONEXTSECT
+       INCB
+       CMPB  #18
+       BLS   Z@
+       LDB   #1
+       INCA
+       CMPA  #17
+       BNE   Z@
+       INCA
+Z@     RTS
+
+*U, X ^ BYTES
+COMPARE PSHS X,Y,U,D
+       LDB   #128
+A@     LDA   ,U+
+       CMPA  ,X+
+       BNE   Z@
+       DECB
+       BNE   A@
+Z@     PULS  X,Y,U,D,PC
+
+*X=BYTES
+*X=AT
+*A=$FFA2
+GT     TFR   X,D
+       LSLD
+       LSLD
+       LSLD
+       LSLD
+       LSLD
+       LSLD
+       LSLD
+       PSHS  D
+       ANDA  #%00011111
+       TFR   D,X
+       PULS  D
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       INCA
+       RTS
+
+*A, B = INDEX NUMBERS
+*X, U ^ BYTES
+GET    PSHS  Y,D
+       BSR   GT
+       LEAX  +$6000,X
+       STA   $FFA3
+       EXG   U,X
+       BSR   GT
+       LEAX  +$4000,X
+       EXG   X,U
+       STA   $FFA2
+       PULS  Y,D,PC
+
+NEXTSECT FDB 0
+DISKBUFFER BSZ 256
+*FUNCTION TO PUT 128
+*BYTES ONTO DISK
+*X ^ 128 BYTES
+DISKOUT
+       PSHS  X,Y,U,D
+A@     LDU   #DISKBUFFER
+       LDA   NEXTSECT
+       BPL   B@
+       LDU   #DISKBUFFER+128
+*WE NOW HAVE THE DESTINATION
+B@     LDA   #128
+C@     LDB   ,X+
+       STB   ,U+
+       DECA
+       BNE   C@
+       COM   NEXTSECT
+       BMI   Z@ *WE DONE
+*SEND SECTOR OUT
+       LDD   NEXTSECT
+       LDU   #DISKBUFFER
+       JSR   DISKWRITE
+       JSR   GONEXTSECT
+       STD   NEXTSECT
+Z@     PULS  X,Y,U,D,PC
+
+*U ^ SECTOR
+DISKOUTS
+       PSHS  X,Y,U,D
+       LDD   NEXTSECT
+       JSR   DISKWRITE
+       JSR   GONEXTSECT
+       STD   NEXTSECT
+       PULS  X,Y,U,D,PC
+
+
+EXEC   LDU   #BUFFER
+       LDD   #$0001
+       JSR   DISKREAD
+       LDD   BUFFER+96 *NEXT
+       STD   NEXTSECT
+
+       LDX   #0  *PRIMARY
+A@     TFR   X,U *SECONDARY
+C@     LEAU  -1,U
+       CMPU  #-1
+       BNE   B@
+*WE ARE DONE: WE SAVE IT (A)
+       PSHS  X,Y,U,D
+*SAVE POINTER IN ARRAY
+       TFR   X,D
+       LSLD
+       LDX   #BLOCKPOINTERS
+       LDU   NEXTSECT
+       STU   D,X *SAVED
+       LDA   #'_
+       JSR   [$A002]
+       PULS  X,Y,U,D
+       PSHS  X,Y,U,D
+       JSR   GET
+       JSR   DISKOUT *GOODBYE
+       PULS  X,Y,U,D
+       BRA   L@
+*NO, WE DON'T HAVE IT YET: RETRY
+B@     PSHS  X,Y,U,D
+       JSR   GET
+       JSR   COMPARE
+       PULS  X,Y,U,D
+       BNE   C@
+*WE FOUND A MATCH: *A=*B!
+       PSHS  X,Y,U,D
+       TFR   U,D
+       LSLD
+       LDX   #BLOCKPOINTERS
+       LDU   D,X *U=*B
+       LDD   +2,S
+       LSLD
+       STU   D,X
+       LDA   #'!
+       JSR   [$A002]
+       PULS  X,Y,U,D
+*DO THE NEXT ONE
+L@     LEAX  +1,X
+       CMPX  #64*8
+       LBLO  A@
+
+*NOW SAVE THE HEADER
+       LDD   NEXTSECT
+       BPL   A@
+       COMA
+       JSR   GONEXTSECT
+A@     STD   NEXTSECT
+*DONE SAVEING HEADER
+
+*NOW SAVE ARRAY
+       LDB   #5 *5-0!
+       PSHS  B
+*GET LEVEL DESCRIPTOR
+A@     LDU   #BUFFER
+       LDB   ,S
+       ADDB  #3 *FIRST LEVEL
+       CLRA
+       JSR   DISKREAD
+       LDB   ,S
+       LDA   #128
+       MUL
+       LDX   #BLOCKPOINTERS
+       LEAX  D,X *X ^ BLOCK
+       LDU   #BUFFER
+       LDA   #128
+C@     LDB   ,X+
+       STB   ,U+
+       DECA
+       BNE   C@
+*SAVE SECTOR
+       LDU   #BUFFER
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       JSR   DISKWRITE
+       DEC   ,S
+       BPL   A@
+       PULS  A
+
+*NOW LETS SAVE LEVELS
+*START AT BLOCK 10
+       LDA   #5 *LEVEL
+       PSHS  A
+A@     LDA   ,S
+       ADDA  #'1
+       JSR   [$A002]
+*GET LEVEL DESCRIPTOR
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKREAD
+*GET BLOCKS
+       LDA   ,S
+       LDB   #3
+       MUL
+       ADDB  #11
+       TFR   B,A
+       INCB
+       STD   $FFA1
+       INCB
+       STB   $FFA3
+*SAVE POINTER/LENGTH
+       LDD   NEXTSECT
+       STD   BUFFER+138
+*LENGTH (0=1 SECTOR)
+       LDA   $2000
+       STA   BUFFER+140
+*SAVE BUFFER
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKWRITE
+*SAVE LEVEL
+       LDU   #$2002
+*U ^  LEVEL
+*WHILE (MORE SECTORS LEFT)
+C@     JSR   DISKOUTS
+       LEAU  +256,U
+       DEC   BUFFER+140
+       BPL   C@
+*LEVEL HAS BEEN SAVED!
+       DEC   ,S
+       BPL   A@
+       PULS  A
+
+       LDA  #13
+       JSR   [$A002]
+
+*NOW LETS SAVE LEVELS
+*START AT BLOCK 10
+       LDA   #5 *LEVEL
+       PSHS  A
+A@     LDA   ,S
+       ADDA  #'1
+       JSR   [$A002]
+*GET LEVEL DESCRIPTOR
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKREAD
+*GET BLOCKS
+       LDA   ,S
+       ADDA  #40
+       STA   $FFA2
+*SAVE POINTER/LENGTH
+       LDD   NEXTSECT
+       STD   BUFFER+142
+*LENGTH (0=1 SECTOR)
+       LDA   $4000
+       STA   BUFFER+144
+*SAVE BUFFER
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKWRITE
+*SAVE OBJECTS
+       LDU   #$4001
+*U ^  OBJECTS
+*WHILE (MORE SECTORS LEFT)
+C@     JSR   DISKOUTS
+       LEAU  +256,U
+       DEC   BUFFER+144
+       BPL   C@
+*LEVEL HAS BEEN SAVED!
+       DEC   ,S
+       BPL   A@
+       PULS  A
+
+       LDA   #13
+       JSR   [$A002]
+
+       LDA   #49
+       STA   $FFA2
+*NOW LETS SAVE COLTAB
+*START AT BLOCK 10
+       LDA   #5 *LEVEL
+       PSHS  A
+A@     LDA   ,S
+       ADDA  #'1
+       JSR   [$A002]
+*GET LEVEL DESCRIPTOR
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKREAD
+*GET BLOCKS
+*SAVE POINTER/LENGTH
+       LDD   NEXTSECT
+       STD   BUFFER+132
+*LENGTH (0=1 SECTOR)
+*SAVE BUFFER
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKWRITE
+*SAVE COLTAB
+       CLRB
+       LDA   ,S
+       ADDA  #$40
+       TFR   D,U
+       JSR   DISKOUTS
+*LEVEL HAS BEEN SAVED!
+       DEC   ,S
+       BPL   A@
+       PULS  A
+
+       LDA   #13
+       JSR   [$A002]
+
+       LDA   #50
+       STA   $FFA2
+*NOW LETS SAVE BOSSES
+*START AT BLOCK 10
+       LDA   #5 *LEVEL
+       PSHS  A
+A@     LDA   ,S
+       ADDA  #'1
+       JSR   [$A002]
+*GET LEVEL DESCRIPTOR
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKREAD
+*GET BLOCKS
+*SAVE POINTER/LENGTH
+       LDD   NEXTSECT
+       STD   BUFFER+128
+*LENGTH (0=1 SECTOR)
+*SAVE BUFFER
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKWRITE
+*SAVE BOSSES
+       LDA   ,S
+       LSLA
+       LSLA
+       CLRB
+       ADDA  #$40
+       TFR   D,U
+       JSR   DISKOUTS
+       LEAU  +256,U
+       JSR   DISKOUTS
+       LEAU  +256,U
+       JSR   DISKOUTS
+       LEAU  +256,U
+       JSR   DISKOUTS
+*LEVEL HAS BEEN SAVED!
+       DEC   ,S
+       BPL   A@
+       PULS  A
+
+       RTS
+
+ MSG "END @",*
+       END   EXEC
+
+
+
+

@@ -1,0 +1,124 @@
+       ORG   $E00
+
+PRINT  PSHS  X,D
+       LDX   +4,S
+       LDA   ,X+
+A@     JSR   [$A002]
+       LDA   ,X+
+       BNE   A@
+       STX   +4,S
+       PULS  X,D,PC
+
+BLOCK  FCB   8
+BLAT   FDB   $6002
+LENGTH FDB   0
+WRITE
+       PSHS  X,Y,U,D
+       LDB   $FFA3
+       PSHS  B
+       LDB   BLOCK
+       STB   $FFA3
+       LDX   BLAT
+       STA   ,X+
+       CMPX  #$8000
+       BNE   A@
+       LDX   #$6000
+       INC   BLOCK
+A@     STX   BLAT
+       LDD   LENGTH
+       ADDD  #1
+       STD   LENGTH
+       PULS  B
+       STB   $FFA3
+       PULS  X,Y,U,D,PC
+
+LONGJMP FDB 0
+BLOCKIT FDB $0102
+TOTLEN FDB   0
+LASLEN FDB   $4000
+ADJUSTY
+       PSHS  X,U,D
+       TFR   Y,D
+       SUBD  LASLEN
+       ADDD  TOTLEN
+       STD   TOTLEN
+       CMPD  #$8000
+       BHS   O@
+       CMPY  #$7000
+       BLO   Z@
+       LDD   BLOCKIT
+       ADDD  #$0101
+       STD   BLOCKIT
+       STD   $FFA2
+       LEAY  -$2000,Y
+Z@     STY   LASLEN
+       PULS  X,U,D,PC
+*WE ARE DONE - SEND GOOD MESSAGE
+O@     LDA   #%01001111
+       JSR   WRITE
+       JSR   WRITE
+       JSR   WRITE
+       JSR   WRITE
+       JSR   WRITE
+       JSR   WRITE
+       JSR   WRITE
+       JSR   WRITE
+       LDD   #$0809
+       STD   $FFA1
+       LDA   #$0B
+       STA   $FFA3
+       LDD   LENGTH
+       STD   $2000
+       LDS   LONGJMP
+       RTS
+
+
+EXEC   STS   LONGJMP
+
+       LDY   #$4000
+       LDD   #$0102
+       STD   $FFA2
+
+A@     JSR   ADJUSTY
+*ZEROS SHOULD BE COMPRESSED
+       LDD   ,Y
+       BNE   NC@
+*WE HAVE AT LEAST 2 ZEROS
+Z@     LEAY  +2,Y *SKIP THEM
+       LDA   #$FF *1 ZERO
+B@     INCA  *2 OR MORE ZEROS
+       JSR   ADJUSTY
+       CMPA  #%00001111
+       BEQ   NMZ@
+       LDB   ,Y+
+       BEQ   B@
+       LEAY  -1,Y
+NMZ@   ORA   #%01000000
+       JSR   WRITE
+       BRA   A@
+NC@    LDA   ,Y
+       CMPA  #$40
+       BNE   GO@
+*WE HAVE AT LEAST 2 64'S
+       LEAY  +1,Y *SKIP IT
+       LDA   #$FF *0 64'S
+BA@    INCA  *1 OR MORE 64'S
+       JSR   ADJUSTY
+       LDB   ,Y+
+       CMPB  #64
+       BEQ   BA@
+       LEAY  -1,Y
+       ORA   #%01100000
+       JSR   WRITE
+       BRA   A@
+GO@    LDA   ,Y+
+       CMPA  #64
+       BNE   WRIT@
+       ORA   #%00100000
+WRIT@  JSR   WRITE
+       BRA   A@
+
+
+
+
+       END   EXEC

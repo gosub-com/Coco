@@ -1,0 +1,1239 @@
+JEREMY EQU   0 *0=YES
+
+SR     EQU   0 *STEP RATE
+
+TIMER  EQU   $985
+IOTEST EQU   1
+RAMIM  EQU   $986
+
+       ORG   $EA
+DSKOP  FCB   0
+DSKDRV FCB   0
+DSKTRK FCB   0
+DSKSEC FCB   0
+DSKBUF FDB   0
+DSKSTA FCB   0
+       FDB   0 *NO US  FCB   0
+MOFF   FCB   0
+REALTRACK FCB 0
+SLOW   FCB   0
+
+       ORG   $D75F
+DSKON  PSHS  X,Y,U,D
+       LDA   DSKDRV
+       CMPA  #3
+       LBHS  DKST
+       CLR   65496
+       LDB   #5 *RETRY
+       PSHS  B
+DSKCLR LDD   DSKDRV
+       CLR   TIMER
+       LDX   #DRVTBL
+       LSLA
+       JSR   [A,X]
+       CMPB  #22
+       BLO   C@
+       ORA   #$10
+C@     STB   REALTRACK
+       STA   RAMIM
+       STA   $FF40
+       LDB   MOFF
+       BNE   D@
+       COM   MOFF
+       BSR   READY
+       BNE   ERRCHK
+       LDX   #0
+E@     LEAX  -1,X
+       BNE   E@
+D@     CLR   DSKSTA
+       BSR   READY
+       BNE   ERRCHK
+       LDX   #JMPTBL
+       LDB   DSKOP
+       LSLB
+       JSR   [B,X]
+ERRCHK TST   $F0
+       BEQ   DSKOUT
+       DEC   ,S *RETRY
+       BEQ   DSKOUT
+       BSR   RESET
+       BRA   DSKCLR
+DSKOUT PULS  A *TIMER
+       LDA   #96
+       STA   TIMER
+       TST   SLOW
+       BEQ   DSKRTS
+       CLR   65497
+DSKRTS PULS  X,Y,U,D,PC
+
+RESET  LDX   #DRIVEHEADS
+       LDB   DSKDRV
+       LSLB
+       CLR   [B,X]
+
+       LDA   #0+SR
+       STA   $FF48
+       BSR   READY
+       BSR   WAIT
+       ANDA  #$10
+       STA   DSKSTA
+TRTS   RTS
+
+WAIT   LDY   #4375
+A@     LEAY  -1,Y
+       BNE   A@
+       RTS
+
+READY  EXG   A,A
+       EXG   A,A
+       LDY   #0
+R@     LEAY  -1,Y
+       BEQ   FRCINT
+       LDA   $FF48
+       BITA  #1
+       BNE   R@
+       RTS
+FRCINT LDA   #$D0
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       LDA   $FF48
+       LDA   #$80
+       STA   DSKSTA
+       RTS
+
+*SEEK OPERATION
+SEEK   LDX   #DRIVEHEADS
+       LDB   DSKDRV
+       LSLB
+       LDX   B,X
+
+       LDB   ,X
+       STB   $FF49
+       CMPB  REALTRACK
+       BEQ   ?RTS *EXIT OK
+       COM   ,X
+       BNE   S@
+*TRACK WE ARE ON IS UNKNOWN
+       BSR   RESET
+       BRA   SEEK
+S@     LDA   REALTRACK
+       STA   $FF4B
+       STA   ,X
+       LDA   #$14+SR
+       STA   $FF48
+       BSR   READY
+       BNE   Z@   *OUT IF ERROR
+       BSR   WAIT
+       ANDA  #$18
+       STA   DSKSTA
+Z@     RTS
+
+READ   LDA   #$80
+       FCB   $8C
+WRITE  LDA   #$A0
+       PSHS  CC,A
+
+       BSR   SEEK
+       BEQ   A@
+       PULS  CC,A,PC
+A@     LDA   DSKSEC
+       STA   $FF4A
+       LDX   #NMIVEC
+       STX   $983
+       LDX   DSKBUF
+       LDA   $FF48
+       LDA   RAMIM
+       ORA   #$80
+       LDB   +1,S *GET R/W FLAG
+       LDY   #0
+       LDU   #$FF48
+       COM   $982
+       ORCC  #$50
+       STB   $FF48
+       EXG   A,A
+       EXG   A,A
+       CMPB  #$80
+       BEQ   RSEC
+       BRA   WSEC
+
+
+JMPTBL FDB   RESET
+       FDB   TRTS
+       FDB   READ
+       FDB   WRITE
+       FDB   SEEKIT
+
+       IFEQ  JEREMY
+
+DRVTBL
+       FDB   DRVR5
+       FDB   DRVR6
+       FDB   DRVR7
+       FDB   0
+*1 MORE DRIVE
+
+DRIVEHEADS
+       FDB   $97E *BOTH ARE
+       FDB   $97E *SAME HEAD
+       FDB   $97F
+
+       ELSE
+DRVTBL
+       FDB   DRVR7
+       FDB   DRVR7
+       FDB   DRVR7
+       FDB   0
+
+DRIVEHEADS
+       FDB   $97E
+       FDB   $97F
+       FDB   $980
+
+       ENDC
+
+NMISER LDA   $982
+       BEQ   NMIOUT
+       LDX   $983
+       STX   10,S
+       CLR   $982
+NMIOUT RTI
+
+ MSG *," MUST BE UNDER $D8AF"
+
+       ORG   $D8AF
+IRQ    LDA   $FF03
+       BPL   NMIOUT
+       LDA   $FF02
+       LDA   TIMER
+       BEQ   IRQOUT
+       DECA
+       STA   TIMER
+       BNE   IRQOUT
+       CLR   $FF40
+       CLR   MOFF
+IRQOUT JMP   $8955
+
+WSEC   LDB   #2
+A@     BITB  ,U
+       BNE   B@
+       LEAY  -1,Y
+       BNE   A@
+       CLR   $982
+       PULS  A,CC
+       JMP   FRCINT
+B@     LDB   ,X+
+       STB   $FF4B
+       STA   $FF40
+       BRA   B@
+
+RSEC   LDB   #2
+A@     BITB  ,U
+       BNE   B@
+       LEAY  -1,Y
+       BNE   A@
+       CLR   $982
+       PULS  A,CC
+       JMP   FRCINT
+B@     LDB   $FF4B
+       STB   ,X+
+       STA   $FF40
+       BRA   B@
+
+NMIVEC LDA   $FF48
+       PULS  B,CC
+       ANDA  #$7C
+       STA   DSKSTA
+       RTS
+
+*THIS SEEKS ANY TRACK
+*REGAURDLESS OF FORMAT
+SEEKIT LDA   DSKTRK
+       BNE   A@
+R@     JSR   RESET
+A@     LDX   #DRIVEHEADS
+       LDB   DSKDRV
+       LSLB
+       LDX   B,X *X ^ HEAD
+       LDB   REALTRACK *TO
+       CMPB  ,X
+       BEQ   ?RTS *DONE
+       BLO   R@
+*STEPIN TIL REALTRACK = ,X
+***************
+*DO STEPIN COMMAND
+SI@    INC   ,X
+       LDA   #$50+SR
+       STA   $FF48
+       JSR   READY
+       LDB   ,X
+       CMPB  REALTRACK
+       BLO   SI@
+       BNE   R@
+       CLR   DSKSTA
+       RTS
+
+DRIVETYPES
+       FDB   DRVR0
+       FDB   DRVR1
+       FDB   DRVR5
+       FDB   DRVR6
+       FDB   DRVR7
+
+DRVR0  LDA   #1+8+$20
+A@     RTS
+
+DRVR1  LDA   #1+8+$20+$40
+A@     RTS
+
+
+DRVR5  LDA   #2+8+$20
+       LSRB
+       BCC   A@
+       ORA   #$40
+A@     RTS
+
+DRVR6  LDA   #2+8+$20
+       LSRB
+       BCC   A@
+       ORA   #$40
+A@     ADDB  #40
+       RTS
+
+DRVR7  LDA   #1+8+$20
+       LSRB
+       BCC   A@
+       ORA   #$40
+A@     RTS
+
+
+DKST   CMPA  #3
+       BEQ   A@
+DKERR  LDA   #8
+       STA   DSKSTA
+       PULS  X,Y,U,D,PC
+DKERR2 PULS  D
+       BRA   DKERR
+A@     CLR   DSKSTA
+       LDA   DSKTRK
+       CMPA  #80
+       BHS   DKERR
+       LDB   #18
+       MUL
+       PSHS  D
+       CLRA
+       LDB   DSKSEC
+       DECB
+       CMPB  #18
+       BHS   DKERR2
+       ADDD  ,S++ *ADD TRACK
+       ADDD  #0   *ADD DRIVE #
+       PSHS  D *D = SECT COUNT
+       TFR   D,X
+       ANDB  #$1F
+       TFR   B,A
+       CLRB
+       TFR   D,U
+       LEAU  +$A000,U
+*U ^ PLACE TO STORE BLOCK
+       LDY   DSKBUF
+       PULS  D *GET SECT. COUNT
+       LSRA
+       RORB
+       LSRA
+       RORB
+       LSRA
+       RORB
+       LSRB
+       LSRB
+       PSHS  CC
+       ORCC  #$50
+       LDA   $FFA5
+       PSHS  A *SAVE BLOCK
+       ADDB  #2 *DISK DATA AREA
+       STB   $FFA5
+       LDA   DSKOP
+       CMPA  #2
+       BEQ   DKRD
+       CMPA  #3
+       BEQ   DKWT
+       PULS  A
+       STA   $FFA5
+       PULS  CC
+       LDA   #$80
+       STA   DSKSTA
+       PULS  X,Y,U,D,PC
+
+DKRD   PSHS  X *SAVE SECT COUNT
+       LDD   #$0010
+A@     LDX   ,U
+       STX   ,Y
+       LDX   +2,U
+       STX   +2,Y
+       LDX   +4,U
+       STX   +4,Y
+       LDX   +6,U
+       STX   +6,Y
+       LDX   +8,U
+       STX   +8,Y
+       LDX   +10,U
+       STX   +10,Y
+       LDX   +12,U
+       STX   +12,Y
+       LDX   +14,U
+       STX   +14,Y
+       ADDA  ,U
+       ADDA  +1,U
+       ADDA  +2,U
+       ADDA  +3,U
+       ADDA  +4,U
+       ADDA  +5,U
+       ADDA  +6,U
+       ADDA  +7,U
+       ADDA  +8,U
+       ADDA  +9,U
+       ADDA  +10,U
+       ADDA  +11,U
+       ADDA  +12,U
+       ADDA  +13,U
+       ADDA  +14,U
+       ADDA  +15,U
+       LEAU  +16,U
+       LEAY  +16,Y
+       DECB
+       BNE   A@
+       LDB   #IOTEST
+       STB   $FFA5
+       PULS  X
+       CMPA  +$A000,X
+       BEQ   DSKRES
+DKSERR PULS  A
+       STA   $FFA5
+       PULS  CC
+       JMP   DKERR
+
+DKWT   PSHS  X
+       LDD   #$0010
+A@     LDX   ,Y
+       STX   ,U
+       LDX   +2,Y
+       STX   +2,U
+       LDX   +4,Y
+       STX   +4,U
+       LDX   +6,Y
+       STX   +6,U
+       LDX   +8,Y
+       STX   +8,U
+       LDX   +10,Y
+       STX   +10,U
+       LDX   +12,Y
+       STX   +12,U
+       LDX   +14,Y
+       STX   +14,U
+       ADDA  ,U
+       ADDA  +1,U
+       ADDA  +2,U
+       ADDA  +3,U
+       ADDA  +4,U
+       ADDA  +5,U
+       ADDA  +6,U
+       ADDA  +7,U
+       ADDA  +8,U
+       ADDA  +9,U
+       ADDA  +10,U
+       ADDA  +11,U
+       ADDA  +12,U
+       ADDA  +13,U
+       ADDA  +14,U
+       ADDA  +15,U
+       LEAU  +16,U
+       LEAY  +16,Y
+       DECB
+       BNE   A@
+       LDB   #IOTEST
+       STB   $FFA5
+       PULS  X
+       STA   +$A000,X
+DSKRES PULS  A
+       STA   $FFA5
+       PULS  CC
+       PULS  X,Y,U,D,PC
+
+FATTAB
+ FDB FAT0,FAT1,FAT2,FAT3
+
+
+DSKEND
+
+*SECTOR BUFFER
+DBUF   EQU   $600
+
+FAT0   EQU   $800
+FAT1   EQU   $1DA
+FAT2   EQU   $DF00-158-8
+FAT3   EQU   $DF59
+
+*MODIFY FAT CLEARS
+       ORG   $C07C
+       CLR   FAT0
+       CLR   FAT1
+       CLR   FAT2
+       CLR   FAT3
+
+*MODIFY FAT CALCULATE
+       ORG   $C755
+GETFAT PSHS  B
+       LDB   DSKDRV
+       LSLB
+       LDX   #FATTAB
+       LDX   B,X
+       PULS  B,PC
+
+*START ON WHICH GRANULE?
+       ORG   $C599
+       FCB   121
+*FIX ERROR IN ROM!!!
+       ORG   $C7E2
+       BCC   $C7E8
+
+*NUMBER OF GRANULES
+       ORG   $C735
+       FCB   158
+       ORG   $C7BB
+       FCB   158
+       ORG   $C7D0
+       FCB   158
+       ORG   $C7EF
+       FCB   158
+       ORG   $CD26
+       FCB   158
+*      ORG   $CEB5 *FREE IS
+*      FCB   158   *NOT NEEDED
+       ORG   $D44D
+       FCB   158
+
+*DSKI/DSKO
+       ORG   $D534
+       FCB   79
+
+*BACKUP
+       ORG   $D29D
+       FCB   80
+
+*MASTER SECTOR GETTER
+       ORG   $D6F2
+DSKGO  JSR   DSKON
+DSKERR TST   DSKSTA
+       BNE   A@
+       RTS
+A@     LDA   DSKSTA
+       LDB   #2*30 *WP
+       BITA  #$40
+       BNE   B@
+IOERR  LDB   #2*20 *I/O
+B@     JMP   $AC46 *ERROR
+
+       ORG   $C066
+       LDX   #NMISER
+
+       ORG   $C1F1
+       FDB   $CCA9
+
+       ORG   $C1EE
+       FCC   "JM",'S+$80
+       ORG   $C217
+       FDB   JMSDOS
+
+       ORG   $C0E4
+       JMP   DOSINI
+
+       ORG   $D310
+       JSR   TRKRW
+       BRA   $D31C
+
+       ORG   $C105
+       JMP   WMST
+
+*COPY COMMAND
+       ORG   $C211
+       FDB   COPY
+
+       ORG   DSKEND
+ MSG ""
+ MSG "LOADM'COPY':EXEC"
+ MSG "LOADM'JMS',65536-&HA000"
+ MSG "THE EPROMABLE PROGRAM"
+ MSG "IS AT $2000-$6000"
+ MSG ""
+
+DOSINI LDX   #$97E
+       LDA   #255
+       STA   ,X
+       STA   +1,X
+       STA   +2,X
+       STA   +3,X
+       LDA   #63
+       STA   $FFB0+12
+       CLR   $FFB0+13
+       JMP   $A0E2
+
+WMST   CLR   MOFF
+       LDA   #63
+       STA   $FFB0+12
+       CLR   $FFB0+13
+       RTS
+
+TRKRW  PSHS  X,Y,U,D
+       LDA   $EA
+       CMPA  #2
+       BEQ   TRKRW1
+       LDY   #LST2
+       BRA   TRKRW2
+TRKRW1 LDY   #LST1
+TRKRW2 LDX   $EE
+       CLRB
+TRKRW3 LDA   ,Y+
+       BEQ   TRKRWO
+       STA   $ED
+       DECA
+       LEAU  D,X
+       STU   $EE
+       JSR   DSKGO
+       BRA   TRKRW3
+TRKRWO LEAX  +$1200,X
+       STX   $EE
+       PULS  X,Y,U,D,PC
+
+VERIFY CLRA
+A@     STA   DSKTRK
+       BSR   VTRACK
+       LDA   DSKTRK
+       INCA
+       CMPA  #79
+       BLS   A@
+       RTS
+
+VTRACK LDD   #$600
+       STD   DSKBUF
+       LDA   #2 *READ
+       STA   DSKOP
+       LDU   #LST1
+       LDA   ,U+
+A@     STA   DSKSEC
+       JSR   DSKGO
+       LDA   DSKSTA
+       BNE   Z@
+       LDA   ,U+
+       BNE   A@
+Z@     RTS
+
+LST1   FCB   1,12,5,16
+       FCB   9,2,13,6
+       FCB   17,10,3,14
+       FCB   7,18,11,4
+       FCB   15,8,0
+LST2   FCB   1,5,9,13
+       FCB   17,3,7,11
+       FCB   15,12,16,2
+       FCB   6,10,14,18
+       FCB   4,8,0
+
+JMSDOS BNE   A@
+       JMP   $B277 *SNERR
+A@     CMPA  #'D *DOS
+       BNE   JMS010
+*DO DOS COMMAND
+       CLR   3
+       LDD   #$2600
+       PSHS  D
+B@     LDX   $C00 6
+       INC   3
+       LDA   3
+       CMPA  #18
+       BHI   C@
+       STA   3,X
+       LDD   #$0200
+       STD   ,X
+       LDA   #34
+       STA   2,X
+       PULS  D
+       STD   4,X
+       ADDA  #1
+       PSHS  D
+       JSR   [$C004]
+       TST   6,X
+       BEQ   B@
+       PULS  D
+       LDB   #2*20
+       JMP   $AC46
+C@     PULS  D
+       LDD   $2600
+       CMPD  #'O*256+'S
+       LBEQ  $2602
+       CLR   113
+       JMP   [$FFFE]
+
+JMS010 CMPA  #70 *F
+       BNE   A@
+       CLR   SLOW
+       COM   SLOW
+       CLR   65497
+       JMP   $9F
+A@     CMPA  #83 *S
+       BNE   JMS020
+       CLR   SLOW
+       CLR   65496
+       JMP   $9F
+
+JMS020 CMPA  #$9E *CLS
+       LBNE  JMS030
+       JSR   $9F
+       LBNE  $B277 *SN ERROR
+JMSCLS CLR   65497
+       LDA   $FFA5
+       PSHS  CC
+       PSHS  A
+       ORCC  #$50
+       LDD   #$2F00
+       STD   DSKTRK
+       STS   DSKBUF
+       LDX   #0
+       LEAY  ,X
+       LEAU  ,X
+E@     STA   $FFA5
+       TFR   X,D
+       LDS   #$C000
+F@     PSHS  X,Y,U,D
+       PSHS  X,Y,U,D
+       PSHS  X,Y,U,D
+       PSHS  X,Y,U,D
+       DEC   DSKSEC
+       BNE   F@
+       LDA   DSKTRK
+       BEQ   G@
+       DECA
+       STA   DSKTRK
+       BRA   E@
+G@     LDS   DSKBUF
+       PULS  A
+       STA   $FFA5
+       PULS  CC
+*DO DIRECTORY
+       LDD   #$00FF
+       LDX   #DBUF
+       STX   DSKBUF
+CL@    STB   ,X+
+       DECA
+       BNE   CL@
+       LDD   #$0303 *DRIVE 3
+       STD   DSKOP
+       LDD   #$1112
+       STD   DSKTRK
+WR@    JSR   DSKON
+       DEC   DSKSEC
+       BNE   WR@
+       RTS
+
+JMS030 CMPA  #$DA *VERIFY
+       BNE   JMS040
+       JSR   $9F
+       JSR   $B70B
+       STB   DSKDRV
+       JMP   VERIFY
+
+JMS040 JMP   JMS050
+
+DV FCC " DISK VERIFIED!",13,0
+DNV FCC " BAD SECTOR AT TRK ",0
+DNVS FCC "  SEC ",0
+CONT
+       ORG   $D599
+DSKINI BNE   A@
+       JMP   $A61F
+A@     JSR   $D256
+       JSR   $A5
+       BEQ   B@
+FCERR  JMP   $B44A
+B@     JSR   $CAE9
+D@     COM   $95C
+       LDS   #$800
+       CLR   DSKTRK
+*LOOP BACK HERE
+F@     LDA   #4 *SEEKIT
+       STA   DSKOP
+       JSR   DSKON *SEEK
+       CLR   65496
+       CLR   $985
+       LDA   RAMIM
+       STA   $FF40
+       CLR   65497
+       BSR   BUILD
+       CLR   65496
+       LDY   #$FF4B
+       ORCC  #$50
+       LDX   #DSNNMI
+       STX   $983
+       LDX   #$989
+       LDA   $FF48
+       LDA   #$FF
+       STA   $982
+       LDB   #$F4
+       STB   $FF48
+       LDA   RAMIM
+       ORA   #$80
+       STA   $FF40
+L@     LDB   ,X+
+       STB   ,Y
+       BRA   L@
+DSNNMI LDA   $FF48
+       ANDCC #$AF
+       ANDA  #$44
+       STA   DSKSTA
+       BNE   ERROR@
+       JSR   VTRACK
+       JSR   DSKERR
+       INC   DSKTRK
+       LDA   DSKTRK
+       CMPA  #80
+       BLO   F@
+       JMP   $D2CD
+ERROR@ JMP   IOERR
+
+BUILD  LDX   #$989
+       LDD   #$204E
+       BSR   WAB
+       CLRB
+A@     PSHS  B
+       LDU   #LST1
+       LDB   B,U
+       STB   $ED
+       LDU   #$D6D4
+       LDB   #3
+       BSR   WAX
+       LDA   REALTRACK
+       STA   ,X+
+*WHICH SIDE?
+       LDA   RAMIM
+       ROLA
+       ROLA
+       ROLA
+       ANDA  #1
+       STA   ,X+
+       LDA   $ED
+       STA   ,X+
+       LDB   #9
+       BSR   WAX
+       PULS  B
+       INCB
+       CMPB  #18
+       BLO   A@
+       LDD   #$C84E
+WAB    STB   ,X+
+       DECA
+       BNE   WAB
+       RTS
+WAX    PSHS  B
+       LDD   ,U++
+       BSR   WAB
+       PULS  B
+       DECB
+       BNE   WAX
+       RTS
+ MSG *," MUST BE UNDER $D6EC"
+
+       ORG   CONT
+
+JMS050 CMPA  #$B6 *EDIT
+       BNE   JMS060
+       LDX   #STARTEDIT
+       LDU   #ENDEDIT
+       BSR   LOADM
+       JMP   $9F
+
+LOADM  PSHS  U
+       ORCC  #$50
+       CLR   $FFDE *ROM
+       LDU   #$E00
+A@     LDD   ,X++
+       STD   ,U++
+       CMPX  ,S
+       BLO   A@
+       CLR   $FFDF *RAM
+       ANDCC #$AF
+       PULS  U,PC
+
+JMS060 CMPA  #'B
+       BNE   JMS070
+       LDX   #STARTBU
+       LDU   #ENDBU
+       BSR   LOADM
+       JMP   $E00
+
+
+
+
+
+JMS070 CMPA  #'E
+       BNE   JMS080
+       LDU   #EDITOR
+
+*U ^ BASIC PROGRAM
+RUNBAS LDA   #2
+       STA   $959
+       BRA   A@
+LOADBAS CLR  $959
+A@     JSR   $AD19 *NEW
+       ORCC  #$50
+       CLR   $FFDE *ROM
+       LDA   ,U+ *SKIP $FF
+       LDY   ,U++ *D = LENGTH
+       TFR   Y,D  *Y = LENGTH
+       ADDD  $19 *TXTTAB
+       CLR   $FFDF *RAM
+       JSR   $AC37 *ROOM?
+       CLR   $FFDE *ROM
+       LDX   $19 *TXTTAB
+B@     LDA   ,U+
+       STA   ,X+
+       LEAY  -1,Y
+       BNE   B@
+       CLR   $FFDF *RAM
+       ANDCC #$AF
+       JMP   $CAAF
+
+JMS080 CMPA  #'A
+       BNE   JMS090
+       LDU   #ADDRESS
+       BRA   RUNBAS
+JMS090 CMPA  #'P
+      LBNE   JMS100
+       LDU   #PUNCH
+       BRA   RUNBAS
+
+
+VALEN  SET   11+6
+FROMDR SET   0
+TODR   SET   1
+FILEON SET   2
+FILENAME SET 3 *STRING
+
+*NEW COPY COMMAND
+COPY
+       JSR   $C935 *GET PARAMS
+
+       LDX   #$94C
+LOOK@  LDA   ,X+
+       CMPA  #'*
+       BEQ   US@
+       CMPX  #$957
+       BNE   LOOK@
+       JMP   $D3BC *COPY COMMAND
+*OUR COPY COMMAND
+US@    LEAS  -VALEN,S
+*COPY NAME ON STACK
+       LEAU  FILENAME,S
+       LDX   #$94C
+       LDB   #11
+       JSR   $A59A *COPY X TO U
+       LDA   DSKDRV
+       STA   FROMDR,S
+       STA   TODR,S *TODR=FROMDR
+       JSR   $C79D
+       JSR   $A5
+       BEQ   Z@
+       LDB   #$A5 *TO TOKEN
+       JSR   $B26F
+       JSR   $A5
+       SUBB  #2
+       SUBA  #'0
+       LBLO  Z@
+       CMPA  #'3
+       LBHI  Z@
+       STA   TODR,S
+       JSR   $9F
+SKIP@  JSR   $A5C7
+*WE ARE READY TO COPY
+       CLRA
+LOOP@  LDB   FROMDR,S
+       CMPB  TODR,S
+       BEQ   Z@
+       STA   FILEON,S
+       JSR   GETENTRY
+       LDA   ,X
+       COMA
+       BEQ   Z@ *DONE
+       LEAU  FILENAME,S
+       BSR   WCMP
+       BNE   NOCOP@
+       JSR   PRINTENTRY
+*DO THE COPY
+       LDU   #$94C
+       LDB   #11
+       JSR   $A59A *COPY X TO U
+*COPY FILE
+       LDA   FROMDR,S
+       STA   DSKDRV
+       LDA   TODR,S
+       STA   DSKSEC
+       JSR   $CAE9
+       JSR   DOCOPY@
+       JSR   $CAE9
+NOCOP@ LDA   FILEON,S
+       INCA
+       CMPA  #68
+       BLS   LOOP@
+Z@     LEAS  +VALEN,S
+       RTS
+DOCOPY@
+       JSR   $D399 *PUSH
+       LDA   #255
+       PSHS  A
+       LDA   DSKSEC
+       STA   DSKDRV
+       JSR   $D399 *PUSH
+       JMP   $D3D6 *DO COPY
+
+*X ^ REAL FILE NAME
+*U ^ WILD CARDED NAME
+*WILD CARD COMPARE
+WCMP   PSHS  X,Y,U,D
+       LDA   ,X
+       BEQ   NEQ@
+       COMA
+       BEQ   NEQ@
+       LDB   #8
+A@     LDA   ,U+
+       CMPA  #'*
+       BEQ   B@
+       CMPA  ,X+
+       BNE   NEQ@
+       DECB
+       BNE   A@
+*FIRST NAME IS EQUIL
+B@     LDX   +2,S
+       LEAX  +8,X
+       LDU   +6,S
+       LEAU  +8,U
+       LDB   #3
+C@     LDA   ,U+
+       CMPA  #'*
+       BEQ   EQ@
+       CMPA  ,X+
+       BNE   NEQ@
+       DECB
+       BNE   C@
+EQ@    PULS  X,Y,U,D,PC
+NEQ@   LDA   #1
+       PULS  X,Y,U,D,PC
+
+
+*BEQ MEANS DONE
+PRINTENTRY
+*X ^ ENTRY, U IS LENGTH ACCUM
+       PSHS  X,Y,U,D
+       JSR   $A549 *BREAK?
+       LDA   ,X
+       BEQ   Z@
+       COMA
+       BEQ   Z@
+       LDB   #8
+       JSR   $B9A2 *PRINT STR
+       JSR   $CD1B *PRINT SPACE
+       LDB   #3
+       JSR   $B9A2 #PRINT STR
+       JSR   $CD1B *PRINT SPACE
+       LDB   ,X *GET TYPE
+       CLRA
+       PSHS  X
+       JSR   $BDCC *PRINT #
+       PULS  X
+       JSR   $CD1B
+       LDA   #'B
+       ADDA  +1,X *ASCII?
+       JSR   $CD18 *PRINT CHAR
+       LDB   +2,X *1ST GRAN
+       JSR   $CD1E *COUNT GRANS
+       TFR   A,B
+       CLRA
+       PSHS  D
+       JSR   $BDCC *PRINT #
+       PULS  D
+       ADDD  +6,S
+       STD   +6,S
+       JSR   $B958 *CR
+Z@     PULS  X,Y,U,D,PC
+
+*A=ENTRY #
+*B=DRIVE #
+GETENTRY
+       PSHS  D,Y,U
+       TSTA
+       BNE   A@
+*IF GETTING NAME 0
+*MUST DO A DISK READ
+       CLR   DSKSEC
+A@     LDB   #32
+       MUL
+       PSHS  A
+       CLRA
+       ADDD  #DBUF
+       TFR   D,X *X ^ DIR ENTRY
+       PULS  B *B=SECTOR TO GET
+       LDA   #17 *D=TRK/SECT
+       ADDB  #3
+
+       LDU   #DBUF *U ^ DBUF
+       TFR   D,Y *Y=TRK/SECTOR
+       LDA   +1,S *A=DRIVE
+       LDB   #2
+       CMPB  DSKOP
+       BNE   NEQ@
+       CMPA  DSKDRV
+       BNE   NEQ@
+       CMPY  DSKTRK
+       BNE   NEQ@
+       CMPU  DSKBUF
+       BEQ   EQ@
+NEQ@   STB   $EA
+       STY   DSKTRK
+       STU   DSKBUF
+       STA   DSKDRV
+       JSR   DSKGO
+EQ@    PULS  D,Y,U,PC
+
+PRINT  PSHS  X,D
+       LDX   +4,S
+       LDA   ,X+
+A@     JSR   [$A002]
+       LDA   ,X+
+       BNE   A@
+       STX   +4,S
+       PULS  X,D,PC
+
+FREEGRAN
+       PSHS  A
+       CLRA
+       COM   D,X
+       BEQ   FREE@
+       COM   D,X
+       PULS  A
+       JMP   $C7CE
+FREE@  PULS  A
+       JMP   $C7FD
+
+JMS100
+JMS110 CMPA  #'X
+       BNE   JMS120
+       JSR   $9F
+       JSR   $B70B
+       CMPB  #3
+       BHI   FC@
+       STB   DSKDRV
+       JSR   $B738
+       CMPB  #4
+FC@    LBHI  FCERR
+       LSLB
+       LDX   #DRIVETYPES
+       LDX   B,X
+       LDU   #DRVTBL
+       LDB   DSKDRV
+       LSLB
+       STX   B,U
+       JMP   $9F
+
+
+JMS120 JMP   $B277
+
+ MSG $DF00-*," FREE"
+
+       ORG   $CCA9
+*DIRECTORY COMMAND
+DIR    JSR   $D24F *DRIVE #
+       JSR   $C79D *GET FAT
+       JSR   $B958 *CR
+       CLRA  *ENTER # 0
+       LDB   DSKDRV
+       LDU   #0
+A@     JSR   GETENTRY
+*X ^ ENTRY
+       JSR   PRINTENTRY
+*U IS LENGTH ACCUMULATOR
+       COM   ,X
+       BEQ   DONE@
+       INCA
+       CMPA  #68
+       BLS   A@
+DONE@  JSR   $B958
+       JSR   FREE
+       CLRA
+*U = USED
+*D = FREE
+       PSHS  D,U
+       JSR   $BDCC
+       JSR   PRINT
+ FCC " FREE; ",0
+       LDD   +2,S *USED
+       JSR   $BDCC
+       JSR   PRINT
+ FCC " USED; TOTAL=",0
+       LDD   ,S++
+       ADDD  ,S++
+       JSR   $BDCC
+       JMP   $B958
+
+
+
+ MSG *," MUST BE UNDER $CD1E"
+
+       ORG   $CE9C *FREE
+       JSR   $B70E
+       CMPB  #3
+       LBHI  $A61F
+       STB   DSKDRV
+       JSR   $C79D
+       BSR   FREE
+       JMP   $B4F3
+
+*FAT MUST BE THERE FIRST!!!
+FREE   JSR   $C755 *X ^ FAT
+       LEAX  6,X *X ^ FAT
+       CLR   ,-S
+       LDB   #158
+A@     LDA   ,X+
+       COMA
+       BNE   B@
+       INC   ,S
+B@     DECB
+       BNE   A@
+       PULS  B,PC
+
+ MSG *," MUST BE UNDER $CEC5"
+
+*FIX FREE GRNULE STUFF
+       ORG   $C7C8
+       JMP   FREEGRAN
+
+
+       ORG   $E000
+STPR
+
+
+STARTEDIT
+       BINF  ED%
+ENDEDIT
+
+STARTBU
+       BINF  BU
+ENDBU
+
+EDITOR
+       BINF  BASED
+
+PUNCH
+       BINF  PUNCH
+
+ADDRESS
+       BINF  ADDRESS
+
+ MSG "FREE PROG ",$2000-(*-STPR)
+       END

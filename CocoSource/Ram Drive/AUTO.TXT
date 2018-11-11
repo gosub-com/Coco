@@ -1,0 +1,442 @@
+       ORG   $0
+       SETDP $0
+
+*** A $38 IS IN $FFA0
+*** WE ARE AT $0000
+*** SCREEN IS AT $1800
+*** STACK IS AT $4F0
+*** GRANULE DATA IS AT $500
+
+SCREEN  EQU  $1800
+GRANULE EQU  $500
+STK    EQU   $4F0
+
+TIME   MACR
+       PSHS  X,Y,D
+       PULS  X,Y,D
+       ENDM
+
+       LBRA  BLOAD
+       FDB   NOFURTHER
+
+NMIFLG FCB   0
+NMIRTS FDB   0
+
+NMI    LDA   NMIFLG
+       BEQ   A@
+       LDX   NMIRTS
+       STX   10,S
+       CLR   NMIFLG
+A@     RTI
+
+SEXINGRAN FCB 9
+TGRAN  FCB   40
+DSKBUF FDB   0
+OLDADD FDB   0
+RTRACK FCB   0
+DRIVE  FCB   0
+TRACK  FCB   2
+SECTOR FCB   0
+DSKERR FCB   0
+DSKREG FCB   0
+TRKPOS FCB   0
+LFFA1  FCB   0
+ID     FDB   $FFFF
+CRC    BSZ   3
+
+
+GETBLOCK
+       ANDA  #1
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LDX   #$2000
+       LEAX  D,X
+       RTS
+
+GTWORD BSR   GTBYTE
+       TFR   B,A
+GTBYTE LDB   GRANULE
+BUFFP  EQU   *-2
+       INC   BUFFP+1
+       BNE   ?RTS
+       INC   BUFFP
+       DEC   SEXINGRAN
+       BNE   ?RTS
+*GET NEXT GRANULE!
+       PSHS  X,Y,U,D
+       BSR   GETGRAN *A=GRAN
+       BSR   GETTRACK
+       BSR   LOADGRAN
+       LBSR  CRCGRAN
+       LDX   CRC
+       CMPX  GRANULE
+       LBNE  PCRCERR
+       LDA   CRC+2
+       CMPA  GRANULE+2
+       LBNE  PCRCERR
+       PULS  X,Y,U,D,PC
+
+*GET NEXT GRAN TO GET IN A
+GETGRAN
+       LDX   #GRANULE+3
+       STX   BUFFP
+       LDB   #9
+       STB   SEXINGRAN
+       INC   TGRAN
+       LDA   TGRAN
+       RTS
+
+*A = GRANULE/TRACK
+*POINT Y TO SECTOR TABLE
+GETTRACK
+       LDY   #SECTORTABLE
+*CALCULATE TRACK NUMBER
+C@     CMPA  #17
+       BLO   B@
+       INCA
+B@     STA   TRACK
+       RTS
+
+LOADGRAN
+       LDX   #GRANULE
+       CLRB
+       LDA   ,Y+
+D@     STA   SECTOR
+       DECA
+       LEAU  D,X *X ^ GRANULE
+       STU   DSKBUF *U ^ BUFFER
+       BSR   DSKON
+       LDA   ,Y+
+       BNE   D@
+       RTS
+
+*1ST #=SECTOR TO LOAD
+*2ND #=WARE TO LOAD IT
+SECTORTABLE
+ FCB 1,2,3,4,5,6,7,8,9,0
+
+DSKON  PSHS  D
+       LDD   $1800+1
+       INCB
+       CMPB  #'9+1
+       BNE   B@
+       LDB   #'0
+       INCA
+       CMPA  #'9+1
+       BNE   B@
+       LDA   #'0
+       INC   $1800
+B@     STD   $1800+1
+*** GET RANDOM NUMBER IN ID
+       LEAS  -2,S
+       LDA   ID+1
+       LDB   #$55
+       MUL
+       STD   ,S
+       LDA   ID+1
+       LDB   #$62
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   ID
+       LDB   #$55
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   #13849
+       ADDD  ,S++
+       STD   ID
+*** END OF RANDOM NUMBER
+       CLR   65496
+       BSR   DSKGO
+       CLR   65497
+       PULS  D,PC
+
+DSKGO  PSHS  X,Y,U,D
+       LDA   #4
+       PSHS  A
+REDO   LDA   #8+$20+1 *DRIVE 0
+       LDB   TRACK
+Q@     STB   RTRACK
+       CMPB  #22
+       BLO   A@
+       ORA   #$10
+A@     STA   DSKREG
+       STA   $FF40
+       BSR   UNBUSY
+       BNE   B@
+       CLR   DSKERR
+      LBSR   READ
+B@     PULS  A
+       LDB   DSKERR
+       BNE   C@
+       PULS  X,Y,U,D,PC
+C@     DECA
+       BEQ   IOERR
+       PSHS  A
+       BSR   RHEAD
+       BRA   REDO
+
+*** LOADER IS IN WRONG PLACE
+PLACEERR LDA #'2
+         BRA DOERROR
+
+*** LOADER CRC IS WRONG
+LCRCERR LDA #'3
+        BRA DOERROR
+
+*** DISK IO ERROR ON PROGRAM
+IOERR  LDA   #'4
+       BRA   DOERROR
+
+*** PROGRAM PREAMBLE IS NOT $FF
+PREAMBLEERR LDA #'5
+            BRA DOERROR
+
+*** PROGRAM CRC IS WRONG
+PCRCERR LDA #'6
+        BRA DOERROR
+
+DOERROR
+       LDB   #$3B
+       STB   [$FFFC]
+       CLR   $FF40
+       LDB   #32
+       PSHS  B
+       LEAU  IOMESS,PCR
+       LDX   #SCREEN+32*6
+S@     LDB   ,U+
+       CMPB  #'0
+       BNE   T@
+       TFR   A,B
+T@     STB   ,X+
+       DEC   ,S
+       BNE   S@
+A@     BRA   A@
+
+RHEAD  CLR   TRKPOS
+       LDA   #3
+       STA   $FF48
+       BSR   UNBUSY
+       BSR   WAIT
+       RTS
+
+UNBUSY TIME
+       LDX   #0
+A@     LEAX  -1,X
+       BEQ   FRCINT
+       LDA   $FF48
+       BITA  #1
+       BNE   A@
+       RTS
+FRCINT LDA   #$D0
+       STA   $FF48
+       TIME
+       LDA   $FF48
+       LDA   #$80
+       STA   DSKERR
+       RTS
+
+WAIT   LDX   #8750
+A@     LEAX  -1,X
+       BNE   A@
+       RTS
+
+READ   LDB   TRKPOS
+       STB   $FF49
+       CMPB  RTRACK
+       BEQ   ONTRK
+       LDA   RTRACK
+       STA   $FF4B
+       LDA   #$17
+       STA   $FF48
+       BSR   UNBUSY
+       BNE   ?RTS
+       BSR   WAIT
+       ANDA  #$18
+       STA   DSKERR
+       BNE   ?RTS
+       LDB   RTRACK
+       STB   TRKPOS
+ONTRK  LDA   SECTOR
+       STA   $FF4A
+       LDX   #OUTNMI
+       STX   NMIRTS
+       LDX   DSKBUF
+       LDA   $FF48
+       LDA   DSKREG
+       ORA   #$80
+       LDY   #0
+       LDU   #$FF48
+       LDB   #$FF
+       STB   NMIFLG
+       LDB   #$80
+       STB   $FF48
+       TIME
+       LDB   #2
+A@     BITB  ,U
+       BEQ   A@
+       LDB   ID
+B@     EORB  $FF4B
+       STB   ,X+
+       STA   $FF40
+       BRA   B@
+OUTNMI TIME
+       LDA   $FF48
+       ANDA  #$7C
+       STA   DSKERR
+       RTS
+
+CRCGRAN
+       LDX   #GRANULE+3
+       LDY   #9*256-3
+       LDU   #CRC
+       LDD   #$FFFF
+       STD   ,U
+       STA   +2,U
+       BSR   CRCBUF
+       RTS
+
+*ENTRY:
+* U ^ CRC
+* X ^ BYTES TO CRC
+* Y = # OF BYTES TO CRC
+*ALL REGISTERS PRESERVED
+* THE CRC AT U IS MODIFIED
+CRCBUF PSHS  D,X,Y
+A@     LDA   ,X+
+CRCA   EORA  ,U
+       PSHS  A
+       LDD   1,U
+       STD   ,U
+       CLRA
+       LDB   ,S
+       LSLB
+       ROLA
+       EORA  1,U
+       STD   1,U
+       CLRB
+       LDA   ,S
+       LSRA
+       RORB
+       LSRA
+       RORB
+       EORA  1,U
+       EORB  2,U
+       STD   1,U
+       LDA   ,S
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       EORA  ,S+
+       BPL   E@
+       LDD   #$8021
+       EORA  ,U
+       STA   ,U
+       EORB  2,U
+       STB   2,U
+E@
+*CRC END
+       LEAY  -1,Y
+       BNE   A@
+R@     PULS  D,Y,X,PC
+
+BLOAD  ORCC  #$50
+       CLR   65496
+       LDS   #STK
+       TFR   PC,X
+C@     CMPX  #C@
+       LBNE  PLACEERR
+       CLRA
+       TFR   A,DP
+       LDX   #0
+       TFR   X,D
+CRC@   ADDA  ,X
+       EORB  ,X+
+       CMPX  #NOFURTHER
+       BLO   CRC@
+       SUBD  ,X
+       LBNE  LCRCERR
+*DONE WITH CRC STUFF
+       CLR   NMIFLG
+       LDD   #$E00+(NMI!.$FF)
+       STD   [$FFFC]
+       JSR   RHEAD
+       LDA   #$FF
+       STA   BUFFP+1
+       LDA   #1
+       STA   SEXINGRAN
+       LDA   #1
+       STA   TGRAN *1ST GRAN=2
+       LDD   #'00
+       STD   $1800+1
+       STA   $1800
+       JSR   GTBYTE
+
+*LOAD IN PROGRAM
+A@     JSR   GTBYTE *PRE AMBLE
+       TSTB
+      LBNE   PREAMBLEERR
+       JSR   GTWORD
+       PSHS  D      *LENGTH
+       TFR   D,U
+       JSR   GTWORD *ADDRESS
+       LEAU  D,U
+       SUBD  OLDADD
+       TFR   CC,B
+       STU   OLDADD
+       LDY   ,S++
+       TFR   B,CC
+       BEQ   B@
+*NEW ADDRESS!
+       JSR   GTWORD REAL ADDRESS
+       SUBD  #0
+       BEQ   O@ *LOAD AT 0?
+       PSHS  A      *PLACE
+       LSRA
+       STA   $FFA1
+       STA   LFFA1
+       PULS  A      *PLACE
+       JSR   GETBLOCK
+       LEAY  -2,Y
+       BEQ   A@
+B@     JSR   GTBYTE
+       STB   ,X+
+       LEAY  -1,Y
+       BEQ   A@
+       CMPX  #$4000
+       BLO   B@
+       LDB   LFFA1
+       INCB
+       STB   LFFA1
+       STB   $FFA1
+       LDX   #$2000
+       BRA   B@
+O@     JSR   GTWORD *GET EXEC
+       PSHS  A
+       LSRA
+       STA   $FFA1
+       PULS  A
+       JSR   GETBLOCK
+       JMP   ,X
+IOMESS
+ FCC "ERROR #0: CONTAC"
+ FCC "T GOSUB SOFTWARE"
+NOFURTHER
+       FDB   0
+
+ MSG "BLOAD END @",*," ($400)"

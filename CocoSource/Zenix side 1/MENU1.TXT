@@ -1,0 +1,831 @@
+WRITCS EQU   0
+WRINT  EQU   1
+WRITCX EQU   2
+*WRBCD  EQU   3
+WRXY   EQU   4
+WRCL   EQU   5
+INKEY  EQU   6
+WRITCA EQU   7
+CHMODE EQU   128
+GOTOXY EQU   129
+CHCOL  EQU   130
+
+DO     MACR
+       SWI2
+       FCB   \0
+       ENDM
+
+LSLD   MACR
+       LSLB
+       ROLA
+       ENDM
+
+       SETDP $D2
+WORKSPACE EQU *-256*3
+STACK  EQU   *-10
+
+MENUDP
+       LBRA  EXEC
+       LBRA  PRINT
+       LBRA  ENTSCR
+       LBRA  REXEC
+MUSON  FCB   255
+PUTCOL FDB   $1001
+GETCOL FDB   $1001
+RND
+PARTS
+CCOL
+POS
+INK
+       FCB   0
+       FCB   0
+VAL
+DOWN
+       FCB   0
+UP
+       FCB   0
+DIR
+       FCB   0
+       FCB   0
+       FCB   0
+       FCB   0
+       FCB   0
+
+TIMER  FCB   0
+
+LFFB0  BSZ   16
+
+FIRQ   PSHS  X,Y,U,D
+       LDX   #PALETTES
+       LDU   #LFFB0
+       LDY   #$FFB0
+       LDB   #16
+C@     LDA   ,U+
+       LDA   A,X
+       STA   ,Y+
+       DECB
+       BNE   C@
+       LDA   $FF93
+       INC   TIMER
+O@     PULS  X,Y,U,D
+       RTI
+
+ MSG "MENU DP  @",*-MENUDP
+
+*TRACK OF SCORE
+
+
+SCORES
+ FDB $0006
+ FDB $0576
+ FCC ">=-> JEREMY SPILLER <-=<"
+ FCC "   "
+ FCB 0
+
+ FDB $0005
+ FDB $8813
+ FCC "*** BIG MIKE NEWELL *** "
+ FCC "   "
+ FCB 0
+
+
+ FDB $0003
+ FDB $4507
+ FCC "Gosub Software: Jeremy/M"
+ FCC "ike"
+ FCB 0
+
+ FDB $0000
+ FDB $8964
+ FCC "Marty Spiller           "
+ FCC "   "
+ FCB 0
+
+ FDB $0000
+ FDB $7238
+ FCC "Diana Spiller           "
+ FCC "   "
+ FCB 0
+
+ FDB $0000
+ FDB $4396
+ FCC "Michael Nathan Sebastian"
+ FCC "   "
+
+ FCB 0
+ FDB $0000
+ FDB $3853
+ FCC "Heather Spiller         "
+ FCC "   "
+ FCB 0
+
+ FDB $0000
+ FDB $1592
+ FCC "Nancy R. Segal          "
+ FCC "   "
+ FCB 0
+
+*END OF SCORE TABLE
+SCRSEN BSZ   40
+
+BCOLS  FCB   27,25,15,13
+       FCB   11,9,8,1
+       FCB   0
+
+RCOLS  FCB   61,47,45,44
+       FCB   38,36,32,4
+       FCB   0
+
+*CRC TABLE
+CRCTABLE
+ FDB $3333,$3333
+ FDB CRCS0,CRCE0
+
+ FDB $3E33,$3333
+ FDB CRCS1,CRCE1
+
+ FDB $3D33,$3333
+ FDB CRCS2-$8000,CRCE2-$8000
+
+ FDB $3333,$3333
+ FDB CRCS3,CRCE3
+
+ FDB $3F33,$3333
+ FDB CRCS4-$E000,CRCE4-$E000
+
+ FDB $3031,$3233
+ FDB CRCS5-$2000,CRCE5-$2000
+
+ FDB $3E33,$3333
+ FDB CRCS6-$2000,CRCE6-$2000
+
+ FDB $3334,$3333
+ FDB CRCS7,CRCE7
+
+ FDB 0
+
+*CRC AND DISK NUMBERS
+DISKID1  CMPS  $CD00,U *1 MSB
+DISKID1L CMPS  $CD01,U *1 LSB
+DISKID2  CMPS  $CD02,U *2 MSB
+DISKID2L CMPS  $CD03,U *2 LSB
+DISKID3  CMPS  $CD04,U *3 MSB
+DISKID3L CMPS  $CD05,U *3 LSB
+
+
+*ENTRY:D=NUMBER TO BE INVERTED
+*EXIT :Y=INVERTED NUMBER
+INV    PSHS  D,X
+       LDD   #$8000
+       STD   +2,S
+       LDY   #0
+I@     TFR   Y,U
+       TFR   Y,D
+       ORA   +2,S
+       ORB   +3,S
+       TFR   D,Y
+       TFR   D,X
+       LDD   ,S
+       BSR   MULT
+       STD   -2,S
+       BEQ   A@
+       TFR   U,Y
+A@     LSR   +2,S
+       ROR   +3,S
+       BCC   I@
+       PULS  D,X,PC
+
+*ENTRY:D=MULTIPLIER
+*      X=MULTIPLIER
+*EXIT :(D:X)=PRODUCT!!
+MULT   PSHS  D,X
+       PSHS  D,X
+       LDA   +3,S
+       LDB   +1,S
+       MUL
+       STD   +6,S
+       LDA   +2,S
+       LDB   ,S
+       MUL
+       STD   4,S
+       LDA   +3,S
+       LDB   ,S
+       MUL
+       ADDD  +5,S
+       STD   +5,S
+       LDA   +4,S
+       ADCA  #0
+       STA   +4,S
+       LDD   +1,S
+       MUL
+       ADDD  +5,S
+       STD   +5,S
+       LDA   +4,S
+       ADCA  #0
+       STA   +4,S
+       PULS  X,D
+       PULS  X,D,PC
+
+LINE   PSHS  A,B,X,Y
+       BSR   YBDOT
+       TFR   A,B
+       TFR   X,Y
+       BSR   YBDOT
+       PULS  A,B,X,Y
+LINEM  PSHS  X,Y,D
+       SUBB  ,S
+       INCB
+       CMPB  #2
+       BHI   A@
+       LDD   +2,S
+       SUBD  +4,S
+       ADDD  #1
+       CMPD  #2
+       BHI   A@
+       PULS  X,Y,D,PC
+*FIND MID POINT
+A@     LDD   +2,S
+       ADDD  +4,S
+       LSRA
+       RORB
+       TFR   D,Y
+       LDB   ,S
+       ADDB  +1,S
+       RORB
+*B,Y=MID POINT
+       BSR   YBDOT
+*(A,X)-MIDPOINT
+       LDA   ,S
+       BSR   LINEM
+       LDA   +1,S
+       LDX   +4,S
+*(B,Y)-MIDPOINT
+       BSR   LINEM
+       PULS  X,Y,D,PC
+
+YBDOT  PSHS  D
+       BSR   YBTOD
+       BSR   PIXPUT
+       PULS  D,PC
+
+YBTOD  PSHS  Y
+       LDA   #160
+       MUL
+       LSLB
+       ROLA
+       ADDD  ,S
+       BSR   PIXPUT
+       PULS  Y,PC
+
+PIXPUT PSHS  D,X
+       LSRA
+       RORB
+       TFR   D,X
+       LDA   ,X
+       BCS   O@
+E@     ANDA  #$0F
+       ORA   PUTCOL
+       STA   ,X
+       PULS  D,X,PC
+O@     ANDA  #$F0
+       ORA   PUTCOL+1
+       STA   ,X
+       PULS  D,X,PC
+
+PAINT  LDX   #0
+       PSHS  X    *END FLAG
+       PSHS  D    *DO ALL!!!
+PRET   LDD   ,S++ *GET A LINE
+       BEQ   ?RTS *OUT IF END
+       STD   POS
+       CLR   DOWN
+       CLR   UP
+       LDU   #1
+       STU   DIR
+PAINTL SUBD  #320
+       BSR   PIXGET
+       BEQ   PUTRUE
+       TST   UP
+       BNE   PUPASS
+       CLR   UP
+       COM   UP
+       PSHS  D
+       BRA   PUPASS
+PUTRUE CLR   UP
+PUPASS ADDD  #640
+       BSR   PIXGET
+       BEQ   PDTRUE
+       TST   DOWN
+       BNE   PDPASS
+       CLR   DOWN
+       COM   DOWN
+       PSHS  D
+       BRA   PDPASS
+PDTRUE CLR   DOWN
+PDPASS SUBD  #320
+       BSR   PIXPUT
+       ADDD  DIR
+       BSR   PIXGET
+       BNE   PAINTL
+       TST   DIR
+       BNE   PRET
+       LDA   #$FF
+       STA   UP
+       STA   DOWN
+       LDD   #-1
+       STD   DIR
+       LDD   POS
+       BRA   PAINTL
+
+PIXGET PSHS  X,D
+       LSRA
+       RORB
+       TFR   D,X
+       LDA   ,X
+       BCS   O@
+E@     ANDA  #$F0
+       CMPA  GETCOL
+       PULS  X,D,PC
+O@     ANDA  #$0F
+       CMPA  GETCOL+1
+       PULS  X,D,PC
+
+ZENIX  FCB   +0,+37
+       FCB   +7,+0
+       FCB   +52,-30
+       FCB   +0,+27
+       FCB   -3,+3
+       FCB   -2,+0
+       FCB   +8,+0
+       FCB   +0,-37
+       FCB   -7,+0
+       FCB   -52,+30
+       FCB   +0,-27
+       FCB   +3,-3
+       FCB   +2,-0
+       FCB   -8,+0
+       FCB   0,0
+       FCB   0,+2
+       FCB   +3,+3
+       FCB   +56,+0
+       FCB   +3,-3
+       FCB   +0,-2
+       FCB   +0,+37
+       FCB   -8,+0
+       FCB   +2,-0
+       FCB   +3,-3
+       FCB   0,-22
+       FCB   -24,+0
+       FCB   -2,+3
+       FCB   0,+13
+       FCB   +3,+3
+       FCB   +2,+0
+       FCB   -13,+0
+       FCB   +2,-0
+       FCB   +3,-3
+       FCB   +0,-13
+       FCB   -2,-3
+       FCB   -25,+0
+       FCB   0,+22
+       FCB   +3,+3
+       FCB   +2,+0
+       FCB   -8,+0
+       FCB   +0,-37
+       FCB   0,0
+       FCB   +0,+10
+       FCB   +48,+20
+       FCB   -45,+0
+       FCB   -3,-3
+       FCB   -0,-2
+       FCB   +0,+15
+       FCB   +0,-2
+       FCB   +3,-3
+       FCB   +58,+0
+       FCB   +0,-5
+       FCB   -47,-20
+       FCB   +44,+0
+       FCB   +3,+3
+       FCB   +0,+2
+       FCB   +0,-15
+       FCB   -0,+2
+       FCB   -3,+3
+       FCB   -55,+0
+       FCB   -3,-3
+       FCB   -0,-2
+       FCB   0,0
+       FCB   +0,+2
+       FCB   +3,+3
+       FCB   +56,+0
+       FCB   +3,-3
+       FCB   +0,-2
+       FCB   +0,+17
+       FCB   -0,-2
+       FCB   -3,-3
+       FCB   -56,+0
+       FCB   -3,+3
+       FCB   -0,+2
+       FCB   +0,-17
+       FCB   0,0
+       FCB   +0,+16
+       FCB   +0,-2
+       FCB   +3,-3
+       FCB   +20,+8
+       FCB   -20,+10
+       FCB   -3,-3
+       FCB   -0,-2
+       FCB   +0,+15
+       FCB   +0,-2
+       FCB   +3,-3
+       FCB   +27,-11
+       FCB   +28,+11
+       FCB   +3,+3
+       FCB   +0,+2
+       FCB   +0,-17
+       FCB   -0,+2
+       FCB   -3,+3
+       FCB   -21,-8
+       FCB   +21,-8
+       FCB   +3,+3
+       FCB   +0,+2
+       FCB   +0,-16
+       FCB   -0,+2
+       FCB   -3,+3
+       FCB   -28,+10
+       FCB   -27,-10
+       FCB   -3,-3
+       FCB   -0,-2
+       FCB   0,0
+
+*X ^ MESSAGE
+MESSAGE
+       PSHS  X,Y,U,D
+       JSR   VSYNC
+       LDU   #LFFB0
+       LDX   #$FFB0
+       LDB   #16
+A@     CLR   ,U+
+       CLR   ,X+
+       DECB
+       BNE   A@
+       JSR   VSYNC
+       LDD   #$2020
+       LDU   #$C000
+       LDX   #$120
+B@     STD   ,U++
+       LEAX  -1,X
+       BNE   B@
+       LDX   +2,S *GET X BACK
+       LDU   #$C000+128
+RET@   PSHS  X
+       CLRB
+C@     INCB
+       LDA   ,X+
+       CMPA  #32
+       BHS   C@
+       PULS  X
+       DECB
+       LSRB
+       NEGB
+       ADDB  #16 *B=POS ON LINE
+       LEAY  B,U
+       LEAU  +32,U
+D@     LDA   ,X+
+       STA   ,Y+
+       CMPA  #32
+       BHS   D@
+       LDB   #32
+       STB   -1,Y
+       CMPA  #13
+       BEQ   RET@
+       CMPA  #14 *2 LINES
+       BNE   E@
+       LEAU  +32,U
+       BRA   RET@
+E@     CMPA  #1 *GOTO
+       BNE   F@
+       LDX   ,X
+       BRA   RET@
+*DONE WITH MESSAGE
+F@     JSR   VSYNC
+       LDB   #%00000110
+       STB   $FF98
+       CLR   $FF99
+       CLR   $FF9A
+       CLR   $FF9C
+       LDD   #$F000 *$78000
+       STD   $FF9D
+       CLR   $FF9F
+       PSHS  CC
+       ORCC  #$50
+       JSR   VSYNC
+       LDD   #$3F
+       STD   LFFB0
+       STD   $FFB0
+       JSR   VSYNC
+       PULS  CC
+*DATA IS DISPLAYED
+       PULS  X,Y,U,D,PC
+
+SCREEN PSHS  X,Y,U,D
+       JSR   VSYNC
+       LDD   #16
+       LDX   #$FFB0
+       LDU   #LFFB0
+A@     STA   ,X+
+       STA   ,U+
+       DECB
+       BNE   A@
+       LDD   #%0111110000100000
+       STD   $FF90
+       CLR   $FF92
+       CLR   $FF93
+       LDD   #%1000000000111110
+       STD   $FF98
+       CLR   $FF9A
+       LDD   #$D400+20*9
+       STD   $FF9D
+       CLR   $FF9F
+       JSR   VSYNC
+       PULS  X,Y,U,D,PC
+
+BFT
+BUX
+ FCC "THIS IS A BACKUP COPY,",13
+ FCC "IT IS ONLY USED TO",13
+ FCC "RESTORE THE ORIGINAL.",0
+BDX
+ FCC "PROGRAM FAILURE",14
+CGS
+ FCC "CONTACT GOSUB "
+ FCC "SOFTWARE",0
+IOE
+ FCC "IO ERROR",14,1
+ FDB CGS
+WPM
+ FCC "DISK WRITE PROTECTED"
+ FCB 14,1
+ FDB SNS
+DFM
+ FCC "DISK FULL",14
+SNS
+ FCC "YOUR SCORES WON'T "
+ FCC "BE SAVED",14
+ FCC "HIT <ENTER>",0
+
+REXEC  ORCC  #$50
+       LDA   #$3C
+       STA   $FFA6
+       LDS   #STACK
+       LDA   #$D2
+       TFR   A,DP
+       CLR   65497
+       JMP   ZCN
+
+EXEC   ORCC  #$50
+       LDA   #$3C
+       STA   $FFA6
+       JMP   F@
+F@     LDS   #STACK
+       LDA   #$D2
+       TFR   A,DP
+       CLR   65497
+*************************
+*CRC
+*************************
+       LEAS  -3,S
+       LDD   #$FFFF
+       STD   ,S
+       STB   +2,S
+       LEAU  ,S
+       LDA   #$3E
+       STA   $FFA5
+       LDY   #CRCTABLE
+A@     LDD   ,Y++
+       BEQ   CRCE@
+       STD   $FFA0
+       LDD   ,Y++
+       STD   $FFA2
+       LDX   ,Y++
+       LDD   ,Y++
+       JSR   CRCIT+$8000
+       BRA   A@
+CRCE@  PULS  X,A
+
+       CMPA  CMPCRC
+       BEQ   B@
+C@     LDX   #BDX
+       JSR   MESSAGE
+       JMP   PREND
+B@     CMPX  CMPCRC+1
+       BNE   C@
+
+       LDX   #PALETTES
+       LDB   #63
+C@     STB   B,X
+       SUBB  #1
+       BCC   C@
+
+*ONLY DONE AT THE BEGINING
+*LOAD SCORES AND PALLETS
+       LDD   $FFF4
+       ADDD  #2
+       PSHS  D
+       LDD   #SWIGO
+       SUBD  ,S++
+       LDA   #$20
+       STD   [$FFF4]
+       STD   $FE00
+       LDA   #$3E
+       STA   $FFA1
+*DISK IS ALREADY RUNNING
+       JSR   DISKINIT
+       JSR   DISKRESET
+       LDD   #PALETTES
+       LDU   #WORKSPACE
+       LDX   #SCORES
+       LDY   #MERR
+       JSR   LOADSCORES
+
+
+ZCN    LDD   #$3A3E
+       STD   $FFA0
+       LDD   #$3737
+       STD   $FFA2
+       STD   $FFA4
+       LDA   #$3C
+       STA   $FFA7
+       LDD   #$E00+(FIRQ!.$FF)
+       STD   [$FFF6]
+       JSR   SCREEN
+
+
+*DISK
+       LDA   #$3E
+       STA   $FFA1
+       JSR   DISKINIT
+*THE NEXT SECTION OF CODE
+*DRAWS ZENIX, AND ACTS AS
+*A TIMEING DELAY
+       CLR   65497
+
+*** DRAW ZENIX ($68000-$6AFFF)
+       ORCC  #$50
+*** CLEAR $6A000-$76000
+       LDD   #$3B07
+       LDU   #0
+A@     TFR   U,X
+       STA   $FFA0
+B@     STU   ,X++
+       CMPX  #$2000
+       BLO   B@
+       DECA
+       DECB
+       BNE   A@
+
+       LDD   #$3A3B
+       STD   $FFA0
+       LDD   #$0301
+       PSHS  D
+       LDU   #ZENIX
+       LDX   #48
+       LDA   #2
+A@     TFR   X,Y
+       TFR   A,B
+       PSHS  D
+       LDB   +1,U
+       SEX
+       LEAX  D,X
+       PULS  D
+       ADDA  ,U++
+       JSR   LINE
+       TST   ,U
+       BNE   A@
+       TST   +1,U
+       BNE   A@
+       PSHS  X,Y,U,D
+       TFR   X,Y
+       TFR   A,B
+       JSR   YBTOD
+       ADDD  #5+320*2
+       JSR   PAINT
+       PULS  X,Y,U,D
+       LEAU  +2,U
+       LEAX  +50,X
+       DEC   ,S
+       BPL   A@
+       LEAX  -22,X
+       DEC   +1,S
+       BPL   A@
+       PULS  D
+
+***FINISHED DRAWING ZENIX!!!
+
+***COLOR ZENIX IN
+       LDX   #0
+       LDA   #8
+       STA   CCOL
+A@     LDY   #640
+B@     LDA   ,X
+       LDB   CCOL
+       MUL
+       STB   ,X+
+       LDA   ,X
+       LDB   CCOL
+       MUL
+       STB   ,X+
+       LEAY  -1,Y
+       BNE   B@
+       DEC   CCOL
+       BNE   A@
+
+*SETUP FOR ROTATE ZENIX
+       JSR   COPY
+       FDB   $FFA0
+       FCB   6
+       FCB   $35,$36,$37,$38
+       FCB   $3A,$3B
+       LDD   #64
+       STD   PARTS
+       LDU   #$E000
+       LDY   #$E200
+       CLR   ,Y+
+       CLR   ,Y+
+C@     STY   ,U++
+       PSHS  Y,U
+       LDD   PARTS
+       JSR   INV
+       TFR   Y,D
+       LSRA
+       RORB
+       LSRA
+       RORB
+*D=INKERMENT VALUE
+       LDU   #0
+       LDX   PARTS
+D@     LEAU  D,U
+       EXG   U,D
+       PULS  Y
+       STA   ,Y+
+       PSHS  Y
+       EXG   U,D
+       LEAX  -1,X
+       BNE   D@
+       PULS  U,Y
+       CLR   ,Y+
+       LDD   PARTS
+       SUBD  #2
+       STD   PARTS
+       BNE   C@
+       LDD   #$E202
+       STD   ,U
+
+*MORE DISK
+       CLR   65496
+       LDA   #$3E
+       STA   $FFA1
+*SAVE SCORES ONTO DISK
+       LDD   #PALETTES
+       LDU   #WORKSPACE
+       LDX   #SCORES
+       LDY   #MERR
+       JSR   SAVESCORES
+*TEST FOR CORRECT DISK ID
+       LDX   #DFU
+       JSR   COPYPROTECT
+       CMPD  #0
+       BNE   A@
+*BACKUP DISK
+       LDX   #BUX
+       JSR   MESSAGE
+       BRA   PREND
+A@     CMPD  #400
+       BLO   B@
+       LDX   #BDX
+       JSR   MESSAGE
+       BRA   PREND
+B@     JSR   DISKDEINIT
+       LDA   #$36
+       STA   $FFA1
+       BRA   MENUCONT
+MERR   FDB   IO@,DF@,WP@,0
+       FDB   BF@
+IO@    LDX   #IOE
+       JSR   MESSAGE
+PREND  LDA   #$3E
+       STA   $FFA1
+       JSR   DISKDEINIT
+D@     BRA   D@
+DF@    LDX   #DFM
+       JSR   MESSAGE
+       BRA   ENTER@
+BF@    LDX   #BFT
+       JSR   MESSAGE
+       BRA   PREND
+WP@    LDX   #WPM
+       JSR   MESSAGE
+ENTER@ DO    INKEY
+EN@    DO    INKEY
+       CMPA  #13
+       BNE   EN@
+       RTS
+

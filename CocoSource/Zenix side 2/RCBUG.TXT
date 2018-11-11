@@ -1,0 +1,936 @@
+BUGC1
+       LEAX  +1*256+7,U
+       LDD   #255
+       LDU   #0
+       STA   -9,X
+       STA   -6,X
+       ABX
+       STA   -9,X
+       STA   -4,X
+       ABX
+       STU   -7,X
+       STU   -5,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       ABX
+       STU   +2,X
+       STU   +4,X
+       ABX
+       STU   +3,X
+       STU   +5,X
+       ABX
+       STA   +3,X
+       STU   +5,X
+       STA   +8,X
+       ABX
+       STA   +5,X
+       STA   +8,X
+       RTS
+
+
+
+
+
+BUGC2
+       LEAX  +1*256+7,U
+       LDD   #255
+       LDU   #0
+       STA   -8,X
+       ABX
+       STA   -8,X
+       ABX
+       STU   -6,X
+       ABX
+       STA   -5,X
+       STU   -4,X
+       STA   -1,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STA   ,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       ABX
+       STA   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +3,X
+       STU   +5,X
+       ABX
+       STU   +5,X
+       STA   +7,X
+       ABX
+       STA   +8,X
+       RTS
+
+
+
+
+
+BUGC3
+       LEAX  +0*256+8,U
+       LDD   #255
+       LDU   #0
+       STU   -8,X
+       ABX
+       STA   -7,X
+       ABX
+       STA   -6,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       STA   -2,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STA   -1,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       STA   +2,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STA   +2,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STA   -1,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +3,X
+       ABX
+       STA   +5,X
+       ABX
+       STU   +5,X
+       RTS
+
+
+
+
+
+BUGC4
+       LEAX  +2*256+6,U
+       LDD   #255
+       LDU   #0
+       STA   -4,X
+       ABX
+       STA   -4,X
+       ABX
+       STU   -4,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STA   +2,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -1,X
+       STU   +1,X
+       STU   +3,X
+       STU   +5,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       STA   +6,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +3,X
+       ABX
+       STA   +5,X
+       RTS
+
+
+
+
+BUGC5
+       LEAX  +4*256+4,U
+       LDD   #255
+       LDU   #0
+       STA   -7,X
+       STA   -4,X
+       STA   -1,X
+       ABX
+       STU   -7,X
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -1,X
+       STU   +1,X
+       STU   +3,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   ,X
+       STU   +3,X
+       STU   +5,X
+       STA   +7,X
+       ABX
+       STA   +2,X
+       STA   +5,X
+       STA   +8,X
+       RTS
+
+
+
+
+
+BUGC6
+       LEAX  +1*256+7,U
+       LDD   #255
+       LDU   #0
+       STA   -10,X
+       ABX
+       STU   -9,X
+       ABX
+       STU   -7,X
+       STA   -5,X
+       ABX
+       STU   -7,X
+       STU   -5,X
+       STA   -3,X
+       ABX
+       STU   -7,X
+       STU   -5,X
+       STU   -3,X
+       STA   ,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STA   +2,X
+       ABX
+       STA   -3,X
+       STA   -1,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       ABX
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STA   +6,X
+       ABX
+       STU   +7,X
+       RTS
+
+
+
+
+
+
+BUGC7
+       LEAX  +0*256+8,U
+       LDD   #255
+       LDU   #0
+       STU   -10,X
+       ABX
+       STA   -8,X
+       ABX
+       STU   -9,X
+       STA   -7,X
+       ABX
+       STU   -8,X
+       STU   -6,X
+       ABX
+       STU   -8,X
+       STU   -6,X
+       STU   -4,X
+       ABX
+       STU   -7,X
+       STU   -5,X
+       STU   -3,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STA   +5,X
+       ABX
+       STA   +6,X
+       ABX
+       STA   +7,X
+       RTS
+
+
+BUGC8
+       LEAX  +1*256+7,U
+       LDD   #255
+       LDU   #0
+       STA   -7,X
+       ABX
+       STU   -8,X
+       STA   -6,X
+       ABX
+       STU   -8,X
+       STU   -6,X
+       ABX
+       STA   -8,X
+       STU   -6,X
+       STA   -4,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STA   -1,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +2,X
+       STU   +4,X
+       STA   +7,X
+       ABX
+       STU   +4,X
+       STA   +6,X
+       STA   +8,X
+       ABX
+       STU   +5,X
+       ABX
+       STA   +5,X
+       ABX
+       STA   +7,X
+       RTS
+
+
+GASBGC CLRA
+       STA   +12*256-3+256,U
+       STA   +12*256+3+256,U
+
+BUGC9
+       LEAX  +1*256+7,U
+       LDD   #255
+       LDU   #0
+       STA   -9,X
+       STA   -5,X
+       ABX
+       STA   -8,X
+       STA   -6,X
+       STA   -4,X
+       ABX
+       STU   -7,X
+       STU   -5,X
+       STA   -3,X
+       ABX
+       STU   -5,X
+       STA   -3,X
+       ABX
+       STU   -4,X
+       STA   -2,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STA   +2,X
+       ABX
+       STA   -1,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STA   +3,X
+       STA   +5,X
+       STA   +7,X
+       ABX
+       STA   +4,X
+       STA   +8,X
+       ABX
+       STA   +5,X
+       STA   +9,X
+       RTS
+
+
+
+BUGC10
+       LEAX  +0*256+8,U
+       LDD   #255
+       LDU   #0
+       STA   -8,X
+       ABX
+       STA   -8,X
+       STA   -6,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STA   -1,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STA   -1,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STA   +2,X
+       ABX
+       STA   -1,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -1,X
+       STU   +1,X
+       STU   +3,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STA   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +4,X
+       STA   +6,X
+       ABX
+       STA   +7,X
+       ABX
+       STA   +8,X
+       RTS
+
+
+
+
+
+BUGC11
+       LEAX  +1*256+7,U
+       LDD   #255
+       LDU   #0
+       STU   -7,X
+       ABX
+       STA   -6,X
+       ABX
+       STU   -5,X
+       STA   -3,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STU   -1,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STA   +2,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STA   +5,X
+       ABX
+       STA   +6,X
+       ABX
+       STA   +7,X
+       RTS
+
+
+BUGC12
+       LEAX  +2*256+6,U
+       LDD   #255
+       LDU   #0
+       STA   -4,X
+       ABX
+       STU   -3,X
+       ABX
+       STU   -4,X
+       STA   -2,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STA   -5,X
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       ABX
+       STA   -1,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       ABX
+       STU   +2,X
+       STU   +4,X
+       ABX
+       STU   +4,X
+       ABX
+       STA   +5,X
+       ABX
+       STA   +5,X
+       RTS
+
+
+
+BUGC13
+       LEAX  +4*256+4,U
+       LDD   #255
+       LDU   #0
+       STA   -7,X
+       STU   -5,X
+       STA   -1,X
+       ABX
+       STU   -7,X
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   ,X
+       STU   +3,X
+       STU   +5,X
+       STA   +7,X
+       ABX
+       STA   +2,X
+       STU   +4,X
+       STA   +8,X
+       RTS
+
+
+
+
+
+
+BUGC14
+       LEAX  +2*256+6,U
+       LDD   #255
+       LDU   #0
+       STU   -9,X
+       ABX
+       STA   -7,X
+       ABX
+       STU   -6,X
+       STA   -4,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STA   -1,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       STA   +2,X
+       ABX
+       STA   -3,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       ABX
+       STA   -1,X
+       STU   +1,X
+       STU   +3,X
+       STU   +5,X
+       ABX
+       STU   +2,X
+       STU   +4,X
+       STA   +6,X
+       ABX
+       STU   +4,X
+       STA   +6,X
+       ABX
+       STU   +7,X
+       ABX
+       STA   +9,X
+       RTS
+
+
+BUGC15
+       LEAX  +0*256+8,U
+       LDD   #255
+       LDU   #0
+       STA   -9,X
+       ABX
+       STA   -8,X
+       ABX
+       STA   -7,X
+       ABX
+       STU   -7,X
+       STA   -5,X
+       ABX
+       STU   -7,X
+       STU   -5,X
+       STA   -3,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       STA   -2,X
+       ABX
+       STU   -6,X
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STA   -5,X
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STA   +4,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STU   +5,X
+       ABX
+       STU   +3,X
+       STU   +5,X
+       ABX
+       STU   +5,X
+       STA   +7,X
+       ABX
+       STA   +6,X
+       ABX
+       STU   +7,X
+       RTS
+
+
+
+
+
+BUGC16
+       LEAX  +1*256+7,U
+       LDD   #255
+       LDU   #0
+       STA   -7,X
+       ABX
+       STA   -5,X
+       ABX
+       STU   -6,X
+       ABX
+       STA   -8,X
+       STA   -6,X
+       STU   -5,X
+       ABX
+       STA   -7,X
+       STU   -5,X
+       STU   -3,X
+       ABX
+       STU   -5,X
+       STU   -3,X
+       STA   -1,X
+       ABX
+       STU   -4,X
+       STU   -2,X
+       STA   ,X
+       ABX
+       STU   -3,X
+       STU   -1,X
+       STU   +1,X
+       ABX
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   ,X
+       STU   +2,X
+       ABX
+       STU   +1,X
+       STU   +3,X
+       STA   +5,X
+       ABX
+       STU   +3,X
+       STU   +5,X
+       ABX
+       STU   +4,X
+       STA   +6,X
+       STA   +8,X
+       ABX
+       STU   +5,X
+       STU   +7,X
+       ABX
+       STU   +6,X
+       STA   +8,X
+       ABX
+       STA   +7,X
+       RTS
+

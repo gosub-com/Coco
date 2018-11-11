@@ -1,0 +1,102 @@
+BUFR   BSZ   257
+
+FAT    BSZ   257
+
+VERIFY
+ FCB 1,2,3,4,5,6,7,8,9,0
+
+MF$FF  PSHS  D,X
+       LDD   #$FF
+       LDX   #FAT
+A@     STB   ,X+
+       DECA
+       BNE   A@
+       PULS  D,X,PC
+
+PRINT  PSHS  X,D
+       LDX   +4,S
+       LDA   ,X+
+A@     JSR   [$A002]
+       LDA   ,X+
+       BNE   A@
+       STX   +4,S
+       PULS  D,X,PC
+
+EXEC   JSR   PRINT
+       FCB   13
+ FCC "THIS PROGRAM VERIFIES",13
+ FCC "THE DISK, AND ZAPS BAD",13
+ FCC "GRANULES.",13
+ FCC "THIS WILL DESTROY ALL",13
+ FCC "FILES ON THE DISK.",13
+ FCC 'HIT "ENTER" TO '
+ FCC "CONTINUE,",13
+ FCC 'OR HIT "BREAK" TO '
+ FCC "QUIT.",13,0
+       JSR   [$A000]
+A@     JSR   [$A000]
+       CMPA  #3
+       BNE   B@
+DIE    CLR   113
+       JMP   [$FFFE]
+B@     CMPA  #13
+       BNE   A@
+*VERIFY DISK
+
+       JSR   MF$FF
+
+       JSR   PRINT
+ FCC "VERIFYING",13,0
+
+       LDX   $C006
+       LDD   #$0200
+       STA   ,X
+       CLR   +1,X
+       LDU   #BUFR
+       STU   +4,U
+       LDY   #FAT
+A@     LDU   #VERIFY
+       CMPB  #17
+       BNE   B@
+       INCB
+B@     STB   +2,X
+C@     LDA   ,U+
+       BEQ   D@
+       STA   +3,X
+       JSR   [$C004]
+       LDA   +6,X
+       BEQ   C@
+       JSR   PRINT
+ FCC "ZAPPING GRANULE",13,0
+       LDA   #$C0
+       BRA   E@
+D@     LDA   #$FF
+E@     STA   ,Y+
+       LDA   #$CF
+       STA   ,Y+
+       INCB
+       CMPB  #34
+       BLS   A@
+
+       LDU   #FAT
+       STU   +4,X
+       LDA   #3
+       STA   ,X
+       LDD   #17*256+2
+       STD   +2,X
+       JSR   [$C004]
+       LDA   +6,X
+       BEQ   A@
+BD     JSR   PRINT
+ FCC "BAD DIRECTORY!",13,0
+       RTS
+A@     JSR   MF$FF
+       INC   +3,X
+       JSR   [$C004]
+       LDA   +6,X
+       BNE   BD
+       JSR   PRINT
+ FCC "DONE.",13,0
+       RTS
+       END   EXEC
+

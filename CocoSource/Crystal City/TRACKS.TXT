@@ -1,0 +1,563 @@
+OBTAB
+       FDB   REXPLODE
+       FDB   IMINE
+       FDB   IMISSLE
+       FDB   IBOMB
+       FDB   IJET
+       FDB   IHELL *GLEFT
+       FDB   ISHOOTER
+       FDB   IPARA
+       FDB   ISHIELD
+       FDB   ISAUCER
+       FDB   ISAW
+       FDB   IHELL2
+       FDB   IHELL3 *GRIGHT
+       FDB   TRIPLEMINE
+       FDB   IBOMB *NOT USED
+       FDB   IGUISER
+
+
+*OBJECTS
+*1ST # IS WARE TO DO IT
+*2ND # IS WHICH TO DO
+*3RD- #'S ARE OBJECT INDEPENDANT
+*OBJECTS
+
+
+*ENTRY TO ALL SUBS:
+* Y ^ OBJECT
+* U ^ DATA
+*EXIT:
+* U ^ END OF DATA
+
+REXPLODE
+       LDD   #TBLOW
+       STD   TRKDRV,Y
+       LDD   ,U++
+       STD   NEWPOS,Y
+       RTS
+
+TRIPLEMINE
+       LDA   ,U
+       ADDA  #24
+       PSHS  X,Y,U,D
+       JSR   NEWLINK
+       LEAU  ,S
+       BSR   IMINE
+       LDA   ,S
+       ADDA  #24
+       STA   ,S
+       JSR   NEWLINK
+       LEAU  ,S
+       BSR   IMINE
+       PULS  X,Y,U,D
+***FALL THROUGH TO IMINE
+
+IMINE  LDD   #MINE
+       STD   TRKDRV,Y
+       LDD   #DMINE
+       STD   DEATH,Y
+       LDA   ,U+ *GET Y POS
+       LDB   #231    *X POS
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   #7
+       STA   MINE.AGE,Y
+       LDD   #3*256+4
+       STD   POINTS,Y
+       RTS
+
+IGUISER
+       LDD   #GUISER
+       STD   TRKDRV,Y
+       LDD   #DGUISER
+       STD   DEATH,Y
+       CLR   STATUS,Y
+       LDA   ,U+
+       STA   BOMB.Y,Y
+       CLR   BOMB.Y+1,Y
+       LDB   #233 *D=NEWPOS
+       STD   NEWPOS,Y
+       LDA   #10
+       STA   GROUND,Y
+*POINTS ARE DONE ELSEWHERE
+       RTS
+
+
+IBOMB
+       LDD   #BOMB
+       STD   TRKDRV,Y
+       LDD   #DBOMB
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDD   ,U++
+       STB   BOMB.Y,Y
+       CLR   BOMB.Y+1,Y
+       STA   BOMB.X,Y
+       CLR   BOMB.X+1,Y
+       EXG   A,B *D=NEWPOS
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDD   ,U++
+       STD   BOMB.VEL.X,Y
+       LDD   ,U++
+       STD   BOMB.VEL.Y,Y
+       LDA   #10
+       STA   GROUND,Y
+*POINTS ARE DONE ELSEWHERE
+       RTS
+
+IMISSLE
+       LDD   #MISSLE
+       STD   TRKDRV,Y
+       LDD   #DMISSLE
+       STD   DEATH,Y
+       LDA   ,U+  *GET Y POS
+       LDB   #231 *X POS
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   #7
+       STA   MISSLE.AGE,Y
+*GET WAIT
+       LDA   #10
+       STA   MISSLE.WAIT,Y
+       LDA   #1
+       STA   MISSLE.SPEED,Y
+*GET MOVEMENT
+       CLR   MISSLE.DRIFT,Y
+       CLR   MISSLE.SPAT,Y
+       LDD   #6*256+2
+       STD   POINTS,Y
+       RTS
+
+
+
+ISAW
+       LDD   #SAW
+       STD   TRKDRV,Y
+       LDD   #DSAW
+       STD   DEATH,Y
+       LDA   #$80+4
+       STA   STATUS,Y
+       LDB   #220
+A@     LDA   ,U+
+       STA   HELL.Y,Y
+       CLR   HELL.Y+1,Y
+       STA   HELL.MAX,Y
+       STB   HELL.X,Y
+       CLR   HELL.X+1,Y
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       JSR   ARB
+       ANDA  #1
+       NEGD
+       SUBD  #$60
+       STD   HELL.VX,Y
+       JSR   ARB
+       SEX
+       STD   HELL.VY,Y
+       LDA   #10
+       STA   GROUND,Y
+       CLR   HELL.BLADE,Y
+       JSR   ARB
+       SEX   *DIRECTION
+       TSTA
+       BNE   B@
+       INCA
+B@     STA   HELL.BLADE+1,Y
+       LDD   #9*256+3
+       STD   POINTS,Y
+       RTS
+
+
+IHELL2
+       LDD   #CHELL2
+       STD   HELL.PICT,Y
+       LDD   #HELL
+       STD   TRKDRV,Y
+       LDD   #DHELL
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   ,U+
+       CMPA  #2
+       BHS   OK@
+       LDA   #2
+OK@    LDB   #230
+       STA   HELL.Y,Y
+       CLR   HELL.Y+1,Y
+       STB   HELL.X,Y
+       CLR   HELL.X+1,Y
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       JSR   ARB
+       ANDA  #1
+       NEGD
+       SUBD  #$60
+       STD   HELL.VX,Y
+       JSR   ARB
+       SEX
+       STD   HELL.VY,Y
+       LDA   #10
+       STA   GROUND,Y
+       LDD   #BLADE0
+       STD   HELL.BLADE,Y
+       LDD   #9*256+1
+       STD   POINTS,Y
+       RTS
+
+IHELL3 LDD   #A@
+       STD   TRKDRV,Y
+       LDA   ,U+
+       STA   NEWPOS,Y
+       LDA   #107
+       STA   NEWPOS+1,Y
+       RTS
+A@     DEC   NEWPOS+1,Y
+       BNE   ?RTS
+       LDD   #CHELL
+       STD   HELL.PICT,Y
+       LDD   #HELL
+       STD   TRKDRV,Y
+       LDD   #DHELL
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   NEWPOS,Y
+       CMPA  #2
+       BHS   OK@
+       LDA   #2
+OK@    LDB   #17
+       STA   HELL.Y,Y
+       CLR   HELL.Y+1,Y
+       STB   HELL.X,Y
+       CLR   HELL.X+1,Y
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       JSR   ARB
+       ANDA  #1
+       ADDD  #$60
+       STD   HELL.VX,Y
+       JSR   ARB
+       SEX
+       STD   HELL.VY,Y
+       LDA   #10
+       STA   GROUND,Y
+       LDD   #BLADE0
+       STD   HELL.BLADE,Y
+       LDD   #9*256+1
+       STD   POINTS,Y
+       RTS
+
+IHELL
+       LDD   #CHELL
+       STD   HELL.PICT,Y
+       LDD   #HELL
+       STD   TRKDRV,Y
+       LDD   #DHELL
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   ,U+
+       CMPA  #2
+       BHS   OK@
+       LDA   #2
+OK@    LDB   #230
+       STA   HELL.Y,Y
+       CLR   HELL.Y+1,Y
+       STB   HELL.X,Y
+       CLR   HELL.X+1,Y
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       JSR   ARB
+       ANDA  #1
+       NEGD
+       SUBD  #$60
+       STD   HELL.VX,Y
+       JSR   ARB
+       SEX
+       STD   HELL.VY,Y
+       LDA   #10
+       STA   GROUND,Y
+       LDD   #BLADE0
+       STD   HELL.BLADE,Y
+       LDD   #9*256+1
+       STD   POINTS,Y
+       RTS
+
+AT@    FCB   73
+TITLEOBJECTS
+       JSR   ARB
+       LSRA
+       LSRA
+       CMPA  #10
+       BNE   ?RTS
+       JSR   NEWLINK
+       LDU   #AT@
+       JSR   ARB
+       SUBA  #128
+       BHI   A@ *WAS A BHI
+*DO HELLOCOPTER
+       BITA  #%00100000
+       BEQ   H2@
+       JSR   IHELL
+       BRA   H1@
+H2@    JSR   IHELL2
+H1@    LDD   #0
+       STD   HELL.VY,Y
+       JSR   ARB
+       ANDA  #3
+       SUBD  #$200
+       STD   HELL.VX,Y
+       BLO   ZZ@
+       LDD   #26*256
+       STD   HELL.X,Y
+Z@     RTS
+ZZ@    LDD   #231*256
+       STD   HELL.X,Y
+       RTS
+*DO JET
+A@     JSR   IJET3
+       LDD   #0
+       STD   JET.VY,Y
+       STD   JET.AX,Y
+       STD   JET.AY,Y
+       RTS
+
+
+IJET3  LDA   ,U+
+       STA   NEWPOS,Y
+       BRA   IJET2
+IJET   LDD   #A@
+       STD   TRKDRV,Y
+       LDA   ,U+
+       STA   NEWPOS,Y
+       LDA   #107
+       STA   NEWPOS+1,Y
+       RTS
+A@     DEC   NEWPOS+1,Y
+       BNE   ?RTS
+IJET2  LDD   #JET
+       STD   TRKDRV,Y
+       LDD   #DJET
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   NEWPOS,Y
+       CMPA  #2
+       BHS   OK@
+       LDA   #2
+OK@    LDB   #26
+       STA   JET.Y,Y
+       CLR   JET.Y+1,Y
+       STB   JET.X,Y
+       CLR   JET.X+1,Y
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDD   #0
+       STD   JET.AX,Y
+       STD   JET.AY,Y
+       STD   JET.VY,Y
+       JSR   ARB
+       ANDA  #1
+       ADDD  #$80
+       STD   JET.VX,Y
+       JSR   ARB
+       ANDA  #3
+       SUBA  #2
+       STD   JET.VY,Y
+       LDA   #10
+       STA   GROUND,Y
+       LDD   #$15*256+1
+       STD   POINTS,Y
+       RTS
+
+
+ISHIELD
+       LDD   #A@
+       STD   TRKDRV,Y
+       LDA   ,U+
+       STA   NEWPOS,Y
+       LDA   #107
+       STA   NEWPOS+1,Y
+       RTS
+A@     DEC   NEWPOS+1,Y
+       BNE   ?RTS
+       LDD   #SHIELD
+       STD   TRKDRV,Y
+       LDD   #DSHIELD
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   NEWPOS,Y
+       LDB   #26
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDA   #10
+       STA   GROUND,Y
+       LDD   #$21*256+3
+       STD   POINTS,Y
+       RTS
+
+ISAUCER LDD   #SAUCER
+       STD   TRKDRV,Y
+       LDD   #DSAUCER
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   ,U+
+       LDB   #212
+       STD   NEWPOS,Y
+       STA   JET.Y,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDA   #10
+       STA   GROUND,Y
+       LDD   #$45*256+2
+       STD   POINTS,Y
+       JSR   ARB
+       ANDA  #%00000111
+       ADDA  #2
+       STD   JET.AY,Y
+       CLR   JET.VY,Y
+       JSR   ARB
+       LSRA
+       ORA   #%00001111
+       STA   JET.Y+1,Y
+       RTS
+
+
+
+IPARA
+       LDD   #PARA
+       STD   TRKDRV,Y
+       LDD   #DPARA
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   ,U+
+       LDB   #231
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDD   #$01*256+$FC *-4
+       STD   POINTS,Y
+       LDA   #1
+       STA   MISSLE.DRIFT,Y
+       RTS
+
+
+ISHOOTER
+       LDD   #SHOOTER
+       STD   TRKDRV,Y
+       LDD   #DSHOOTER
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   ,U+
+       LDB   #231
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDD   #$73*256+1
+       STD   POINTS,Y
+       RTS
+
+
+NEWOBJECTS
+       RTS
+       JSR   ARB
+       CMPA  #10
+       BHI   ?RTS
+*PRODUCE HELLOCOPTER
+       NEWLINK
+       JSR   ARB
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+*0/1/2/3
+       SUBA  #2
+*-2/-1/0/1
+       SBCA  #0
+*-3/-2/0/1
+       INCA
+*-2/-1/1/2
+       CMPA  #2
+       BNE   C@
+       LDA   #1
+C@     LDX   #30*256
+       STD   HELL.VX,Y
+       BPL   A@
+       LDX   #(256-30)*256
+A@     STX   HELL.X,Y
+       JSR   ARB
+       LSRA
+       LSRA
+       STD   HELL.Y,Y
+       LDB   HELL.X,Y
+       STD   NEWPOS,Y
+       JSR   ARB
+       CLRA
+       SEX
+       ASRB
+       ASRB
+       STD   HELL.VY,Y
+
+
+
+       LDD   #HELL
+       STD   TRKDRV,Y
+       LDD   #DHELL
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDA   HELL.Y,Y
+       LDB   HELL.X,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       CLR   GROUND,Y
+       LDD   #BLADE0
+       STD   HELL.BLADE,Y
+       RTS

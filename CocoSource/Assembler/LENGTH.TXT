@@ -1,0 +1,1103 @@
+LENRTS LDD   STARVL
+       STD   LRTS
+LABX
+LASLA
+LASLB
+LASRA
+LASRB
+LCLRA
+LCLRB
+LCOMA
+LCOMB
+LDAA
+LDECA
+LDECB
+LINCA
+LINCB
+LLSLA
+LLSLB
+LLSRA
+LLSRB
+LMUL
+LNEGA
+LNEGB
+LNOP
+LROLA
+LROLB
+LRORA
+LRORB
+LRTI
+LSEX
+LSWI
+LSYNC
+LTSTA
+LTSTB
+       LDB   #1
+       LBRA  DOLBL1
+
+LBCC
+LBCS
+LBEQ
+LBGE
+LBGT
+LBHI
+LBHS
+LBLE
+LBLO
+LBLS
+LBLT
+LBMI
+LBNE
+LBPL
+LBRA
+LBRN
+LBSR
+LBVC
+LBVS
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LDA   -1,Y
+       CMPA  #'?
+       BNE   T@
+*IS THERE ENOUGH ROOM?
+       LDD   LRTS
+       SUBD  STARVL
+       SUBD  #2
+*MUST BE NEGATIVE
+       SUBD  #-128
+       BHI   T@
+       LDD   STARVL
+       ADDD  #2
+       STD   LRTS
+       LDB   #3 *NOT ENOUGH ROOM
+       LBRA  DOLBL1
+LCWAI
+LEXG
+LORCC
+LANDCC
+LPSHS
+LPULS
+LPULU
+LPSHU
+LSWI2
+LSWI3
+LTFR
+T@     LDB   #2
+       LBRA  DOLBL1
+
+LLBRA
+LLBSR
+       LDB   #3
+       LBRA  DOLBL1
+
+LLBCC
+LLBCS
+LLBEQ
+LLBGE
+LLBGT
+LLBHI
+LLBHS
+LLBLE
+LLBLO
+LLBLS
+LLBLT
+LLBMI
+LLBNE
+LLBPL
+LLBRN
+LLBVC
+LLBVS
+       LDB   #4
+       LBRA  DOLBL1
+
+LADCA
+LADCB
+LADDA
+LADDB
+LANDA
+LANDB
+LBITA
+LBITB
+LCMPA
+LCMPB
+LEORA
+LEORB
+LLDA
+LLDB
+LORA
+LORB
+LSBCA
+LSBCB
+LSUBA
+LSUBB
+       LDB   #1
+       BSR   OPANDL
+       ADDB  #1
+       LBRA  DOLBL1
+
+LADDD
+LCMPX
+LLDD
+LLDU
+LLDX
+LSUBD
+*TEST FOR ALL MODE
+*IMMEDIATE = 3
+       LDB   #2
+       BSR   OPANDL
+       ADDB  #1
+       LBRA  DOLBL1
+
+LCMPD
+LCMPS
+LCMPU
+LCMPY
+LLDS
+LLDY
+*TEST FOR ALL MODES
+*IMMEDIATE = 4
+       LDB   #2
+       BSR   OPANDL
+       ADDB  #2
+       LBRA  DOLBL1
+
+LASL
+LASR
+LCLR
+LCOM
+LDEC
+LINC
+LJMP
+LJSR
+LLSL
+LLSR
+LNEG
+LROL
+LROR
+LSTA
+LSTB
+LSTD
+LSTU
+LSTX
+LTST
+*NO IMMEDIATE
+*DIRECT = 2 BYTES
+       CLRB
+       BSR   OPANDL
+       ADDB  #1
+       LBRA  DOLBL1
+
+LSTS
+LSTY
+*NO IMMEDIATE
+*DIREXT = 3 BYTES
+       CLRB
+       BSR   OPANDL
+       ADDB  #2
+       LBRA  DOLBL1
+
+*EXTENDED ONLY
+LLEAX
+LLEAY
+LLEAU
+LLEAS
+       CLRB
+       BSR   OPANDL
+       ADDB  #1
+       LBRA  DOLBL1
+
+OPANDL LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+*NO OPERAND!
+       LDB   #2
+       LEAY  -1,Y
+C@     RTS
+B@     LDA   ,-Y
+       CMPA  #'#
+       BNE   F@
+*IMMEDIATE
+       TSTB
+       BNE   C@
+       LEAY  +1,Y
+*IMMEDIATE ERROR!
+*CONTINUE PROCESSING AS IF
+*IT WERE ANOTHER TYPE
+F@     PSHS  Y
+*SKIP AN EXPRESSION
+       SKIPEX IAT
+*DIRECT, EXTENDED, []
+       PULS  Y
+       LDA   ,Y
+       CMPA  #'[
+       BNE   H@
+       LDB   #3 *[]
+       RTS
+H@     CMPA  #'> *IS EXTENDED?
+       BEQ   E@
+       CMPA  #'< *IS DIRECT?
+       BEQ   D@
+*EXTENDED, DIRECT
+       JSR   EVAL
+       TSTB
+       BMI   E@ *SN ERROR
+       ANDB  #2
+       BNE   E@ *UNDEFINED
+       LDB   ,Y
+       CMPB  #32
+       BHI   E@ *SN ERROR
+       TFR   X,D
+       CMPA  DP
+       BNE   E@ *EXTENDED
+D@     LDB   #1
+       RTS
+E@     LDB   #2
+       RTS
+IAT
+
+*INDEXED
+       PULS  Y
+       LDD   ,Y
+       CMPA  #',
+       BEQ   Z@ *SIMP INDX
+       CMPA  #'>
+       BEQ   T@ *TWO BYTES
+       CMPA  #'<
+       BEQ   O@ *ONE BYTE
+       CMPA  #'[
+       BEQ   I@ *INDIRECT
+       CMPD  #'A*256+',
+       BEQ   Z@
+       CMPD  #'B*256+',
+       BEQ   Z@
+       CMPD  #'D*256+',
+       BEQ   Z@
+       JSR   EVAL
+       TSTB
+       BMI   T@ *ERROR
+       ANDB  #2
+       BNE   T@ *UNDEFINED
+       LDD   ,Y
+       CMPA  #',
+       BNE   T@ *ERROR
+       CMPB  #'P *PC
+       BEQ   P@
+       CMPX  #16
+       BGE   A@
+       CMPX  #-16
+       BLT   A@
+Z@     LDB   #1
+       RTS
+A@     CMPX  #128
+       BGE   T@
+       CMPX  #-128
+       BLT   T@
+O@     LDB   #2
+       RTS
+T@     LDB   #3
+       RTS
+*INDIRECT
+I@     LEAY  +1,Y
+       LDD   ,Y
+       CMPA  #',
+       BEQ   Z@ *SIMP IND INDX
+       CMPD  #'A*256+',
+       BEQ   Z@
+       CMPD  #'B*256+',
+       BEQ   Z@
+       CMPD  #'D*256+',
+       BEQ   Z@
+       JSR   EVAL
+       TSTB
+       BMI   T@ *ERROR
+       ANDB  #2
+       BNE   T@ *UNDEFINED
+       LDD   ,Y
+       CMPA  #',
+       BNE   T@ *ERROR
+       CMPB  #'P
+       BEQ   P@ *PC
+F@     CMPX  #128
+       BGE   T@
+       CMPX  #-128
+       BLT   T@
+       LDB   #2
+       RTS
+*PC OR PCR
+P@
+*PC RELATIVE
+       TFR   X,D
+       SUBD  STARVL
+       CMPD  #124
+       BGE   T@
+       CMPD  #-124
+       BLT   T@
+       LDB   #2
+       RTS
+
+LFCS
+LFCC   LDX   #-1
+       LDD   #$2001
+       PSHS  B *DEFAULT LENGTH
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       PULS  B
+       LBRA  LBLE1 *NO LENGTH
+B@     LDA   -1,Y
+       PSHS  A
+C@     LEAX  +1,X
+       LDA   ,Y+
+       CMPA  #32
+       BHS   D@
+       JSR   MSEND
+       TFR   X,D
+       LEAS  +2,S
+       LBRA  DOLBD1
+D@     CMPA  ,S
+       BNE   C@
+       PULS  A
+E@     LDA   ,Y+
+       CMPA  #',
+       BEQ   PRFC
+       TFR   X,D
+       LEAS  +1,S
+       LBRA  DOLBD1
+
+
+LFCB   LDX   #0
+       LDB   #1 *DEFAULT LENGTH
+       PSHS  B
+       BRA   PRFB
+
+LFDB   LDX   #0
+       LDB   #2 *DEFAULT LENGTH
+       PSHS  B
+       BRA   PRFB
+
+PRFB   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       LEAS  +1,S
+       LBRA  LBLE1 *NO LENGTH
+B@     LEAY  -1,Y
+PRFC   LDA   ,Y
+R@     CMPA  #'>
+       BNE   C@
+       LEAX  +2,X
+       BRA   S@
+C@     CMPA  #'<
+       BNE   D@
+       LEAX  +1,X
+       BRA   S@
+D@     LDB   ,S
+       ABX
+S@     SKIPEX PRFC
+       LEAS  +1,S
+       TFR   X,D
+       LBRA  DOLBD1
+
+LENDM
+LEND   LEAS  PC,S
+       CLRB
+       RTS
+
+
+LSETDP
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   C@
+       LEAY  -1,Y
+       JSR   EVAL
+       BITB  #2
+       BEQ   Z@
+       JSR   FRERR
+       LEAS  PC,S
+       LDB   #1
+       RTS
+Z@     TFR   X,D
+       TSTA
+       BEQ   D@
+       JSR   OVERR
+D@     STB   DP
+C@     LBRA  LBLE1
+
+MSETDP
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   C@
+       LEAY  -1,Y
+       JSR   EVALT
+       TFR   X,D
+       TSTA
+       LBNE  OVERR
+       STB   DP
+C@     RTS
+
+*THESE TWO COMMANDS ARE =
+LSET
+LEQU
+       LDX   #0 *DEFAULT VALUE
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   D@
+       LEAY  -1,Y
+       JSR   EVAL
+       BITB  #2
+       BEQ   Z@
+       JSR   FRERR
+       LEAS  PC,S
+       LDB   #1
+       RTS
+Z@     LDY   LINEIN
+D@     PSHS  X *VALUE IN X
+       LDA   ,Y
+       CMPA  #'A
+       BLO   N@
+       CMPA  #'Z
+       BHI   N@
+*VALID LABLE
+       LEAS  -MAXLL,S
+       LEAU  ,S
+       JSR   LCOPY
+       LEAY  ,S
+       JSR   INSLAB
+       LEAS  MAXLL,S
+       LDA   #1
+       STA   -3,X
+       LDD   ,S
+       STD   -2,X
+N@     LEAS  +2,S
+       LBRA  DONLN1
+
+LMACR  LDY   LINEIN
+       LEAS  -MAXLL,S
+       LEAU  ,S
+       JSR   LCOPY
+       LEAY  ,S
+       LDA   ,Y
+       ADDA  #32
+       STA   ,Y
+       JSR   INSLAB
+       LEAS  MAXLL,S
+       LDU   NXTLIM
+       STU   -2,X *MACRO AT
+       CLRA
+       STA   -3,X
+*GET MACRO TILL END
+A@     LDA   PATH+PR,S
+       PSHS  U
+       LDY   LINEIN
+       JSR   READLN
+       PULS  U
+*TEST FOR END OF FILE
+       LDA   ,Y+
+       CMPA  #'*
+       BEQ   A@
+       STA   ,U+
+       CMPA  #32
+       BEQ   C@ *DO OP
+       BLO   A@ *EOLN
+D@     LDA   ,Y+
+       STA   ,U+
+       CMPA  #32
+       BHI   D@ *COPY LABLES
+       BLO   A@ *EOLN
+*FIND OP
+C@     LDA   ,Y+
+       CMPA  #32
+       BEQ   C@
+       STA   ,U+ *BYTE OF OP
+       CMPA  #32
+       BLO   A@ *EOLN
+*OP FOUND - SEE IF ENDM
+       PSHS  Y,U
+       LEAY  -1,Y
+       JSR   HASH
+       PULS  Y,U
+       CMPB  #KENDM
+       BNE   E@
+*IS ENDM! SHOULD TEST FOR MACR!
+       LDD   ,Y++
+       STD   ,U++
+       LDA   ,Y
+       LDB   #13
+       STD   ,U++
+       STU   NXTLIM
+       LBRA  DONLN1
+*IS NOT ENDM, COPY OP
+E@     LDA   ,Y+
+       STA   ,U+
+       CMPA  #32
+       BHI   E@
+       BLO   A@ *EOLN
+*SKIP SPACES
+F@     LDA   ,Y+
+       CMPA  #32
+       BEQ   F@
+       STA   ,U+
+       CMPA  #32
+       BLO   A@
+*COPY OP
+G@     LDA   ,Y+
+       STA   ,U+
+       CMPA  #32
+       BHS   G@
+       BRA   A@
+
+MMACR  LDY   LINEIN
+       LEAS  -MAXLL,S
+       LEAU  ,S
+       JSR   LCOPY
+       LEAY  ,S
+       LDA   ,Y
+       ADDA  #32
+       STA   ,Y
+       JSR   FNDLAB
+       LEAS  MAXLL,S
+       LDA   #1
+       STA   -3,X
+A@     LDY   LINEIN
+       LDA   PATH+PR+2,S
+       JSR   READLN
+*SHOULD TEST FOR EOF
+       BSR   FIGOP
+       CMPB  #KENDM
+       BNE   A@
+       RTS
+
+FIGOP  LDA   ,Y+
+       CMPA  #'*
+       BNE   D@
+A@     CLRB
+       RTS
+D@     CMPA  #32
+       BLO   A@ *EOLN
+       BEQ   B@ *FIND OP
+       LDA   #32 *SKIP LABLE
+C@     CMPA  ,Y+
+       BLO   C@
+       BHI   A@ *EOLN
+*FIND OP
+B@     CMPA  ,Y+
+       BEQ   B@
+       BHI   A@ *EOLN
+       LEAY  -1,Y
+       JSR   HASH
+       RTS
+
+MMSG   RTS
+
+LMSG   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LBHI  LBLE1
+       LDA   -1,Y
+B@     CMPA  #'"
+       BEQ   C@
+       LEAY  -1,Y
+       JSR   EVALT
+       BITB  #2
+       BEQ   Z@
+       JSR   FRERR
+       LEAS  PC,S
+       LDB   #1
+       RTS
+Z@     TFR   X,D
+       JSR   PRHEXD
+       BRA   E@
+D@     JSR   PCHR
+C@     LDA   ,Y+
+       CMPA  #32
+       BLO   M@
+       CMPA  #'"
+       BNE   D@
+E@     LDA   ,Y+
+       CMPA  #',
+       BNE   M@
+       LDA   ,Y+
+       BRA   B@
+M@     LDA   #13
+       JSR   PCHR
+       LBRA  LBLE1
+
+
+IFM    MACR
+       BSR   SEVAL
+       B\0   A@
+       LDA   PATH+PR+\1,S
+       JSR   SKIPC
+       IFEQ  \1
+A@     LBRA  DONLN1
+       ELSE
+A@     LEAS  +2,S
+       LBRA  NOTH2
+       ENDC
+       ENDM
+
+MIFEQ  IFM   EQ,2
+MIFNE  IFM   NE,2
+MIFGT  IFM   GT,2
+MIFGE  IFM   GE,2
+MIFLT  IFM   LT,2
+MIFLE  IFM   LE,2
+
+SEVAL  LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   B@
+       LEAY  -1,Y
+       JSR   EVALT
+       CMPX  #0
+       RTS
+B@     LDX   #0
+       RTS
+
+LIFNE  IFM   NE,0
+LIFGT  IFM   GT,0
+LIFGE  IFM   GE,0
+LIFLT  IFM   LT,0
+LIFLE  IFM   LE,0
+LIFEQ  IFM   EQ,0
+
+LELSE  LDA   PATH+PR,S
+       JSR   SKIPC
+       LBRA  DONLN1
+
+MELSE  LDA   PATH+PR+2,S
+       JSR   SKIPC
+       LEAS  +2,S
+       LBRA  NOTH2
+
+LENDC  LBRA  DONLN1
+MENDC  LEAS  +2,S
+       LBRA  NOTH2
+
+*X=COUNTER=0
+*IF ELSE AND CNTR=0 THEN ASSEM
+*IF ENDC WHEN 0 THEN ASSEMBLE
+*IFEQ/IFNE/ELSE HAS BEEN DONE
+SKIPC  PSHS  A *PATH
+       LDX   #0 *COUNTER
+       BRA   A@
+B@     LEAX  +1,X
+A@     LDA   ,S *GET PATH
+       LDY   LINEIN
+       PSHS  X
+       JSR   READLN
+       JSR   FIGOP
+       PULS  X
+*CHECK RANGE FOR IF THEN'S
+       CMPB  #KIFEQ
+       BLO   H@
+       CMPB  #KIFNC
+       BLS   B@
+H@     CMPB  #KENDC
+       BNE   D@
+       CMPX  #0
+       BNE   F@
+E@     PULS  A,PC
+D@     CMPB  #KELSE
+       BNE   A@
+       CMPX  #0
+       BEQ   E@
+       BRA   A@
+F@     LEAX  -1,X
+       BRA   A@
+
+MINCL  LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       RTS
+B@     LEAS  -MAXLL,S
+       LEAX  ,S
+       LEAY  -1,Y
+C@     LDA   ,Y+
+       STA   ,X+
+       CMPA  #32
+       BHI   C@
+       CLR   -1,X
+*DO LABLE ON LINE
+       LDY   LINEIN
+       JSR   CHKLAB
+       LEAX  ,S
+       JSR   OPENT
+       LEAS  MAXLL,S
+       BSR   INCPR
+       JSR   PASS2
+       LDA   4,S
+       LEAS  +9,S
+       JSR   CLOSE
+       LEAS  +2,S
+       LBRA  NOTH2
+
+INCPR  PULS  Y
+       LDX   #0
+       PSHS  X
+       PSHS  X
+       PSHS  A
+       PSHS  Y
+
+STPR   PULS  Y
+       LDD   NUMLOG
+       ADDD  #1
+       STD   NUMLOG
+       PSHS  D
+       LDD   ATLOG
+       ADDD  #1
+       STD   ATLOG
+       PSHS  D
+       JMP   ,Y
+
+LINCL  LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       RTS
+B@     LEAS  -MAXLL,S
+       LEAX  ,S
+       LEAY  -1,Y
+C@     LDA   ,Y+
+       STA   ,X+
+       CMPA  #32
+       BHI   C@
+       CLR   -1,X
+       LDY   LINEIN
+       JSR   ENLAB
+       LEAX  ,S
+       JSR   OPENT
+       LEAS  MAXLL,S
+       BSR   INCPR
+       JSR   PASS1
+       LDA   4,S
+       LEAS  +9,S
+       JSR   CLOSE
+       TSTB
+       LBEQ  DONLN1
+       LEAS  PC,S
+       LDB   #1
+       RTS
+
+LBSZ   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LEAY  -1,Y
+       JSR   EVAL
+       BITB  #2
+       BEQ   B@
+       JSR   FRERR
+       LEAS  PC,S
+       LDB   #1
+       RTS
+B@     TFR   X,D
+       LBRA  DOLBD1
+
+MBSZ   LEAS  +2,S
+       PSHS  Y
+       LDY   LINEIN
+       JSR   CHKLAB
+       PULS  Y
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LEAY  -1,Y
+       JSR   EVALT
+       TFR   X,D
+       LDX   #0
+B@     SUBD  #2
+       BCS   C@
+D@     JSR   XSOUT
+       SUBD  #2
+       BCC   D@
+C@     INCB
+       BNE   O@
+       JSR   BSOUT
+O@     LBRA  LINE2
+
+LFGOTO LBRA  LBLE1
+
+MFGOTO PSHS  Y
+       JSR   FLUSH
+       PULS  Y
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LEAY  -1,Y
+       JSR   EVALT
+       TFR   X,D
+       SUBD  BYTES
+B@     SUBD  #5 *PREAMBLE
+       BCS   R@
+*D=LENGTH - SEND PREAMBLE
+       LDX   STRBUF
+       PSHS  D,X *LOAD/LENGHT
+       CLR   ,-S *PRE- NOT POST
+       LEAY  ,S *^ BYTES TO SEND
+       LDX   #5 *# BYTES TO SEND
+       JSR   WRITEB
+       LDX   +1,S *LENGTH
+       LEAS  +5,S
+       LDY   #$8000 *SEND ROM
+       JSR   WRITEB *BYTES
+R@     RTS
+
+LBINF  PSHS  Y
+       LDY   LINEIN
+       JSR   ENLAB
+       PULS  Y
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       RTS
+B@     LEAS  -MAXLL,S
+       LEAX  ,S
+       LEAY  -1,Y
+C@     LDA   ,Y+
+       STA   ,X+
+       CMPA  #32
+       BHI   C@
+       CLR   -1,X
+       LEAX  ,S
+       JSR   OPENB
+       LEAS  MAXLL,S
+       LDX   #0
+       PSHS  X *MISC
+       PSHS  X *TOTAL LENGTH
+       PSHS  A *PATH
+*READ POST/PREAMBLE
+D@     LDX   #5
+       LDY   LINEIN
+       LDA   ,S *PATH
+       JSR   READ
+       LDA   ,Y
+       BNE   E@
+*PRE-AMBLE!
+       LDD   +1,Y
+       ADDD  +1,S
+       STD   +1,S *TOTAL LENGTH
+*SKIP JUNK DATA
+*IN BLOCKS OF #BBUFLN
+       LDD   +1,Y *LENGTH
+       STD   +3,S *AMT TO SKIP
+F@     LDX   #BBUFLN
+       CMPX  +3,S
+       BHI   G@
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+       LDD   +3,S
+       SUBD  #BBUFLN
+       STD   +3,S
+       BRA   F@
+*MOST OF JUNK DATA IS SKIPED
+G@     LDX   +3,S *REST OF IT
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+       BRA   D@ *GO UNTIL POST
+*POST AMBLE!
+E@     LDA   ,S
+       JSR   CLOSE
+       LDD   +1,S *LENGTH
+       LEAS  +5,S
+       LBRA  LN1D
+
+MBINF  PSHS  Y
+       LDY   LINEIN
+       JSR   CHKLAB
+       JSR   FLUSH
+       PULS  Y
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       RTS
+B@     LEAS  -MAXLL,S
+       LEAX  ,S
+       LEAY  -1,Y
+C@     LDA   ,Y+
+       STA   ,X+
+       CMPA  #32
+       BHI   C@
+       CLR   -1,X
+       LEAX  ,S
+       JSR   OPENB
+       LEAS  MAXLL,S
+       LDX   #0
+*PC BECOMES MISC
+       PSHS  A *PATH
+*READ POST/PREAMBLE
+D@     LDX   #5
+       LDY   LINEIN
+       LDA   ,S *PATH
+       JSR   READ
+       LDA   ,Y
+       BNE   E@
+*MODIFY PREAMBLE AND SAVE IT
+       LDD   STARVL
+       STD   +3,Y *LOAD ADDR
+       LDD   +1,Y *LENGTH
+       STD   +1,S
+       ADDD  STARVL
+       STD   STARVL *NEW PC PTR
+       STD   STRBUF
+       JSR   WRITEB
+*WRITE DATA IN BLOCKS
+F@     LDX   #BBUFLN
+       CMPX  +1,S
+       BHI   G@
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+*SEND DATA TO FILE
+       JSR   WRITEB
+       LDD   +1,S
+       SUBD  #BBUFLN
+       STD   +1,S
+       BRA   F@
+*MOST OF DATA IS SKIPED
+G@     LDX   +1,S
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+       JSR   WRITEB
+       BRA   D@ *GO UNTIL POST
+E@     LDA   ,S
+       JSR   CLOSE
+       LEAS  +3,S
+       LBRA  NOTH2
+
+LBINFO PSHS  Y
+       LDY   LINEIN
+       JSR   ENLAB
+       PULS  Y
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       RTS
+B@     LEAS  -MAXLL,S
+       LEAX  ,S
+       LEAY  -1,Y
+C@     LDA   ,Y+
+       STA   ,X+
+       CMPA  #32
+       BHI   C@
+       CLR   -1,X
+       LEAX  ,S
+       JSR   OPENB
+       LEAS  MAXLL,S
+       LDX   #0
+       PSHS  X *MSC
+       PSHS  X *TOTAL LENGTH
+       PSHS  A *PATH
+*READ POST/PREAMBLE
+D@     LDX   #5
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+       LDA   ,Y
+       BNE   E@
+*PRE-AMBLE
+       LDD   +1,Y *LENGTH
+       ADDD  +3,Y *ADDRESS
+       STD   +1,S *END ADDRESS
+*SKIP JUNK DATA
+*IN BLOCKS OF #BBUFLN
+       LDD   +1,Y *LENGTH
+       STD   +3,S *AMNT TO SKIP
+F@     LDX   #BBUFLN
+       CMPX  +3,S
+       BHI   G@
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+       LDD   +3,S
+       SUBD  #BBUFLN
+       STD   +3,S
+       BRA   F@
+*MOST OF JUNK DATA IS SKIPPED
+G@     LDX   +3,S *REST OF IT
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+       BRA   D@
+*POSTAMBLE
+E@     LDA   ,S
+       JSR   CLOSE
+       LDD   +1,S *END ADDRESS
+       STD   STARVL
+       LEAS  +5,S
+       LBRA  LBLE1
+
+MBINFO PSHS  Y
+       LDY   LINEIN
+       JSR   CHKLAB
+       JSR   FLUSH
+       PULS  Y
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       RTS
+B@     LEAS  -MAXLL,S
+       LEAX  ,S
+       LEAY  -1,Y
+C@     LDA   ,Y+
+       STA   ,X+
+       CMPA  #32
+       BHI   C@
+       CLR   -1,X
+       LEAX  ,S
+       JSR   OPENB
+       LEAS  MAXLL,S
+       LDX   #0
+*PC BECOMES MISC
+       PSHS  A *PATH
+*READ POST/PREAMBLE
+D@     LDX   #5
+       LDY   LINEIN
+       LDA   ,S *PATH
+       JSR   READ
+       LDA   ,Y
+       BNE   E@ *POSTAMBLE
+*CALCULATE END ADDRESS
+       LDD   +1,Y
+       STD   +1,S
+       ADDD  +3,Y
+       STD   STARVL
+       STD   STRBUF
+       JSR   WRITEB
+*WRITE DATA IN BLOCKS
+F@     LDX   #BBUFLN
+       CMPX  +1,S
+       BHI   G@
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+*SEND DATA TO FILE
+       JSR   WRITEB
+       LDD   +1,S
+       SUBD  #BBUFLN
+       STD   +1,S
+       BRA   F@
+*MOST OF DATA SENT
+G@     LDX   +1,S
+       LDY   LINEIN
+       LDA   ,S
+       JSR   READ
+       JSR   WRITEB
+       BRA   D@
+E@     LDA   ,S
+       JSR   CLOSE
+       LEAS  +3,S
+       LBRA  NOTH2
+

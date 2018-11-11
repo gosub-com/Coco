@@ -1,0 +1,439 @@
+*BINARY TABLE OF LETTERS
+LETTER
+ FCB 0,0,0,0,0,0,0,0
+ FCB 12,12,12,12,12,0,12,0
+ FCB 102,102,102,0,0,0,0,0
+ FCB 102,102,255,102,255,102,102,0
+ FCB 12,31,44,30,13,62,12,0
+ FCB 56,59,6,12,24,55,7,0
+ FCB 24,60,60,24,63,54,31,0
+ FCB 12,12,24,0,0,0,0,0
+ FCB 6,12,24,24,24,12,6,0
+ FCB 24,12,6,6,6,12,24,0
+ FCB 8,42,28,127,28,42,8,0
+ FCB 0,12,12,63,12,12,0,0
+ FCB 0,0,0,0,0,12,12,24
+ FCB 0,0,0,63,0,0,0,0
+ FCB 0,0,0,0,0,0,12,0
+ FCB 0,3,6,12,24,48,0,0
+*NUMBERS (0, 1, 2, 3...0)
+ FCB 30,51,55,63,59,51,30,0
+ FCB 12,28,12,12,12,12,30,0
+ FCB 30,51,3,30,48,48,63,0
+ FCB 30,51,3,6,3,51,30,0
+ FCB 6,14,30,54,63,6,6,0
+ FCB 63,48,62,3,3,51,30,0
+ FCB 30,48,48,62,51,51,30,0
+ FCB 63,3,6,12,24,48,48,0
+ FCB 30,51,51,30,51,51,30,0
+ FCB 30,51,51,30,3,3,30,0
+ FCB 0,0,48,0,0,48,0,0
+ FCB 0,0,12,0,0,12,12,24
+ FCB 6,12,24,48,24,12,6,0
+ FCB 0,0,63,0,63,0,0,0
+ FCB 24,12,6,3,6,12,24,0
+ FCB 30,51,3,6,12,0,12,0
+*LETTERS (@, A, B, C, D...)
+ FCB 30,51,3,31,55,55,30,0
+ FCB 12,30,51,51,63,51,51,0
+ FCB 62,51,51,62,51,51,62,0
+ FCB 30,51,48,48,48,51,30,0
+ FCB 62,51,51,51,51,51,62,0
+ FCB 63,48,48,60,48,48,63,0
+ FCB 63,48,48,60,48,48,48,0
+ FCB 30,51,48,48,55,51,30,0
+ FCB 51,51,51,63,51,51,51,0
+ FCB 30,12,12,12,12,12,30,0
+ FCB 3,3,3,3,3,51,30,0
+ FCB 51,54,60,56,60,54,51,0
+ FCB 48,48,48,48,48,48,63,0
+ FCB 33,51,63,63,51,51,51,0
+ FCB 51,51,59,63,55,51,51,0
+ FCB 30,51,51,51,51,51,30,0
+ FCB 62,51,51,62,48,48,48,0
+ FCB 30,51,51,51,63,54,31,0
+ FCB 62,51,51,62,60,54,51,0
+ FCB 30,51,48,30,3,51,30,0
+ FCB 63,12,12,12,12,12,12,0
+ FCB 51,51,51,51,51,51,30,0
+ FCB 51,51,51,30,30,12,12,0
+ FCB 51,51,51,63,63,51,33,0
+ FCB 51,51,30,12,30,51,51,0
+ FCB 51,51,30,12,12,12,12,0
+ FCB 63,3,6,12,24,48,63,0
+ FCB 30,24,24,24,24,24,30,0
+ FCB 0,48,24,12,6,3,0,0
+ FCB 30,6,6,6,6,6,30,0
+ FCB 12,30,63,12,12,12,12,0
+ FCB 0,12,24,63,24,12,0,0
+ FCB 12,30,51,0,0,0,0,0
+ FCB 0,0,30,3,31,51,31,0
+ FCB 48,48,62,59,51,59,62,0
+ FCB 0,0,30,51,48,51,30,0
+ FCB 3,3,31,55,51,55,31,0
+ FCB 0,0,30,51,63,48,30,0
+ FCB 6,15,12,30,12,12,12,0
+ FCB 0,0,31,51,51,31,3,30
+ FCB 48,48,62,59,51,51,51,0
+ FCB 0,12,0,28,12,12,30,0
+ FCB 0,3,0,3,3,3,51,30
+ FCB 48,48,54,60,56,60,54,0
+ FCB 28,12,12,12,12,12,30,0
+ FCB 0,0,126,107,107,107,107,0
+ FCB 0,0,62,59,51,51,51,0
+ FCB 0,0,30,51,51,51,30,0
+ FCB 0,0,62,51,51,62,48,48
+ FCB 0,0,31,51,51,31,3,3
+ FCB 0,0,62,59,48,48,48,0
+ FCB 0,0,31,48,30,3,62,0
+ FCB 24,24,60,24,24,27,14,0
+ FCB 0,0,51,51,51,55,31,0
+ FCB 0,0,51,51,51,30,12,0
+ FCB 0,0,99,99,107,119,34,0
+ FCB 0,0,51,30,12,30,51,0
+ FCB 0,0,51,51,51,31,3,30
+ FCB 0,0,63,6,12,24,63,0
+ FCB 6,12,12,24,12,12,6,0
+ FCB 12,12,12,0,12,12,12,0
+ FCB 24,12,12,6,12,12,24,0
+ FCB 24,63,6,0,0,0,0,0
+ FDB $FFFF,$FFFF,$FFFF,$FFFF
+*LEFT HALF OF COPYRIGHT SIGN
+ FCB 15,56,99,198,198,99,56,15
+*RIGHT HALF OF (C)
+ FCB 224,56,140,6,6,140,56,224
+
+COLORTABLE
+ FDB $0000,$000F,$00F0,$00FF
+ FDB $0F00,$0F0F,$0FF0,$0FFF
+ FDB $F000,$F00F,$F0F0,$F0FF
+ FDB $FF00,$FF0F,$FFF0,$FFFF
+
+CURBLOCK FDB 0
+CURPOS   FDB 0
+
+GOTOXY PSHS  D
+       ADDD  SCRPOS
+       BSR   LOCATE
+       PULS  D,PC
+
+LOCATE PSHS  D,X
+       SCREEN X
+       STX   CURBLOCK
+       STD   CURPOS
+       PULS  D,X,PC
+
+*X ^ BCD
+PBCD   PSHS  X,Y,U,D
+       CLRB  *0=SPACE
+       LDA   #4
+       PSHS  A
+A@     LDA   ,X+
+       BSR   PBCDA
+       DEC   ,S
+       BNE   A@
+       LEAS  +1,S
+       PULS  X,Y,U,D,PC
+
+*A=# TO PRINT (B=0=SPACE)
+PBCDA  PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   PD@
+       PULS  A
+       ANDA  #$0F
+PD@    BEQ   A@
+*DIGIT <> 0
+       INCB
+P@     ADDA  #48
+P2@    BSR   PCHRAP
+       RTS
+*DIGIT = 0
+A@     TSTB
+       BNE   P@ *PRINT IT
+       LDA   #32
+       BRA   P2@
+
+PUTSPCAT
+       PSHS  B,X
+       LDX   +3,S
+       LDD   ,X++
+       JSR   GOTOXY
+       BRA   B@
+PUTSPC PSHS  B,X
+       LDX   +3,S
+B@     LDA   ,X+
+       BEQ   Z@
+A@     BSR   PCHRAP
+       LDA   ,X+
+       BNE   A@
+       STX   +3,S
+Z@     PULS  B,X,PC
+
+
+*X ^ STRING
+PUTS   PSHS  B,X
+       LDA   ,X+
+       BEQ   Z@
+A@     BSR   PCHRAP
+       LDA   ,X+
+       BNE   A@
+Z@     PULS  B,X,PC
+
+PCHRAP PSHS  D
+       CMPA  #8
+       BEQ   BS@
+       BSR   PCHRA
+       LDD   CURPOS
+       ADDD  #4
+       STD   CURPOS
+       PULS  D,PC
+*BACK SPACE
+BS@    LDD   CURPOS
+       SUBD  #4
+       STD   CURPOS
+       LDA   #32
+       BSR   PCHRA
+       PULS  D,PC
+
+PCHRA  PSHS  D,X,Y
+       LDX   CURBLOCK
+       STX   $FFA0
+       LDY   CURPOS
+       LDB   ,S
+       BSR   PCHRB
+       PULS  D,X,Y,PC
+
+
+PCHRB2 PSHS  X,Y,U,D
+       BRA   PR@
+*B = CHR
+*Y ^ PLACE TO PRINT
+PCHRB  PSHS  X,Y,U,D
+       LDU   COLORTABLE
+       STU   ,Y
+       STU   +2,Y
+PR@    SUBB  #32
+       BCC   Z@ *PRINTABLE?
+       CLRB     *PRINT SPACE
+Z@     LDX   #LETTER
+       LDA   #8
+       PSHS  A
+       MUL
+       LEAX  D,X
+       LDU   #COLORTABLE
+A@     LEAY  +256,Y
+       LDB   ,X
+       ANDB  #%11110000
+       LSRB
+       LSRB
+       LSRB
+       LDD   B,U
+       STD   ,Y
+       LDB   ,X+
+       ANDB  #%00001111
+       LSLB
+       LDD   B,U
+       STD   +2,Y
+       DEC   ,S
+       BNE   A@
+       LEAS  +1,S
+       PULS  X,Y,U,D,PC
+
+*D = $BBFF
+*(BACKGROUND, FOREGROUND)
+SETCOLOR
+       LDU   #COLORTABLE
+       PSHS  D
+       STA   ,U
+       STA   +1,U
+       STA   +2,U
+       STA   +4,U
+       STA   +6,U
+       STA   +9,U
+       STA   +17,U
+       STA   +25,U
+       STB   +7,U
+       STB   +15,U
+       STB   +23,U
+       STB   +24,U
+       STB   +26,U
+       STB   +28,U
+       STB   +30,U
+       STB   +31,U
+       ANDA  #%00001111
+       ANDB  #%11110000
+       PSHS  A
+       ORB   ,S+
+*B=FB=10
+       STB   +5,U
+       STB   +13,U
+       STB   +16,U
+       STB   +18,U
+       STB   +20,U
+       STB   +21,U
+       STB   +22,U
+       STB   +29,U
+       PULS  D
+       ANDA  #%11110000
+       ANDB  #%00001111
+       PSHS  A
+       ORB   ,S+
+*B=BF=01
+       STB   +3,U
+       STB   +8,U
+       STB   +10,U
+       STB   +11,U
+       STB   +12,U
+       STB   +14,U
+       STB   +19,U
+       STB   +27,U
+       RTS
+
+*INKEY GETS A GEY FROM
+*THE KEYBOARD IN A
+
+KEYBUF BSZ   8
+SHIFT  FCB   0
+CTRL   FCB   0
+ALT    FCB   0
+F1     FCB   0
+F2     FCB   0
+
+SCNASC CMPA  #26
+       BHI   A@
+*CONVERT TO LOWER CASE LETTER
+       TSTA
+       BNE   E@
+       LDA   #64 *THE @ (AT)
+       RTS
+E@     TST   SHIFT
+       BEQ   G@
+       ADDA  #96
+       RTS
+G@     ADDA  #64
+       RTS
+A@     CMPA  #32
+       BLO   S@ *SPECIAL KEY
+       CMPA  #48
+       BLO   N@ *NUMBER
+*CONTROLE CHAR
+       CMPA  #50
+       BLS   C@
+*CTRL, ALT, SHIFT, F1, F2
+       CLRA
+       RTS
+C@     SUBA  #16
+S@     SUBA  #27
+       LSLA
+       PSHS  X,B
+       LDX   #Z@
+       LEAX  A,X
+       LDA   ,X
+       LDB   SHIFT
+       BNE   D@
+       LDA   +1,X
+D@     PULS  B,X,PC
+N@     CMPA  #44
+       BHS   I@
+       ADDA  #16
+I@     TST   SHIFT
+       BNE   ?RTS
+       EORA  #16
+       RTS
+Z@     FCB   94,95 *UP ARR ^
+       FCB   10,91 *DWN ARR
+       FCB   8,21 *LFT ARR
+       FCB   9,93 *RGHT ARR
+       FCB   32,32 *SPACE
+       FCB   13,13 *ENTER
+       FCB   12,92 *CLEAR
+       FCB   3,3  *BREAK
+
+INKEY  PSHS  X,Y,U,B
+       BSR   GETSCN *GET SCAN
+       BPL   A@
+       CLRA
+       PULS  X,Y,U,B,PC
+A@     BSR   CNTRL
+       BSR   SCNASC *CVT TO ASC
+       TSTA
+       PULS  X,Y,U,B,PC
+
+       EXG   A,A
+
+CNTRL  PSHS  A
+       LDA   KEYBUF
+       ANDA  #%01000000
+       STA   SHIFT
+       LDA   KEYBUF+4
+       ANDA  #%01000000
+       STA   ALT
+       LDA   KEYBUF+3
+       ANDA  #%01000000
+       STA   CTRL
+       LDA   KEYBUF+2
+       ANDA  #%01000000
+       STA   F1
+       LDA   KEYBUF+1
+       ANDA  #%01000000
+       STA   F2
+       PULS  A,PC
+
+GETSCN PSHS  X,B
+       LDA   #$FF
+       STA   $FF02
+       LDX   #KEYBUF
+       LDB   #8
+       CLR   ,-S  *VARS ON
+       CLR   ,-S  *STACK
+       LEAS  -1,S *"""""""
+       ANDCC #$FE
+*POLE FROM COLUMN 8 TO 1
+*B=COLUMN COUNTER, A=ROW
+A@     ROR   $FF02 *COLUMN
+       LDA   $FF00 *ROW
+       ORA   #$80
+       STA   ,S *SAVE ROW
+       EORA  ,X
+       ANDA  ,X
+       BEQ  B@ *BRIF NO NEW KEY
+*NEW KEY IS PRESSED IN THIS ROW
+*SAVE KEY INFO
+       STA   +1,S *SAVE ROW
+       STB   +2,S *SAVE COLUMN
+B@     LDA   ,S  *GET ROW AND
+       STA   ,X+ *SAVE IT
+       DECB      *NEXT COLUMN
+       BNE   A@ *BRIF MORE
+*FINISHED WITH POLE
+       CLRA
+       LDB   +1,S *ROW
+       BNE   C@ *BRIF KEY FOUND
+       LEAS  +3,S
+       COMA
+       PULS  X,B,PC
+C@     INCA
+       LSRB
+       BCC   C@
+       DECA
+       LSLA
+       LSLA  *MULT A BY 8
+       LSLA
+       ADDA  +2,S
+       DECA
+*A=KEYBOARD SCAN CODE
+       LEAS  +3,S
+       PULS  X,B,PC
+
+
+
+
+
+
+
+
+
+

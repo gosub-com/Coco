@@ -1,0 +1,4 @@
+EXEC   LDA   ,Y+
+       BNE   EXEC
+
+

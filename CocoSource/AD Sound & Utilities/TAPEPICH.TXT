@@ -1,0 +1,31 @@
+EXEC   LDD   #0
+       LDX   #SWIR
+       LDU   $FFF8
+       STX   +1,U
+A@     LDA   $FF20
+       LSRA
+       BCC   A@
+       LEAX  +1,X
+B@     LDA   $FF20
+       LSRA
+       BCS   B@
+       LEAX  +1,X
+       BRA   A@
+
+SWIR   TFR   X,D
+       LSRA
+       RORB
+       LSRA
+       RORB
+       LSRA
+       RORB
+       LDU   #$400
+       COM   D,U
+       LDA   $FF02
+       CLR   +1,S
+       CLR   +2,S
+       RTI
+
+       END   EXEC
+
+

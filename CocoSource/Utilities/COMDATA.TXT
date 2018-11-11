@@ -1,0 +1,313 @@
+OPS
+ FCC "NEG ",0 *0
+ FCC "??  ",8 *1
+ FCC "??  ",8 *2
+ FCC "COM ",0 *3
+ FCC "LSR ",0 *4
+ FCC "??  ",8 *5
+ FCC "ROR ",0 *6
+ FCC "ASR ",0 *7
+ FCC "LSL ",0 *8
+ FCC "ROL ",0 *9
+ FCC "DEC ",0 *A
+ FCC "??  ",0 *B
+ FCC "INC ",0 *C
+ FCC "TST ",0 *D
+ FCC "JMP ",0 *E
+ FCC "CLR ",0 *F
+ FCC "??  ",128 *10
+ FCC "??  ",128 *11
+ FCC "NOP ",1 *12
+ FCC "SYNC",1 *13
+ FCC "??  ",8 *14
+ FCC "??  ",8 *15
+ FCC "LBRA",5 *16
+ FCC "LBSR",5 *17
+ FCC "??  ",8 *18
+ FCC "DAA ",1 *19
+ FCC "ORCC",6 *1A
+ FCC "??  ",8 *1B
+ FCC "ANDC",6 *1C
+ FCC "SEX ",1 *1D
+ FCC "EXG ",11 *1E
+ FCC "TFR ",11 *1F
+ FCC "BRA ",4 *20
+ FCC "BRN ",4 *21
+ FCC "BHI ",4 *22
+ FCC "BLS ",4 *23
+ FCC "BHS ",4 *24
+ FCC "BLO ",4 *25
+ FCC "BNE ",4 *26
+ FCC "BEQ ",4 *27
+ FCC "BVC ",4 *28
+ FCC "BVS ",4 *29
+ FCC "BPL ",4 *2A
+ FCC "BMI ",4 *2B
+ FCC "BGE ",4 *2C
+ FCC "BLT ",4 *2D
+ FCC "BGT ",4 *2E
+ FCC "BLE ",4 *2F
+ FCC "LEAX",3 *30
+ FCC "LEAY",3 *31
+ FCC "LEAS",3 *32
+ FCC "LEAU",3 *33
+ FCC "PSHS",9 *34
+ FCC "PULS",9 *35
+ FCC "PSHU",9 *36
+ FCC "PULU",9 *37
+ FCC "??  ",8 *38
+ FCC "RTS ",1 *39
+ FCC "ABX ",1 *3A
+ FCC "RTI ",1 *3B
+ FCC "CWAI",6 *3C
+ FCC "MUL ",1 *3D
+ FCC "??  ",8 *3E
+ FCC "SWI ",1 *3F
+ FCC "NEGA",1 *40
+ FCC "??  ",8 *41
+ FCC "??  ",8 *42
+ FCC "COMA",1 *43
+ FCC "LSRA",1 *44
+ FCC "??  ",8 *45
+ FCC "RORA",1 *46
+ FCC "ASRA",1 *47
+ FCC "LSLA",1 *48
+ FCC "ROLA",1 *49
+ FCC "DECA",1 *4A
+ FCC "??  ",8 *4B
+ FCC "INCA",1 *4C
+ FCC "TSTA",1 *4D
+ FCC "??  ",8 *4E
+ FCC "CLRA",1 *4F
+ FCC "NEGB",1 *50
+ FCC "??  ",8 *51
+ FCC "??  ",8 *52
+ FCC "COMB",1 *53
+ FCC "LSRB",1 *54
+ FCC "??  ",8 *55
+ FCC "RORB",1 *56
+ FCC "ASRB",1 *57
+ FCC "LSLB",1 *58
+ FCC "ROLB",1 *59
+ FCC "DECB",1 *5A
+ FCC "??  ",8 *5B
+ FCC "INCB",1 *5C
+ FCC "TSTB",1 *5D
+ FCC "??  ",8 *5E
+ FCC "CLRB",1 *5F
+ FCC "NEG ",3 *60
+ FCC "??  ",8 *61
+ FCC "??  ",8 *62
+ FCC "COM ",3 *63
+ FCC "LSR ",3 *64
+ FCC "??  ",8 *65
+ FCC "ROR ",3 *66
+ FCC "ASR ",3 *67
+ FCC "LSL ",3 *68
+ FCC "ROL ",3 *69
+ FCC "DEC ",3 *6A
+ FCC "??  ",8 *6B
+ FCC "INC ",3 *6C
+ FCC "TST ",3 *6D
+ FCC "JMP ",3 *6E
+ FCC "CLR ",3 *6F
+ FCC "NEG ",2 *70
+ FCC "??  ",8 *71
+ FCC "??  ",8 *72
+ FCC "COM ",2 *73
+ FCC "LSR ",2 *74
+ FCC "??  ",8 *75
+ FCC "ROR ",2 *76
+ FCC "ASR ",2 *77
+ FCC "LSL ",2 *78
+ FCC "ROL ",2 *79
+ FCC "DEC ",2 *7A
+ FCC "??  ",8 *7B
+ FCC "INC ",2 *7C
+ FCC "TST ",2 *7D
+ FCC "JMP ",2 *7E
+ FCC "CLR ",2 *7F
+ FCC "SUBA",6 *80
+ FCC "CMPA",6 *81
+ FCC "SBCA",6 *82
+ FCC "SUBD",7 *83
+ FCC "ANDA",6 *84
+ FCC "BITA",6 *85
+ FCC "LDA ",6 *86
+ FCC "??  ",8 *87
+ FCC "EORA",6 *88
+ FCC "ADCA",6 *89
+ FCC "ORA ",6 *8A
+ FCC "ADDA",6 *8B
+ FCC "CMPX",7 *8C
+ FCC "BSR ",4 *8D
+ FCC "LDX ",7 *8E
+ FCC "??  ",8 *8F
+ FCC "SUBA",0 *90
+ FCC "CMPA",0 *91
+ FCC "SBCA",0 *92
+ FCC "SUBD",0 *93
+ FCC "ANDA",0 *94
+ FCC "BITA",0 *95
+ FCC "LDA ",0 *96
+ FCC "STA ",0 *97
+ FCC "EORA",0 *98
+ FCC "ADCA",0 *99
+ FCC "ORA ",0 *9A
+ FCC "ADDA",0 *9B
+ FCC "CMPX",0 *9C
+ FCC "JSR ",0 *9D
+ FCC "LDX ",0 *9E
+ FCC "STX ",0 *9F
+ FCC "SUBA",3 *A0
+ FCC "CMPA",3 *A1
+ FCC "SBCA",3 *A2
+ FCC "SUBD",3 *A3
+ FCC "ANDA",3 *A4
+ FCC "BITA",3 *A5
+ FCC "LDA ",3 *A6
+ FCC "STA ",3 *A7
+ FCC "EORA",3 *A8
+ FCC "ADCA",3 *A9
+ FCC "ORA ",3 *AA
+ FCC "ADDA",3 *AB
+ FCC "CMPX",3 *AC
+ FCC "JSR ",3 *AD
+ FCC "LDX ",3 *AE
+ FCC "STX ",3 *AF
+ FCC "SUBA",2 *B0
+ FCC "CMPA",2 *B1
+ FCC "SBCA",2 *B2
+ FCC "SUBD",2 *B3
+ FCC "ANDA",2 *B4
+ FCC "BITA",2 *B5
+ FCC "LDA ",2 *B6
+ FCC "STA ",2 *B7
+ FCC "EORA",2 *B8
+ FCC "ADCA",2 *B9
+ FCC "ORA ",2 *BA
+ FCC "ADDA",2 *BB
+ FCC "CMPX",2 *BC
+ FCC "JSR ",2 *BD
+ FCC "LDX ",2 *BE
+ FCC "STX ",2 *BF
+ FCC "SUBB",6 *C0
+ FCC "CMPB",6 *C1
+ FCC "SBCB",6 *C2
+ FCC "ADDD",7 *C3
+ FCC "ANDB",6 *C4
+ FCC "BITB",6 *C5
+ FCC "LDB ",6 *C6
+ FCC "??  ",8 *C7
+ FCC "EORB",6 *C8
+ FCC "ADCB",6 *C9
+ FCC "ORB ",6 *CA
+ FCC "ADDB",6 *CB
+ FCC "LDD ",7 *CC
+ FCC "??  ",8 *CD
+ FCC "LDU ",7 *CE
+ FCC "??  ",8 *CF
+ FCC "SUBB",0 *D0
+ FCC "CMPB",0 *D1
+ FCC "SBCB",0 *D2
+ FCC "ADDD",0 *D3
+ FCC "ANDB",0 *D4
+ FCC "BITB",0 *D5
+ FCC "LDB ",0 *D6
+ FCC "STB ",0 *D7
+ FCC "EORB",0 *D8
+ FCC "ADCB",0 *D9
+ FCC "ORB ",0 *DA
+ FCC "ADDB",0 *DB
+ FCC "LDD ",0 *DC
+ FCC "STD ",0 *DD
+ FCC "LDU ",0 *DE
+ FCC "STU ",0 *DF
+ FCC "SUBB",3 *E0
+ FCC "CMPB",3 *E1
+ FCC "SBCB",3 *E2
+ FCC "ADDD",3 *E3
+ FCC "ANDB",3 *E4
+ FCC "BITB",3 *E5
+ FCC "LDB ",3 *E6
+ FCC "STB ",3 *E7
+ FCC "EORB",3 *E8
+ FCC "ADCB",3 *E9
+ FCC "ORB ",3 *EA
+ FCC "ADDB",3 *EB
+ FCC "LDD ",3 *EC
+ FCC "STD ",3 *ED
+ FCC "LDU ",3 *EE
+ FCC "STU ",3 *EF
+ FCC "SUBB",2 *F0
+ FCC "CMPB",2 *F1
+ FCC "SBCB",2 *F2
+ FCC "ADDD",2 *F3
+ FCC "ANDB",2 *F4
+ FCC "BITB",2 *F5
+ FCC "LDB ",2 *F6
+ FCC "STB ",2 *F7
+ FCC "EORB",2 *F8
+ FCC "ADCB",2 *F9
+ FCC "ORB ",2 *FA
+ FCC "ADDB",2 *FB
+ FCC "LDD ",2 *FC
+ FCC "STD ",2 *FD
+ FCC "LDU ",2 *FE
+ FCC "STU ",2 *FF
+
+
+OPS10
+ FCB $21
+ FCC "LBRN",5,$22 *1021
+ FCC "LBHI",5,$23 *1022
+ FCC "LBLS",5,$24 *1023
+ FCC "LBHS",5,$25 *1024
+ FCC "LBLO",5,$26 *1025
+ FCC "LBNE",5,$27 *1026
+ FCC "LBEQ",5,$28 *1027
+ FCC "LBVC",5,$29 *1028
+ FCC "LBVS",5,$2A *1029
+ FCC "LBPL",5,$2B *102A
+ FCC "LBMI",5,$2C *102B
+ FCC "LBGE",5,$2D *102C
+ FCC "LBLT",5,$2E *102D
+ FCC "LBGT",5,$2F *102E
+ FCC "LBLE",5,$3F *102F
+ FCC "SWI2",1,$83 *103F
+ FCC "CMPD",7,$8C *1083
+ FCC "CMPY",7,$8E *108C
+ FCC "LDY ",7,$93 *108E
+ FCC "CMPD",0,$9C *1093
+ FCC "CMPY",0,$9E *109C
+ FCC "LDY ",0,$9F *109E
+ FCC "STY ",0,$A3 *109F
+ FCC "CMPD",3,$AC *10A3
+ FCC "CMPY",3,$AE *10AC
+ FCC "LDY ",3,$AF *10AE
+ FCC "STY ",3,$B3 *10AF
+ FCC "CMPD",2,$BC *10B3
+ FCC "CMPY",2,$BE *10BC
+ FCC "LDY ",2,$BF *10BE
+ FCC "STY ",2,$CE *10BF
+ FCC "LDS ",7,$DE *10CE
+ FCC "LDS ",0,$DF *10DE
+ FCC "STS ",0,$EE *10DF
+ FCC "LDS ",3,$EF *10EE
+ FCC "STS ",3,$FE *10EF
+ FCC "LDS ",2,$FF *10FE
+ FCC "STS ",2,$FF
+ FCC "??  ",8
+
+OPS11
+ FCB $3F
+ FCC "SWI3",1,$83 *113F
+ FCC "CMPU",7,$8C *1183
+ FCC "CMPS",7,$93 *118C
+ FCC "CMPU",0,$9C *1193
+ FCC "CMPS",0,$A3 *119C
+ FCC "CMPU",3,$AC *11A3
+ FCC "CMPS",3,$B3 *11AC
+ FCC "CMPU",2,$BC *11B3
+ FCC "CMPS",2,$FF
+ FCC "??  ",8

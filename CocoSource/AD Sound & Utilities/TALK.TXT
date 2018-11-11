@@ -1,0 +1,101 @@
+TIME   SET   10
+ISTALK MACR
+       TFR   B,A
+       SUBB  LSTVIB,S
+       STA   LSTVIB,S
+       INCB
+       CMPB  #3
+       ENDM
+       BSZ   100
+STACK  FDB   0
+       FDB   0
+
+ADWAIT MACR
+       EXG   A,A
+       ENDM
+
+EXEC   ORCC  #$50
+       CLR   $FFDF
+       LDS   #STACK
+       LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       LDX   #1000 *MIN WORD
+       PSHS  X
+       LDX   #3000 *LEN OF SPC
+       PSHS  X
+       LDX   #$E000 *LEN OF WOR
+       PSHS   X
+       LDX   #$1000 *WORD AT
+       PSHS  X
+       BSR   WORD
+       LEAS  +8,S
+       TFR   D,Y
+*Y = LENGTH OF WORD
+       LDX   #$1000
+A@     LDA   ,X+
+       STA   $FF20
+       LDA   #TIME
+B@     DECA
+       BNE   B@
+       LEAY  -1,Y
+       BNE   A@
+       BRA   EXEC
+
+*WORD:
+PC     SET   1
+*VARS PASSED IN
+WSTART SET   PC+2
+LENWOR SET   PC+4
+LENSPC SET   PC+6
+MINWRD SET   PC+8
+*VARS USED IN PROGRAM
+LSTVIB SET   0
+WORD   LEAS  -PC,S
+*INITILIZE AD
+       LDD   #$0100
+       STD   $FF7E
+       ADWAIT
+       LDD   $FF7C
+       STB   LSTVIB,S
+*WAIT FOR 4 BYTES OF VOICE
+A@     LDX   #4
+R@     LDA   #$01
+       STA   $FF7E
+       ADWAIT
+       LDD   $FF7C
+       ISTALK
+       BLO   A@
+       LEAX  -1,X
+       BNE   R@
+       LDY   LENWOR,S
+       LDU   WSTART,S
+       STB   ,U+
+B@     LDX   LENSPC,S
+C@     LDA   #$01
+       STA   $FF7E
+       ADWAIT
+       LDD   $FF7C
+       STB   ,U+
+       LEAY  -1,Y
+       BEQ   EOF
+       ISTALK
+       BHI   C@
+       LEAX  -1,X
+       BNE   C@
+*END OF WORD FOUND (SAY 1000?)
+*LENWOR - Y = LENGTH OF WORD
+       TFR   Y,D
+       LDD   LENWOR,S
+       PSHS  Y
+       SUBD  ,S++
+*D = LENGTH OF WORD + SPACE
+       CMPD  MINWRD,S
+       BLO   A@
+EOF    LEAS  +PC,S
+       RTS
+
+       END   EXEC

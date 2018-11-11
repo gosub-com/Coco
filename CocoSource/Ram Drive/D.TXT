@@ -1,0 +1,90 @@
+       ORG   $E00+$382
+       FCB   $FF
+       FDB   $985
+*THIS MUST BE RELOCATABLE!
+       ORCC  #$50
+       CLR   65497
+       CLR   113
+       LDA   #$3B
+       STA   [$FFFC] *NMI
+       LDA   #$3F
+       STA   $FFA7
+       LDY   #$E000 *TO
+       LDX   #$600  *FROM
+       LDU   #0 *CLEAR VALUE
+A@     LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       CMPX  #$954
+       BLS   A@
+       JMP   $E000
+
+ MSG *-$800," MUST BE UNDE $A00"
+
+       ORG   $E00
+
+        BRA  AUTOEXEC
+
+
+AUTOEXEC
+       BSR   CLS
+       BSR   PRINT
+       FCB   6,2 *Y,X
+ FCC "NO DIR ALLOWED, "
+ FCC "FUCK HEAD!!!",0
+       LDA   $FF01
+       ANDA  #$F7
+       STA   $FF01
+       LDA   $FF03
+       ANDA  #$F7
+       STA   $FF03
+       LDA   $FF23
+       ORA   #8
+       STA   $FF23
+       CLR   $FF20
+       CLRB
+L@     DECB
+       BNE    L@
+       COM   $FF20
+       BRA   L@
+
+CLS    LDX   #$400
+       LDB   #96
+A@     STB   ,X+
+       CMPX  #$600
+       BLO   A@
+       RTS
+
+PRINT  PSHS  X,D,U
+       LDX   +6,S
+       LDA   ,X+
+       LDB   #32
+       MUL
+       ADDB  ,X+
+       ADCA  #0
+       LDU   #$400
+       LEAU  D,U
+       LDA   ,X+
+A@     ORA   #64
+       STA   ,U+
+       LDA   ,X+
+       BNE   A@
+       STX   +6,S
+       PULS  X,U,D,PC
+
+       END
+
+
+
+
+
+

@@ -1,0 +1,246 @@
+EXEC
+       LDA   DEFDRV
+       STA   NRMDRV
+       LEAX  MIDDLE,PCR
+       PSHS  X
+       LEAX  WRBYTE,PCR
+       PSHS  X
+       LEAX  RDBYTE,PCR
+       PSHS  X
+       LEAX  RDLINE,PCR
+       PSHS  X
+       LEAX  FCLOSE,PCR
+       PSHS  X
+       LEAX  BOPENI,PCR
+       PSHS  X
+       LEAX  TOPENI,PCR
+       PSHS  X
+       JSR   $B3ED
+       TFR   D,X
+       LDX   +2,X *X ^ STRING
+       PSHS  X *TEXT FILE NAME
+A@     LDA   ,X+
+       BNE   A@
+       JSR   BOPENO
+       PSHS  A *BINARY PATH
+B@     LDA   ,X+
+       BNE   B@
+       LDA   ,X+ *STDOUT
+       PSHS  A
+       LDA   ,X+ *STDIN
+       PSHS  A
+       LDA   #17 *UNUSED PATH
+       PSHS  A
+       LDX   $1F *BOTTOM OF MEM
+       PSHS  X
+*FOR GRAPHICS DISPLAY
+       LEAS  -4,S
+       STS   +2,S
+       LDA   #$88
+D@     STA   ,X+
+       CMPX  +2,S
+       BLO   D@
+       LEAS  +4,S
+       JSR   ASSEM
+       LDA   +5,S *BINARY PATH
+       JSR   FCLOSE
+       CLRA
+       TFR   A,DP
+       LEAS  +20,S
+       JSR   $B4F4
+       LDA   NRMDRV
+       STA   DEFDRV
+       RTS
+
+PATHS  FCB   1
+       BSZ   15
+
+TXTEXT FCC   "TXT"
+BINEXT FCC   "BIN"
+
+DFLTYP EQU   $957
+DNAMBF EQU   $94C
+DEFDRV EQU   $95A
+DCDRV  EQU   $EB
+
+*OPENS A BINAY FILE FOR OUT
+*NOT USED IN ASSEM
+BOPENO ANDCC #$FE
+       PSHS  X,Y,U,D,CC,DP
+       CLRB
+       TFR   B,DP
+       LDU   #BINEXT
+       BSR   DONAME
+       STB   1,S
+       LDX   #$0200 *BINARY
+       STX   DFLTYP
+       LDA   #'O
+       JSR   $C48D *OPEN FILE
+       PULS  X,Y,U,D,CC,DP,PC
+
+*OPENS A TEXT FILE FOR IN
+TOPENI ANDCC #$FE
+       PSHS  X,Y,U,D,CC,DP
+       CLRB
+       TFR   B,DP
+       LDU   #TXTEXT
+       BSR   DONAME
+       STB   1,S
+       LDA   #'I
+       JSR   $C48D *OPEN FILE
+       PULS  X,Y,U,D,CC,DP,PC
+
+*OPENS A BINARY FILE FOR IN
+BOPENI ANDCC #$FE
+       PSHS  X,Y,U,D,CC,DP
+       CLRB
+       TFR   B,DP
+       LDU   #BINEXT
+       BSR   DONAME
+       STB   1,S
+       LDA   #'I
+       JSR   $C48D
+       PULS  X,Y,U,D,CC,DP,PC
+
+
+DONAME LDY   #DNAMBF
+       LDD   #$2000+8
+A@     STA   ,Y+
+       DECB
+       BNE   A@
+*COPY DEFAULT EXTENSION
+       LDB   #3
+B@     LDA   ,U+
+       STA   ,Y+
+       DECB
+       BNE   B@
+*COPY DEFAULT DRIVE
+       LDB   DEFDRV
+       STB   DCDRV
+*GET FILENAME.EXT:DRIVE
+       LDY   #DNAMBF
+*COPY 8 CHR'S TO BUFFER
+       LDB   #8 *CHAR'S LEFT
+C@     LDA   ,X+
+       CMPA  #32 *SPACE
+       BLO   P@
+       CMPA  #':
+       BEQ   D@ *DO DRIVE
+       CMPA  #'.
+       BEQ   E@ *DO EXTENSION
+       CMPA  #'/
+       BEQ   E@ *DO EXTENSION
+       TSTB
+       BEQ   C@
+       STA   ,Y+
+       DECB
+       BRA   C@
+*COPY 3 LETTERS FOR EXTENSION
+E@     LDY   #DNAMBF+8
+       LDB   #3
+G@     LDA   ,X+
+       CMPA  #32
+       BLO   P@
+       CMPA  #':
+       BEQ   D@
+       TSTB
+       BEQ   G@
+       STA   ,Y+
+       DECB
+       BRA   G@
+*DO THE DRIVE
+D@     LDA   ,X
+       SUBA  #'0
+       BCS   P@
+*CHANGE THIS FOR MORE DRIVES
+       CMPA  #4 *BAD DRIVE?
+       BHS   P@
+       STA   DEFDRV
+       STA   DCDRV
+*GET A USEABLE PATH IN B
+P@     CLRB
+       LEAU  PATHS,PCR
+Y@     INCB
+       CMPB  #15
+       BHS   X@ *ALL PATHS USED?
+       LDA   B,U
+       BNE   Y@
+       INC   B,U
+       RTS
+X@     RTS *ERROR ROUGHTEEN
+
+
+FCLOSE ANDCC #$FE
+       PSHS  X,Y,U,D,CC,DP
+       CLRB
+       TFR   B,DP
+       LEAX  PATHS,PCR
+       CLR   A,X
+       STA   $6F
+       TFR   A,B
+       JSR   $A42D
+       PULS  X,Y,U,D,CC,DP,PC
+
+*A=PATH
+*Y=PLACE TO STORE DATA
+*X=LENGTH TO READ
+RDBYTE ANDCC #$FE
+       PSHS  X,Y,U,D,CC,DP
+       CMPX  #0
+       BEQ   R@
+       CLRB
+       TFR   B,DP
+       STA   $6F
+A@     PSHS  X,Y
+       JSR   $C5C4
+       PULS  X,Y
+       STA   ,Y+
+       LEAX  -1,X
+       BNE   A@
+R@     PULS  X,Y,U,D,CC,DP,PC
+
+*A=PATH
+*Y=PLACE TO STORE DATA
+RDLINE ANDCC #$FE
+       PSHS  X,Y,U,D,CC,DP
+       CLRB
+       TFR   B,DP
+       STA   $6F
+A@     PSHS  Y
+       JSR   $C5C4
+       PULS  Y
+       STA   ,Y+
+       CMPA  #32
+       BHS   A@
+       CMPA  #13
+       BNE   B@
+       PULS  X,Y,U,D,CC,DP,PC
+B@     PULS  X,Y,U,D,CC,DP
+       LDY   #0
+       RTS
+*READ A LINE FROM STDIN
+D@     PULS  X,Y,U,D,DP,CC,PC
+
+
+*Y = PLACE TO GET DATA
+*X = # OF BYTES TO SEND
+*A = PATH
+*CAN SEND TO STDOUT ALSO
+WRBYTE ANDCC #$FE
+       PSHS  X,Y,U,D,CC,DP
+       CMPX  #0
+       BEQ   R@
+       CLRB
+       TFR   B,DP
+       STA   $6F
+A@     LDA   ,Y+
+       JSR   [$A002]
+       LEAX  -1,X
+       BNE   A@
+R@     PULS  X,Y,U,D,CC,DP,PC
+
+NRMDRV FCB   0
+
+MIDDLE LDA   NRMDRV
+       STA   DEFDRV
+       RTS

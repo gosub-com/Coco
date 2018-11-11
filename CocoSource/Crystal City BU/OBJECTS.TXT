@@ -1,0 +1,1193 @@
+SHOOTERDIE
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+       JSR   CSHOOTER
+       LDD   NEWPOS,Y
+       ADDD  #$0608
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #$1005
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #$100B
+       STD   NEWPOS,Y
+       JMP   TRKEND
+
+DSHOOTER
+       LDD   NEWPOS,X
+       ISDEAD #-19,#-21
+       CLR   STATUS,X
+       LDD   #SHOOTERDIE
+       STD   TRKDRV,X
+       PULS  D,PC
+
+SHOOTER
+       LDD   #RSHOOTER
+       STD   SHOOTER.GO,Y
+       LDX   #A@
+       STX   TRKDRV,Y
+A@     LDA   EPOS+1,Y
+       SUBA  SCRPOS+1
+       CMPA  #14
+       BHI   B@
+       JMP   TRKEND
+B@     STA   NEWPOS+1,Y
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+       JSR   [SHOOTER.GO,Y]
+       PULS  X,U
+       STX   SHOOTER.GO,Y
+***PHYSICS BOMB!!!!!!!!!!
+       JSR   ARB
+       CMPA  #30
+       BHS   Z@
+***INSERT IT
+       LDD   NEWPOS,Y
+       ADDB  #5
+       SUBA  #6
+       PSHS  Y
+       NEWLINK
+       STD   NEWPOS,Y
+       STA   BOMB.Y,Y
+       CLR   BOMB.Y+1,Y
+       STB   BOMB.X,Y
+       CLR   BOMB.X+1,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDD   #BOMB
+       STD   TRKDRV,Y
+       LDD   #DBOMB
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       JSR   ARB
+       ORA   #%11111000
+       DECA
+       STD   BOMB.VEL.Y,Y
+       JSR   ARB
+       SEX
+       STD   BOMB.VEL.X,Y
+       PULS  Y
+Z@     RETURN
+
+MINEDIE
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+
+       JSR   CMINE
+
+       LDD   NEWPOS,Y
+       ADDD  #$1001
+       JSR   MBLOW
+
+       LDD   NEWPOS,Y
+       ADDD  #$0603
+       JSR   MBLOW
+
+       LDD   NEWPOS,Y
+       ADDD  #$0409
+       JSR   MBLOW
+
+       LDD   NEWPOS,Y
+       ADDD  #$070F
+       JSR   MBLOW
+
+       LDD   NEWPOS,Y
+       ADDD  #$0F11
+       JSR   MBLOW
+
+
+       LDD   NEWPOS,Y
+       ADDD  #$0D09
+       STD   NEWPOS,Y
+
+       JMP   TBLOW
+
+
+MINE   LDU   #MINECOLORS
+       LDA   LEVELON
+       DECA
+       LSLA
+       LDU   A,U
+*U ^ RANDOM COLOR POINTERS
+       JSR   ARB
+       ANDA  #%00001110
+       LDU   A,U
+       STU   MINE.COLOR,Y
+       LDU   #RMINE
+       STU   MINE.GO,Y
+       LDD   #MINEELEC
+       STD   MINE.ELEC,Y
+       LDX   #MG@
+       STX   TRKDRV,Y
+MG@    LDA   EPOS+1,Y
+       SUBA  SCRPOS+1
+       CMPA  #14
+       BHI   A@
+       JMP   TRKEND *DIE
+A@     STA   NEWPOS+1,Y
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+       LDA   MINE.AGE,Y
+       INCA
+       ANDA  #3
+       STA   MINE.AGE,Y
+       BEQ   EA@
+       LDU   MINE.COLOR,Y
+       JSR   [MINE.GO,Y]
+       PULS  X,U
+*X=RETURN, U=PC
+       STX   MINE.GO,Y
+Z@     RETURN
+EA@    LDU   MINE.ELEC,Y
+       BEQ   Z@
+       LDD   ,U++ *OFFSET
+       BNE   EB@
+       LDU   #MINEELEC
+       LDD   ,U++
+EB@    LEAX  D,X
+       JSR   [,U++]
+       LDD   ,U++
+       LDX   EPOS,Y
+       LEAX  D,X
+       JSR   [,U++]
+       STU   MINE.ELEC,Y
+       RETURN
+
+MINECOLORS
+ FDB L1@
+ FDB L1@
+ FDB L2@
+ FDB L2@
+ FDB L1@
+ FDB L1@
+L1@
+ FDB RMINECOLOR
+ FDB WMINECOLOR
+ FDB GMINECOLOR
+ FDB RMINECOLOR
+ FDB WMINECOLOR
+ FDB GMINECOLOR
+ FDB WMINECOLOR
+ FDB GMINECOLOR
+L2@
+ FDB RMINECOLOR
+ FDB WMINECOLOR
+ FDB RMINECOLOR
+ FDB WMINECOLOR
+ FDB RMINECOLOR
+ FDB WMINECOLOR
+ FDB RMINECOLOR
+ FDB WMINECOLOR
+
+ FCB $54,$56,$0D,$E4,$65,$45
+ FCB $04,$55,$54,$31,$34,$56
+ FCB $54,$55,$45
+RMINECOLOR
+ FCB $D4,$43,$23,$DE,$E4,$42
+ FCB $31,$32,$40,$44,$4D
+
+ FCB $98,$9A,$0D,$E8,$A9,$89
+ FCB $08,$99,$98,$31,$38,$9A
+ FCB $98,$99,$89
+GMINECOLOR
+ FCB $D8,$83,$23,$DE,$E8,$82
+ FCB $31,$32,$80,$88,$8D
+
+ FCB $ED,$EF,$0D,$ED,$FE,$DE
+ FCB $0D,$EE,$ED,$31,$3D,$EF
+ FCB $ED,$EE,$DE
+WMINECOLOR
+ FCB $DD,$D3,$23,$DE,$ED,$D2
+ FCB $31,$32,$D0,$DD,$4D
+
+*X ^ OUR OBJECT
+DMINE  LDD   NEWPOS,X
+       ISDEAD #-21,#-20
+*WE ARE HIT!!!
+*GIVE POINTS!!!
+       CLR   STATUS,X
+       LDD   #MINEDIE
+       STD   TRKDRV,X
+       PULS  D,PC
+
+
+DMISSLE LDD NEWPOS,X
+       DECA
+       DECB
+       ISDEAD #-13,#-32
+       CLR   STATUS,X
+       LDD   #MISSLEDIE
+       STD   TRKDRV,X
+
+       PULS  D,PC
+
+MISSLEDIE
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+       JSR   CMISSLEF
+ LDD   NEWPOS,Y
+ ADDD  #4+8*256
+ STD   NEWPOS,Y
+ ADDA  #8
+ JSR   MBLOW
+ ADDA  #8
+ JSR   MBLOW
+ JMP   TBLOW
+
+
+MISSLE LDA   EPOS+1,Y
+       SUBA  SCRPOS+1
+       CMPA  #14
+       BHI   A@
+       JMP   TRKEND *DIE
+A@     STA   NEWPOS+1,Y
+       SRASTER 11,3
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+       JSR   CMISSLEF
+       DEC   NEWPOS,Y *UP
+       BNE   B@
+       JMP   TRKEND *DEAD
+B@     LDA   MISSLE.DRIFT,Y
+       BEQ   C@  *NEVER DRIFT
+       BMI   AL@ *ALWAYS DRIFT
+       EORA  #%01000000
+       STA   MISSLE.DRIFT,Y
+       ANDA  #%01000000
+       BEQ   C@
+AL@    INC   NEWPOS+1,Y *DRIFT
+C@     LDD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       STX   $FFA0
+       LDX   EPOS,Y
+
+       JSR   RMISSLEF
+ RETURN
+
+
+DPARA  LDD NEWPOS,X
+       ISDEAD #-17,#-34
+       CLR   STATUS,X
+       LDD   #DIEPARA
+       STD   TRKDRV,X
+
+       PULS  D,PC
+
+DIEPARA
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       INCB
+       STB   $FFA2
+       LDX   EPOS,Y
+       JSR   CPARA
+       LDB   #$31
+       STB   $FFA2
+       JMP   TRKEND
+
+
+PARA   LDA   EPOS+1,Y
+       SUBA  SCRPOS+1
+       CMPA  #14
+       BHI   A@
+       JMP   TRKEND *DIE
+A@     STA   NEWPOS+1,Y
+       SRASTER 12,1
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       INCB
+       STB   $FFA2
+       LDX   EPOS,Y
+       JSR   CPARA
+       DEC   MISSLE.DRIFT,Y
+       BNE   B@
+       INC   NEWPOS,Y *UP
+       LDB   #5
+       STB   MISSLE.DRIFT,Y
+B@     LDD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       EXG   X,D
+       STD   $FFA0
+       INCB
+       STB   $FFA2
+       JSR   RPARA
+       LDB   #$31
+       STB   $FFA2
+ RETURN
+
+
+
+*HELL
+DHELL  LDD   NEWPOS,X
+       ISDEAD #-36,#-16
+       CLR   STATUS,X
+       LDD   #HELLDIE
+       STD   TRKDRV,X
+       PULS  D,PC
+
+HELLDIE
+       LDX   EPOS,Y
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       JSR   [HELL.PICT,Y]
+       LDD   NEWPOS,Y
+       ADDD  #23
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #4*256+17
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #7*256+2
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #8*256+14
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #10*256+24
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #16*256+15
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #16*256+24
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #11
+       STD   NEWPOS,Y
+       JMP   TBLOW
+
+HELL
+
+       INC   IS.HELL
+
+DRAWHELL
+ RASTER
+ LDD   EBLOCK,Y
+ STD   $FFA0
+ LDX   EPOS,Y
+
+ JSR   [HELL.PICT,Y]
+
+       LDD   HELL.VX,Y
+       ADDD  HELL.X,Y
+       STD   HELL.X,Y
+
+       LDD   HELL.VY,Y
+       ADDD  HELL.Y,Y
+       STD   HELL.Y,Y
+
+       LDB   HELL.X,Y
+       STD   NEWPOS,Y
+       CMPA  #1
+       BHI   HI@
+       LDD   HELL.VY,Y
+       NEGD
+       STD   HELL.VY,Y
+       LDD   #$0200
+       STD   HELL.Y,Y
+       LDD   NEWPOS,Y
+HI@    CMPB  #16
+       BHI   A@
+DIE@   JMP   TRKEND
+A@     CMPB  #232
+       BHI   DIE@
+       CMPA  #180
+       BHI   DIE@
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       LDX   EPOS,Y
+       LDU   #HELLTEST
+       JSR   GROUNDED
+       BPL   B@
+       JMP   HELLDIE *DIE
+       FDB   0
+       FDB   +16*256+9
+       FDB   +16*256+29
+       FDB   +11*256+30
+       FDB   +9*256-1
+       FDB   +4*256-1
+       FDB   +28
+       FDB   6
+HELLTEST
+B@     LDD   ,U
+       BEQ   DRHELL
+       ADDD  NEWPOS,Y
+       JSR   POINTDEAD
+       LBNE  HELLDIE
+       LDX   EPOS,Y
+
+DRHELL
+ LDA   HELL.X+1,Y
+ BMI   MOHELL
+ LDU   HELL.PICT,Y
+ JSR   +3,U *RHELL
+ JMP   [HELL.BLADE,Y]
+MOHELL
+ LDU   HELL.PICT,Y
+ JSR   +6,U *OHELL
+ JMP   [HELL.BLADE,Y]
+
+BLADE0 LDD   #0
+       BSR   CBLADE0
+       LDD   #BLADE1
+       STD   HELL.BLADE,Y
+       RETURN
+
+BLADE1 LDD   #0
+       BSR   CBLADE1
+       LDD   #BLADE2
+       STD   HELL.BLADE,Y
+       RETURN
+
+
+BLADE2 LDD   #0
+       BSR   CBLADE2
+       LDD   #BLADE3
+       STD   HELL.BLADE,Y
+       RETURN
+
+BLADE3 LDD   #BLADE4
+       STD   HELL.BLADE,Y
+       RETURN
+
+BLADE4 LDD   #0
+       BSR   CBLADE2
+       LDD   #BLADE5
+       STD   HELL.BLADE,Y
+       RETURN
+
+BLADE5 LDD   #0
+       BSR   CBLADE1
+       LDD   #BLADE0
+       STD   HELL.BLADE,Y
+       RETURN
+
+CBLADE0
+       STD   +13,X
+       STA   +15,X
+       STD   +19,X
+       STA   +21,X
+CBLADE1
+       STD   +10,X
+       STA   +12,X
+       STD   +22,X
+       STA   +24,X
+CBLADE2
+       STD   +6,X
+       STD   +8,X
+       STD   +25,X
+       STD   +27,X
+       RTS
+
+
+*JET
+DJET   LDD   NEWPOS,X
+       ISDEAD #-24,#-13
+       CLR   STATUS,X
+       LDD   #JETDIE
+       STD   TRKDRV,X
+
+       PULS  D,PC
+
+JETDIE LDX   EPOS,Y
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       JSR   CJET
+       LDD   NEWPOS,Y
+       ADDD  #$1003
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #$0C0A
+       JSR   MBLOW
+       JMP   TBLOW
+
+JET
+
+DRAWJET
+       INC   IS.JET
+
+ RASTER
+ LDD   EBLOCK,Y
+ STD   $FFA0
+ LDX   EPOS,Y
+
+ JSR   CJET
+
+       LDD   JET.AX,Y
+       ADDD  JET.VX,Y
+       STD   JET.VX,Y
+       ADDD  JET.X,Y
+       STD   JET.X,Y
+
+       LDD   JET.AY,Y
+       ADDD  JET.VY,Y
+       STD   JET.VY,Y
+       ADDD  JET.Y,Y
+       STD   JET.Y,Y
+
+       LDB   JET.X,Y
+       STD   NEWPOS,Y
+
+       CMPA  #1
+       BHI   HI@
+***REVERSE DIRECTION OF JET
+       LDD   JET.VY,Y
+       NEGD
+       STD   JET.VY,Y
+       LDD   #$0200
+       STD   JET.Y,Y
+       LDD   NEWPOS,Y
+HI@    CMPB  #25
+       BHI   A@
+DIE@   JMP   TRKEND
+A@     CMPB  #255-25
+       BHI   DIE@
+       CMPA  #240
+       BHI   DIE@
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       LDX   EPOS,Y
+       LDU   #JETTEST
+       JSR   GROUNDED
+       BPL   B@
+       JMP   JETDIE *DIE
+       FDB   0
+       FDB   +11*256+6
+       FDB   +9*256+22
+       FDB   +4*256+17
+       FDB   +7
+       FDB   +1
+JETTEST
+B@     LDD   ,U
+       BEQ   DRJET
+       ADDD  NEWPOS,Y
+       JSR   POINTDEAD
+       LBNE  JETDIE
+       LDX   EPOS,Y
+
+DRJET
+ LDB   JET.X+1,Y
+ BMI  MOJET
+ JSR   RJET
+ RETURN
+MOJET
+ JSR   OJET
+ RETURN
+
+
+*SHIELD
+DSHIELD LDD   NEWPOS,X
+       ISDEAD #-23,#-13
+       CLR   STATUS,X
+       LDD   #SHIELDDIE
+       STD   TRKDRV,X
+       PULS  D,PC
+
+SHIELDDIE LDX   EPOS,Y
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       JSR   CSHIELD
+       LDD   NEWPOS,Y
+       ADDD  #$1003
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #$0C0A
+       JSR   MBLOW
+       JMP   TBLOW
+
+SHIELD
+ RASTER
+ LDD   EBLOCK,Y
+ STD   $FFA0
+ LDX   EPOS,Y
+ JSR   CSHIELD
+       LDD   NEWPOS,Y
+       INCB
+       STB   NEWPOS+1,Y
+       CMPB  #231
+       BLS   A@
+DIE@   JMP   TRKEND
+A@     ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       LDX   EPOS,Y
+       LDU   #SHIELDTEST
+       JSR   GROUNDED
+       BPL   B@
+       JMP   SHIELDDIE
+       FDB   0
+       FDB   10
+       FDB   19+2*256
+       FDB   21+6*256
+       FDB   19+11*256
+       FDB   10+13*256
+SHIELDTEST
+B@     LDD   ,U
+       BEQ   D@
+       ADDD  NEWPOS,Y
+       JSR   POINTDEAD
+       LBNE  SHIELDDIE
+       LDX   EPOS,Y
+D@     JSR   RSHIELD
+ RETURN
+
+
+*SAUCER
+DSAUCER LDD   NEWPOS,X
+       ISDEAD #-16,#-15
+       CLR   STATUS,X
+       LDD   #SAUCERDIE
+       STD   TRKDRV,X
+       PULS  D,PC
+
+SAUCERDIE LDX   EPOS,Y
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       JSR   CSAUCER
+       LDD   NEWPOS,Y
+       ADDD  #$1003
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #$0C0A
+       JSR   MBLOW
+       JMP   TBLOW
+
+SAUCER
+ RASTER
+ LDD   EBLOCK,Y
+ STD   $FFA0
+ LDX   EPOS,Y
+ JSR   CSAUCER
+       LDD   JET.AY,Y
+       ADDD  JET.VY,Y
+       STD   JET.VY,Y
+       LDX   #SIN+128
+       LDA   A,X
+       LDB   JET.Y+1,Y
+       MUL
+       ADDA  JET.Y,Y
+       STA   IS.BOMB
+       LDB   NEWPOS+1,Y
+       DECB
+       STB   NEWPOS+1,Y
+       CMPB  #14
+       BHI   A@
+DIE@   JMP   TRKEND
+A@     STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       LDX   EPOS,Y
+       LDU   #SAUCERTEST
+       JSR   GROUNDED
+       BPL   B@
+       JMP   SAUCERDIE
+       FDB   0
+       FDB   2+2*256
+       FDB   9+2*256
+       FDB   12+9*256
+       FDB   5+10*256
+       FDB   0+9*256
+SAUCERTEST
+B@     LDD   ,U
+       BEQ   D@
+       ADDD  NEWPOS,Y
+       JSR   POINTDEAD
+       LBNE  SAUCERDIE
+       LDX   EPOS,Y
+D@     JSR   RSAUCER
+ RETURN
+
+MINEELEC
+ FDB $0104,ME3BC,$0104,ME1B
+ FDB $010A,ME3CC,$000A,ME1C
+ FDB $0800,ME3AC,$0800,ME1A
+ FDB $0810,ME3DC,$080F,ME1D
+
+ FDB $0104,ME1BC,$0004,ME2B
+ FDB $000A,ME1CC,$000A,ME2C
+ FDB $0800,ME1AC,$0700,ME2A
+ FDB $080F,ME1DC,$0710,ME2D
+
+ FDB $0004,ME2BC,$0104,ME3B
+ FDB $000A,ME2CC,$010A,ME3C
+ FDB $0700,ME2AC,$0800,ME3A
+ FDB $0710,ME2DC,$0810,ME3D
+ FDB 0
+
+
+
+ME1A
+ LDD  #$3120
+ STD  $0201,X
+ LDB  #$10
+ STB  $0002,X
+ STB  $0401,X
+ LDB  #$03
+ STB  $0102,X
+ STB  $0501,X
+ LDB  #$02
+ STB  $0300,X
+*BYTES: $001F
+*CYCLES: $0037
+ RTS
+
+ME1AC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STA  $FFF3,X
+ ABX
+ STU  $FFF4,X
+ ABX
+ STU  $FFF4,X
+ ABX
+ STU  $FFF4,X
+ ABX
+ STA  $FFF6,X
+ ABX
+ STU  $FFF7,X
+*BYTES: $0019
+*CYCLES: $003C
+ PULS U,PC
+ME2A
+ LDB   +3,X
+ ANDB #$0F
+ ORB  #$10
+ LDA  #$23
+ STD  $0001,X
+ LDB   #$10
+ STB  $0401,X
+ STB  $0600,X
+ LDB  #$01
+ STB  $0100,X
+ LDB  #$30
+ STB  $0201,X
+ LDB  #$02
+ STB  $0301,X
+ LDB  #$03
+ STB  $0500,X
+*BYTES: $0025
+*CYCLES: $0041
+ RTS
+ME2AC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF2,X
+ ABX
+ STU  $FFF2,X
+ ABX
+ STA  $FFF4,X
+ ABX
+ STU  $FFF5,X
+ ABX
+ STA  $FFF6,X
+ ABX
+ STU  $FFF6,X
+ ABX
+ STA  $FFF7,X
+*BYTES: $001C
+*CYCLES: $0044
+ PULS U,PC
+ME3A
+ LDD  #$0323
+ STD  $0100,X
+ LDB  #$20
+ STB  $0002,X
+ STB  $0200,X
+ LDB  #$01
+ STB  $0300,X
+ STB  $0500,X
+ LDB  #$30
+ STB  $0401,X
+*BYTES: $001F
+*CYCLES: $0037
+ RTS
+ME3AC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STA  $FFF3,X
+ ABX
+ STU  $FFF2,X
+ STA  $FFF4,X
+ ABX
+ STA  $FFF3,X
+ ABX
+ STU  $FFF4,X
+ ABX
+ STA  $FFF6,X
+ ABX
+ STU  $FFF6,X
+*BYTES: $001B
+*CYCLES: $0040
+ PULS U,PC
+ME1B
+ LDD  #$2010
+ STD  $0100,X
+ STA  $0300,X
+ STB  $0400,X
+ LDA  #$30
+ STD  $0302,X
+ LDB  #$02
+ STD  $0200,X
+ STB  $0402,X
+ LDB  #$03
+ STB  $0000,X
+ STB  $0203,X
+*BYTES: $0027
+*CYCLES: $0048
+ RTS
+ME1BC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF1,X
+ ABX
+ STU  $FFF2,X
+ ABX
+ STU  $FFF3,X
+ STU  $FFF5,X
+ STA  $FFF7,X
+ ABX
+ STA  $FFF4,X
+ STU  $FFF6,X
+ ABX
+ STA  $FFF5,X
+ STU  $FFF7,X
+*BYTES: $001E
+*CYCLES: $004A
+ PULS U,PC
+ME2B
+ LDD  #$3030
+ STD  $0102,X
+ LDA   +$0204,X
+ ANDA  #$0F
+ ORA  #$30
+ STA  $0204,X
+ LDD  #$1001
+ STD  $0202,X
+ LDD  #$3120
+ STD  $0500,X
+ STB  $0302,X
+ LDB  #$02
+ STB  $0002,X
+ LDB  #$03
+ STB  $0401,X
+*BYTES: $0027
+*CYCLES: $0045
+ RTS
+ME2BC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF3,X
+ ABX
+ STU  $FFF4,X
+ ABX
+ STU  $FFF5,X
+ STA  $FFF7,X
+ ABX
+ STA  $FFF6,X
+ ABX
+ STU  $FFF6,X
+ ABX
+ STU  $FFF6,X
+*BYTES: $001B
+*CYCLES: $0042
+ PULS U,PC
+ME3B
+ LDD  #$2020
+ STD  $0101,X
+ STA  $0400,X
+ LDA  #$03
+ STD  $0202,X
+ STA  $0001,X
+ STA  $0300,X
+ LDB  $0104,X
+ ANDB #$0F
+ ORB  #$10
+ STD  $0103,X
+ LDB  #$01
+ STB  $0200,X
+ STB  $0302,X
+*BYTES: $0027
+*CYCLES: $0049
+ RTS
+ME3BC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF2,X
+ ABX
+ STU  $FFF3,X
+ STU  $FFF5,X
+ ABX
+ STU  $FFF3,X
+ STU  $FFF5,X
+ ABX
+ STU  $FFF4,X
+ STU  $FFF6,X
+ ABX
+ STA  $FFF5,X
+*BYTES: $001C
+*CYCLES: $0046
+ PULS U,PC
+ME1D
+ LDD  #$3210
+ STD  $0201,X
+ STB  $0001,X
+ LDB  #$02
+ STB  $0100,X
+ LDB  #$03
+ STB  $0302,X
+ LDB  #$20
+ STB  $0402,X
+ LDB  #$01
+ STB  $0501,X
+*BYTES: $0021
+*CYCLES: $0039
+ RTS
+ME1DC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STA  $FFF2,X
+ ABX
+ STU  $FFF2,X
+ ABX
+ STU  $FFF4,X
+ ABX
+ STU  $FFF6,X
+ ABX
+ STA  $FFF7,X
+ ABX
+ STU  $FFF7,X
+*BYTES: $0019
+*CYCLES: $003C
+ PULS U,PC
+ME2D
+ LDD  #$2310
+ STD  $0000,X
+ LDB  #$02
+ STB  $0101,X
+ LDB  #$30
+ STB  $0201,X
+ LDB  #$01
+ STB  $0300,X
+ LDB  #$20
+ STB  $0401,X
+ STB  $0602,X
+ LDB  #$03
+ STB  $0501,X
+*BYTES: $0027
+*CYCLES: $0042
+ RTS
+ME2DC
+ PSHS  U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF1,X
+ ABX
+ STU  $FFF3,X
+ ABX
+ STA  $FFF4,X
+ ABX
+ STU  $FFF4,X
+ ABX
+ STA  $FFF6,X
+ ABX
+ STU  $FFF7,X
+ ABX
+ STA  $FFF9,X
+*BYTES: $001C
+*CYCLES: $0044
+ PULS U,PC
+ME3D
+ LDD  #$0321
+ STD  $0100,X
+ LDB  #$20
+ STB  $0000,X
+ LDB  #$30
+ STB  $0202,X
+ STB  $0401,X
+ LDB  #$02
+ STB  $0301,X
+ STB  $0501,X
+*BYTES: $001F
+*CYCLES: $0036
+ RTS
+ME3DC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STA  $FFF1,X
+ ABX
+ STU  $FFF2,X
+ STA  $FFF4,X
+ ABX
+ STA  $FFF5,X
+ ABX
+ STU  $FFF5,X
+ ABX
+ STA  $FFF6,X
+ ABX
+ STU  $FFF7,X
+*BYTES: $001B
+*CYCLES: $0040
+ PULS U,PC
+ME1C
+ LDD  #$2030
+ STD  $0103,X
+ STA  $0204,X
+ STB  $0404,X
+ LDD  #$3020
+ STD  $0301,X
+ LDB  #$01
+ STB  $0003,X
+ STB  $0401,X
+ LDB  #$02
+ STB  $0200,X
+ LDB  #$03
+ STB  $0202,X
+ LDB  #$10
+ STB  $0304,X
+*BYTES: $0030
+*CYCLES: $0055
+ RTS
+ME1CC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF4,X
+ ABX
+ STU  $FFF5,X
+ ABX
+ STU  $FFF3,X
+ STU  $FFF5,X
+ STA  $FFF7,X
+ ABX
+ STU  $FFF5,X
+ STA  $FFF8,X
+ ABX
+ STU  $FFF6,X
+ STA  $FFF9,X
+*BYTES: $001E
+*CYCLES: $004A
+ PULS U,PC
+ME2C
+ LDD  #$1030
+ STD  $0101,X
+ STA  $0202,X
+ LDA  #$12
+ LDB   +$504,X
+ ANDB #$0F
+ ORB  #$30
+ STD  $0503,X
+ LDB  #$02
+ STB  $0001,X
+ LDB  #$23
+ STB  $0200,X
+ LDB  #$20
+ STB  $0302,X
+ LDB  #$03
+ STB  $0402,X
+*BYTES: $0027
+*CYCLES: $0044
+ RTS
+ME2CC
+ PSHS U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF2,X
+ ABX
+ STU  $FFF3,X
+ ABX
+ STU  $FFF3,X
+ STA  $FFF5,X
+ ABX
+ STA  $FFF6,X
+ ABX
+ STU  $FFF7,X
+ ABX
+ STU  $FFF9,X
+*BYTES: $001B
+*CYCLES: $0042
+ PULS U,PC
+ME3C
+ LDD  #$2020
+ STD  $0102,X
+ LDB  #$01
+ STB  $0002,X
+ LDB  #$13
+ STB  $0100,X
+ LDB  #$23
+ STB  $0201,X
+ LDB  #$03
+ STB  $0203,X
+ LDB  #$02
+ STB  $0301,X
+ STB  $0303,X
+ LDB   $0404,X
+ ANDB #$0F
+ ORB  #$10
+ STB  $0404,X
+*BYTES: $002D
+*CYCLES: $004D
+ RTS
+ME3CC
+ PSHS  U
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF3,X
+ ABX
+ STU  $FFF2,X
+ STU  $FFF4,X
+ ABX
+ STU  $FFF4,X
+ STU  $FFF6,X
+ ABX
+ STU  $FFF5,X
+ STU  $FFF7,X
+ ABX
+ STA  $FFF9,X
+*BYTES: $001C
+*CYCLES: $0046
+ PULS U,PC

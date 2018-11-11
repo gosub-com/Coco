@@ -1,0 +1,997 @@
+*Y ^ OBJECT
+*U ^ TEST SPOT TABLE
+*X ^ OBJECT
+GROUNDED
+       LDD   ,--U
+A@     LDA   D,X
+       ANDA  #%11001100
+       BNE   HIT@
+       LDD   ,--U
+       BNE   A@
+*NOT HIT - FIX GROUND
+       LDA   GROUND,Y
+       CMPA  #4
+       BHS   B@
+       INCA
+       STA   GROUND,Y
+       RTS
+B@     BEQ   ?RTS
+       DECA
+       STA   GROUND,Y
+       RTS
+HIT@   DEC   GROUND,Y
+       RTS
+
+JOYBIT MACR
+       \1B   #\0
+       STB   <$20
+       TST   D,X
+       LDA   <$00
+       BMI   B@
+       ANDB  #\0!X$FF
+B@
+       ENDM
+
+JOYTABY
+ FDB -512,-439,-366,-292,-219
+ FDB -146,-73,0,0,73,146,219
+ FDB 292,366,439,512
+
+JOYTABX
+ FDB -384,-329,-274,-219,-164
+ FDB -109,-54,0,0,54,109,164
+ FDB 219,274,329,384
+
+JOYSTK MACR
+       JOYBIT 128,LD
+       JOYBIT 64,OR
+       JOYBIT 32,OR
+       JOYBIT 16,OR
+       ENDM
+
+*ENTRY:X ^ PLACE TO STORE X POS
+*EXIT:^X = X POS
+*      B = Y POS
+JOYSTK PSHS  CC,DP
+       LDD   #%1111111100110100
+       CWAI  #$FF
+       ORCC  #$50
+       TFR   A,DP
+       STA   <$02
+       LDA   <$00
+       ANDA  #1
+       STA   >BUTPRESS
+       LDA   <$20
+       STA   SND@+1 *SAVE SOUND
+       STB   <$23 *DISENABLE SND
+       JOYSTK
+       STB   ,X *SAVE XPOS
+       LDA   #%00111100
+       STA   <$01 *JOYSTK 1
+       JOYSTK
+SND@   LDA   #0
+       STA   <$20 *RESTORE SND
+       LDA   #%00110100
+       STA   <$01
+       LDA   #%00111100
+       STA   <$23 *ENABLE SND
+       PULS  DP,CC,PC
+
+DSHIP
+       LDA   STATUS,Y
+       ANDA  #2  *CAN NOT HIT
+       BEQ   A@  *YOUR BULLETS
+       JMP   ,U  *OR YOUR SHIP
+A@     LDD   NEWPOS,X
+       ISDEAD #-22,#-14
+*WE HAVE BEEN HIT
+       LDA   RFUEL,Y
+       BPL   B@
+       JMP   ,U *ITS +?
+B@     PSHS  A
+       LDA   FUEL
+       SUBA  ,S+
+       BCC   FA@
+       LDD   #GAMEOVER
+       STD   TRKDRV,X
+       CLRA
+FA@    STA   FUEL
+       PSHS  Y
+       LEAY  ,X
+       BSR   HITSHIP
+       PULS  Y
+       PULS  D,PC
+
+
+
+HITSHIP
+       LDD   #BANG
+       STD   BACKCOLOR
+       LDA   #10
+       STA   GROUND,Y
+       LDD   NEWPOS,Y
+       ADDD  #$0508
+       JSR   MBLOW
+       RTS
+
+GAMEWON
+       JSR   VSYNC
+       LDA   DOBOSS
+       BEQ   GAMEWON
+
+*DONE WITH LEVEL
+NEXTLEVEL
+       PSHS  Y
+       LDD   #0
+       STD   BOSSPITCH
+       INC   PRINTINGSCREEN
+       CLR   SCROLL
+       JSR   VSYNC
+       JSR   PARCLEAR
+       LDA   #10
+       JSR   VSYNCA
+
+       LDD   #SCRBLACK
+       STD   SCRLINE
+
+       LDA   #4
+       JSR   VSYNCA
+
+       JSR   CLS
+
+*SET LINE COLORS
+       LDU   #SCR.LINE.COLOR
+       LDX   #$00FF
+       LDA   #24
+A@     STX   ,U++
+       DECA
+       BNE   A@
+
+*DO SCORE
+DO@    JSR   COPYS
+       FDB   SCR.MEM+40*2+20-8
+ FCC "CONGRATULATIONS!",0
+       LDA   LEVELON
+       CMPA  #6
+       BNE   NL@
+       JSR   COPYS
+       FDB   SCR.MEM+40*3+20-5
+ FCC "YOU WIN!!!",0
+       BRA   WN@
+NL@    JSR   COPYS
+       FDB   SCR.MEM+40*3+20-13
+ FCC "YOU HAVE DEFEATED LEVEL",0
+       LDA   LEVELON
+       ADDA  #'0
+     STA SCR.MEM+40*3+20-13+24
+WN@    LDU   #RTS
+       JSR   PRINTSCREEN
+       LDA   #1
+       STA   SCROLL *NO SCROLL
+
+       JSR   COPY
+       FDB   PALETTE
+       FCB   16
+       FCB   0,0,0,0
+       FCB   R1,R2,R3
+       FCB   G1,G2,G3
+       FCB   B1,B2,B3
+       FCB   7,56,63  *GREY
+
+A@     LDA   EXPLOSIAN
+       BNE   A@
+
+*EXPLOSIAN IS DONE
+*INITIALIZE FIRE WORKS
+       JSR   NEWLINK
+       LDD   #FIREWORKS
+       STD   TRKDRV,Y
+
+P@     LDD   #0
+       STD   BOSSPITCH
+
+       JSR   PUTSPCAT
+       FDB   191*256+128-32*2
+ FCC "HIT THE FIRE BUTTON"
+ FCC " TO CONTINUE",0
+       PULS  Y
+
+
+       LDD   #PA@
+       STD   TRKDRV,Y
+PA@    LDA   $FF
+       STA   $FF02
+       LDA   $FF00
+       ANDA  #1
+       BNE   ?RTS
+
+*GO LOAD NEXT LEVEL
+       LDA   LEVELON
+       CMPA  #6
+       LBNE  CONT@
+       LDA   CURSCORE+2
+       ADDA  CURSCORE+2
+       DAA
+       STA   CURSCORE+2
+       LDA   CURSCORE+1
+       ADCA  CURSCORE+1
+       DAA
+       STA   CURSCORE+1
+       LDA   CURSCORE
+       ADCA  CURSCORE
+       DAA
+       STA   CURSCORE
+       JMP   GAMEOVERS
+SHIP
+       CLR   STATUS,Y
+       LDD   #0
+       STD   TIMER
+       JSR   INKEY
+       BEQ   A@
+*TEST FOR C, R, 1, 2, 3
+       CMPA  #'1
+       BLO   NN@
+       CMPA  #HILEVEL+'0
+       BHI   NN@
+       SUBA  #'1
+       LBRA  GOLEV@
+*WE HAVE A NUMBER
+NN@    CMPA  #'f
+       BNE   CM@
+FT@    JSR   FINETUNE
+       JMP   DOGAME
+CM@    CMPA  #'t
+       BEQ   FT@
+       CMPA  #'c
+       BNE   D@
+*COMPOSIT
+       CLRA
+       JSR   CHCOLOR
+       BRA   A@
+D@     CMPA  #'r
+       BNE   A@
+*RGB (A HAS A NON ZERO #)
+       JSR   CHCOLOR
+       BRA   A@
+A@     LDA   #$FF
+       STA   $FF02
+       LDA   $FF00
+       ANDA  #1
+       BEQ   RUN@
+       JSR   TITLEOBJECTS
+       RETURN
+RUN@   CLRA
+GOLEV@ STA   LEVELON
+       LDB   #50
+       LDX   #0
+       LDU   #0
+       LDY   SEED
+       DISABLE
+       BRA   GO@
+CONT@  DISABLE
+       LDA   LEVELON
+       LDB   FUEL
+       LDX   CURSCORE
+       LDU   CURSCORE+1
+       LDY   SEED
+GO@    PSHS  X,Y,U,D
+       JSR   INITVARS
+       PULS  X,Y,U,D
+       STY   SEED
+       STA   LEVELON
+       STB   FUEL
+       STX   CURSCORE
+       STU   CURSCORE+1
+       JSR   CLEARSCREEN
+       ENABLE
+*THIS IS TO SET PALETTES
+       DISABLE
+*WE DON'T EXIST NOW.  WE WILL
+*RECREATE OURSELVES LATER.
+
+A@     JSR   ISCRYSTAL
+       LDB   LEVELON
+       INCB
+       JSR   LOADLEVEL
+       BEQ   OK@
+       JSR   IOPROMPT
+       BRA   A@
+OK@    JSR   DISKDEINIT
+       INC   LEVELON
+*WE HAVE LOADED LEVEL
+
+       LDD   #SCRGAME
+       STD   SCRLINE
+       JSR   CLEARSCREEN
+       JSR   BLACKPALETTE
+       LDX   #NEWPALETTES
+       LDU   #PALETTE
+       LDB   #16
+       JSR   MOVE
+
+       LDD   #191*256+48
+       JSR   LOCATE
+       JSR   PUTSPC
+ FCC " SCORE:          "
+ FCC "SHIELD:",0
+
+       ENABLE
+
+*CORRECTION FOR ERROR
+       LDD   #2
+       STD   TIMER
+       CLR   SCROLL
+
+*CREATE OURSELVES
+       JSR   NEWLINK
+       LDD   SCREENBLOCKS
+       STD   EBLOCK,Y
+       LDD   #0
+       STD   EPOS,Y
+       LDD   #$8080
+       STD   SHPX,Y
+       STD   SHPY,Y
+       LDA   #10
+       STA   GROUND,Y
+       LDD   #DSHIP
+       STD   DEATH,Y
+       LDA   #$80+2 *SHIP
+       STA   STATUS,Y
+       LDX   #A@
+       STX   TRKDRV,Y
+****************************
+*THIS IS WHERE OUR SHIP BEGINS
+*PLAYING GAME
+***************************
+A@
+*TEST FOR BOSS
+       LDA   DOBOSS
+       BEQ   B@
+       BMI   C@
+*MAKE A NEW BOSS
+       PSHS  Y
+       COM   DOBOSS
+       JSR   NEWLINK
+       LDD   #BOSSPROG
+       STD   TRKDRV,Y
+       PULS  Y
+       BRA   B@
+*IS BOSS DEAD YET?
+C@     LDA   DOBOSS
+       CMPA  #128
+       LBEQ  NEXTLEVEL
+B@     LDX   #X@+1
+       CWAI  #$FF
+       JSR   JOYSTK
+       LSRB
+       LSRB
+       LSRB
+       LDX   #JOYTABY
+       LDD   B,X
+       ADDD  SHPY,Y
+       CMPA  #2
+       BHI   Y1@
+       LDA   #2
+       BRA   YY@
+Y1@    CMPA  #192-15
+       BLO   YY@
+       LDA   #192-15
+YY@    STD   SHPY,Y
+       STA   SHIPY
+       STA   NEWPOS,Y
+X@     LDB   #0
+       LSRB
+       LSRB
+       LSRB
+       LDX   #JOYTABX
+       LDD   B,X
+       ADDD  SHPX,Y
+       CMPA  #50
+       BHI   X1@
+       LDA   #50
+       BRA   XX@
+X1@    CMPA  #160+46-18
+       BLO   XX@
+       LDA   #160+46-18
+XX@    STD   SHPX,Y
+       STA   SHIPX
+       STA   NEWPOS+1,Y
+
+       LDA   BUTPRESS
+       CMPA  BUTP
+       BEQ   A@
+       STA   BUTP
+       BNE   A@
+****FIRE!!!
+       PSHS  Y
+       JSR   NEWLINK
+       LEAX  ,Y
+       PULS  Y
+       LDD   NEWPOS,Y
+       ADDD  #$0910
+       STD   NEWPOS,X
+       LDD   #SHOOT
+       STD   TRKDRV,X
+       LDA   #2
+       STA   STATUS,X
+       LDA   #$40
+       STA   IS.SHOT
+A@
+
+*ERASE SHIP
+       RASTER
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+       JSR   CSHIP
+
+*ARE WE DONE WITH GAME
+       LDA   LEVELON
+       CMPA  #6
+       BNE   Z@
+       LDX   TIMER
+       CMPX  #10560
+       BLO   Z@
+*WE ARE DONE
+       JMP   GAMEWON
+Z@
+*FIGURE WARE SHIP GOES
+       LDD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       LDX   EPOS,Y
+
+*IS ANYTHING IN SHIP'S WAY?
+       LDU   #SHIPTEST
+       JSR   GROUNDED
+       BPL   A@
+*BLOW THE SHIP UP!!!
+       LDD   #GAMEOVER
+       STD   TRKDRV,Y
+A@     LDD   ,U
+       BEQ   DRS@  *NOTHING
+       ADDD  NEWPOS,Y
+       JSR   POINTDEAD
+       BEQ   DRS@ *NOTHING HIT
+       LDA   RFUEL,X
+       BMI   B@
+       PSHS  A
+       LDA   FUEL
+       SUBA  ,S+
+       BCC   FA@
+       LDD   #GAMEOVER
+       STD   TRKDRV,Y
+       CLRA
+FA@    STA   FUEL
+F@     JSR   HITSHIP
+DRS@   LDX   EPOS,Y
+       JSR   DRAWSHIP
+       RETURN
+B@     NEGA
+       ADDA  FUEL
+       CMPA  #100
+       BHI   BB@
+       STA   FUEL
+BB@    LDA   #$FF
+       STA   IS.BELL
+       BRA   DRS@
+
+
+*TABLE OF TEST SPOTS ON SHIP
+       FDB   0
+       FDB   +9*256+1
+       FDB   +11*256+7
+       FDB   +11*256+12
+       FDB   +10*256+17
+       FDB   +8*256+19
+       FDB   +3*256+16
+       FDB   +3*256+10
+       FDB   +1*256+5
+       FDB   +2*256+0
+SHIPTEST
+
+
+*DRAW SHIP (U ^ POSITION)
+DRAWSHIP
+ LDA   SHPX+1,Y
+ LBMI  OSHIP
+ JMP   RSHIP
+
+SHOOTDIE JMP TBLOW
+
+DSHOOT
+       LDA   STATUS,Y
+       ANDA  #2  *CAN NOT HIT
+       BEQ   A@  *YOUR BULLETS
+       JMP   ,U  *OR YOUR SHIP
+A@     LDD   NEWPOS,X
+       ISDEAD #-7,#-4
+       LDD   #SHOOTDIE
+       STD   TRKDRV,X
+       CLR   STATUS,X
+       PULS  D,PC
+
+************************
+*BULLET                *
+************************
+SHOOT
+       LDD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDD   #DSHOOT
+       STD   DEATH,Y
+       LDA   #$80+2 *BUL CODE
+       STA   STATUS,Y
+       LDX   #A@
+       STX   TRKDRV,Y
+A@     RASTER
+       LDX   EPOS,Y
+       LDD   EBLOCK,Y
+       STD   $FFA0
+***ERASE BULLET
+       LDD   #0
+       STD   ,X
+       STD   +2,X
+       STD   +256,X
+       STD   +256+2,X
+*DONE WITH TRACK
+       LDD   NEWPOS,Y
+       CMPB  #210
+       BLO   C@
+       JMP   TRKEND
+*REPOSITION BULLET
+C@     ADDB  #4
+       STB   NEWPOS+1,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       TFR   D,X
+*DRAW BULETTE AND
+*TEST FOR STUFF
+       LDA   GROUND,Y
+       BMI   BL@
+       LDA   +1,X
+       ANDA  #%11001100
+       BNE   BL@
+       LDA   +3+256,X
+       ANDA  #%11001100
+       BNE   BL@
+DO@    LDD   #$FFFF
+       STD   ,X
+       STD   +2,X
+       STD   +256,X
+       STD   +256+2,X
+       RETURN
+BL@    LDD   NEWPOS,Y
+       ADDD  #1
+       JSR   POINTDEAD
+       BEQ   LIVE@
+HIT@   LDA   POINTS,X
+       ADDSCR
+       BRA   DIE@
+LIVE@  LDD   NEWPOS,Y
+       ADDD  #3+256
+       JSR   POINTDEAD
+       BNE   HIT@
+*NO DEATH FOUND!
+       LDX   EPOS,Y
+       COM   GROUND,Y
+       BMI   DO@
+       DEC   NEWPOS+1,Y
+DIE@   DEC   NEWPOS+1,Y
+       JMP   TBLOW
+
+CHCOLOR
+       DISABLE
+       PSHS  A
+       JSR   BLACKPALETTE
+*DISKINIT IS IN ISCRYSTAL
+       JSR   ISCRYSTAL
+       PULS  A
+       STA   WORKBUFFER+67
+       LDU   #WORKBUFFER
+       LDD   #$0001
+       JSR   DISKWRITE
+       JSR   ISCRYSTAL
+       JSR   DISKDEINIT
+       ENABLE
+       RTS
+
+FINETUNE
+       DISABLE
+       JSR   BLACKPALETTE
+*DISKINIT IS IN ISCRYSTAL
+       JSR   ISCRYSTAL
+       JSR   DISKDEINIT
+
+       JSR   CLEARSCREEN
+       JSR   PUTSPCAT
+       FDB   5*9*256+128-2*36
+ FCC "USE THIS FUNCTION "
+ FCC "TO FINE TUNE THE",0
+       JSR   PUTSPCAT
+       FDB   6*9*256+128-2*36
+ FCC "THE SCREEN IF YOU"
+ FCC " HAVE PROBLEMS WITH",0
+       JSR   PUTSPCAT
+       FDB   7*9*256+128-2*36
+ FCC "THE SCORE AT THE BO"
+ FCC "TTOM OF THE SCREEN.",0
+       JSR   PUTSPCAT
+       FDB   9*9*256+128-2*36
+ FCC "RANGE OF SETTINGS: "
+ FCC "0 TO 7",0
+       JSR   PUTSPCAT
+       FDB   10*9*256+128-2*36
+ FCC "NORMAL SETTING: 4 OR 5",0
+       JSR   PUTSPCAT
+       FDB   11*9*256+128-2*36
+ FCC "CURRENT SETTING: ",0
+       LDA   WORKBUFFER+68
+       ANDA  #$7
+       ADDA  #'0
+       JSR   PCHRA
+       JSR   PUTSPCAT
+       FDB   13*9*256+128-2*36
+ FCC "ENTER NEW SETTING"
+ FCC " FROM 0 TO 7",0
+A@     JSR   INKEY
+       CMPA  #'0
+       BLO   A@
+       CMPA  #'7
+       BHI   A@
+       SUBA  #'0
+*DISKINIT IS DONE IN ISCRYSTAL
+*A=NEW FINE TUNE VALUE
+       PSHS  A
+       JSR   ISCRYSTAL
+       PULS  A
+       STA   WORKBUFFER+68
+       LDU   #WORKBUFFER
+       LDD   #$0001
+       JSR   DISKWRITE
+       JSR   ISCRYSTAL
+       JSR   DISKDEINIT
+
+       ENABLE
+       RTS
+
+
+
+
+
+
+
+
+
+
+
+CSHIP
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF1,X
+ STU  $FFF3,X
+ STA  $FFF5,X
+ ABX
+ STU  $FFF2,X
+ STU  $FFF4,X
+ STU  $FFF6,X
+ ABX
+ STU  $FFF4,X
+ STU  $FFF6,X
+ STU  $FFF8,X
+ ABX
+ STU  $FFF6,X
+ STU  $FFF8,X
+ STU  $FFFA,X
+ STU  $FFFE,X
+ STU  $0000,X
+ STU  $0002,X
+ STA  $0004,X
+ ABX
+ STU  $FFF7,X
+ STU  $FFF9,X
+ STU  $FFFB,X
+ STU  $FFFD,X
+ STU  $FFFF,X
+ STU  $0001,X
+ STU  $0003,X
+ STU  $0005,X
+ ABX
+ STU  $FFF9,X
+ STU  $FFFB,X
+ STU  $FFFD,X
+ STU  $FFFF,X
+ STU  $0001,X
+ STU  $0003,X
+ ABX
+ STU  $FFF7,X
+ STU  $FFF9,X
+ STU  $FFFB,X
+ STU  $FFFD,X
+ STU  $FFFF,X
+ STU  $0001,X
+ STU  $0003,X
+ STU  $0005,X
+ STU  $0007,X
+ STA  $0009,X
+ ABX
+ STU  $FFF9,X
+ STU  $FFFB,X
+ STU  $FFFD,X
+ STU  $FFFF,X
+ STU  $0001,X
+ STU  $0003,X
+ STA  $0005,X
+ STU  $000A,X
+ ABX
+ STU  $FFFA,X
+ STU  $FFFC,X
+ STU  $FFFE,X
+ STU  $0000,X
+ STU  $0002,X
+ STU  $0004,X
+ STU  $0006,X
+ STU  $0008,X
+ STU  $000A,X
+ STA  $000C,X
+ ABX
+ STU  $FFFD,X
+ STU  $FFFF,X
+ STA  $0001,X
+ STU  $0003,X
+ STU  $0005,X
+ STU  $0007,X
+ STU  $0009,X
+ STU  $000B,X
+ STA  $000D,X
+ ABX
+ STU  $FFFC,X
+ STU  $FFFE,X
+ STU  $0000,X
+ STU  $0002,X
+ STU  $0004,X
+ STU  $0006,X
+ STU  $0008,X
+ STU  $000A,X
+ STA  $000C,X
+ ABX
+ STU  $FFFF,X
+ STU  $0001,X
+ STA  $0003,X
+ ABX
+ STU  $0001,X
+*BYTES: $00B4
+*CYCLES: $0203
+ RTS
+RSHIP
+ LDD  #$FFFF *D=$FFFF
+ STD  $0001,X
+ STD  $030C,X
+ STD  $030E,X
+ STD  $0405,X
+ STD  $0407,X
+ STD  $0409,X
+ STD  $0506,X
+ STD  $0508,X
+ STD  $050A,X
+ STD  $0600,X
+ STD  $0602,X
+ STD  $0604,X
+ STD  $0606,X
+ DECB *D=$FFFE
+ STD  $0608,X
+ LDA  #$EF *D=$EFFE
+ STD  $0304,X
+ STA  $0505,X
+ INCB *D=$EFFF
+ STD  $0102,X
+ STD  $0203,X
+ STD  $070B,X
+ DECA *D=$EEFF
+ STD  $060E,X
+ LDB  #$EE *D=$EEEE
+ STD  $040D,X
+ STD  $040F,X
+ STD  $0701,X
+ STD  $0703,X
+ STD  $0705,X
+ STD  $0707,X
+ LDA  #$0E *D=$0EEE
+ STD  $0100,X
+ LDA  #$FE *D=$FEEE
+ STD  $040B,X
+ LDB  #$D0 *D=$FED0
+ STD  $0003,X
+ STD  $090B,X
+ STB  $070D,X
+ STB  $0813,X
+ STB  $0A11,X
+ LDD  #$0DDE *D=$0DDE
+ STD  $0201,X
+ STD  $0909,X
+ STB  $0404,X
+ DECB *D=$0DDD
+ STD  $0801,X
+ STB  $0712,X
+ LDA  #$DD *D=$DDDD
+ STD  $0402,X
+ STD  $0503,X
+ STD  $050C,X
+ STD  $0803,X
+ STD  $0805,X
+ STD  $0807,X
+ STD  $080D,X
+ STD  $080F,X
+ STD  $0811,X
+ STD  $090D,X
+ STD  $090F,X
+ STD  $0911,X
+ STD  $0A0D,X
+ STD  $0A0F,X
+ INCB *D=$DDDE
+ STD  $0302,X
+ LDB  #$EF *D=$DDEF
+ STD  $060A,X
+ INCA *D=$DEEF
+ STD  $030A,X
+ LDD  #$FDDD *D=$FDDD
+ STD  $060C,X
+ LDA  #$EE *D=$EEDD
+ STD  $0610,X
+ DECA *D=$EDDD
+ STD  $0709,X
+ STA  $0104,X
+ STA  $0205,X
+ STA  $0306,X
+ LDB  #$0D *D=$ED0D
+ STD  $0A0B,X
+ LDD  #$DD0E *D=$DD0E
+ STD  $0809,X
+ LDD  #$FFED *D=$FFED
+ STD  $080B,X
+ LDD  #$2211 *D=$2211
+ STD  $0903,X
+ STD  $0B03,X
+ LDA  #$11 *D=$1111
+ STD  $0A03,X
+ LDD  #$1222 *D=$1222
+ STD  $0905,X
+ STD  $0B05,X
+ LDA  #$02 *D=$0222
+ STD  $0A01,X
+ LDD  #$3333 *D=$3333
+ STD  $0A05,X
+ LDD  #$6655 *D=$6655
+ STD  $0A07,X
+ LDD  #$5FFF *D=$5FFF
+ STD  $0A09,X
+ LDD  #$2220 *D=$2220
+ STD  $0C04,X
+ LDB  #$0F
+ STB  $0000,X
+*BYTES: $0166
+*CYCLES: $02D6
+ RTS
+OSHIP
+ LDD  #$FFFF *D=$FFFF
+ STD  $0001,X
+ STD  $030C,X
+ STD  $030E,X
+ STD  $0406,X
+ STD  $0408,X
+ STD  $040A,X
+ STD  $0507,X
+ STD  $0509,X
+ STD  $0601,X
+ STD  $0603,X
+ STD  $0605,X
+ STD  $0607,X
+ DECB *D=$FFFE
+ STD  $0103,X
+ STD  $0204,X
+ STD  $0A0A,X
+ DECB *D=$FFFD
+ STD  $050B,X
+ STD  $070C,X
+ LDB  #$ED *D=$FFED
+ STD  $0003,X
+ STD  $0609,X
+ LDD  #$EEEE *D=$EEEE
+ STD  $0101,X
+ STD  $040C,X
+ STD  $040E,X
+ STD  $0702,X
+ STD  $0704,X
+ STD  $0706,X
+ STD  $0708,X
+ LDA  #$DD *D=$DDEE
+ STD  $0202,X
+ INCB *D=$DDEF
+ STD  $0404,X
+ STD  $090A,X
+ LDB  #$D0 *D=$DDD0
+ STD  $050D,X
+ STD  $0912,X
+ STB  $0105,X
+ STB  $0206,X
+ LDA  #$EE *D=$EED0
+ STD  $0306,X
+ DECA *D=$EDD0
+ STD  $0611,X
+ LDA  #$0D *D=$0DD0
+ STD  $0712,X
+ LDB  #$DD *D=$0DDD
+ STD  $0302,X
+ STD  $0402,X
+ STD  $0503,X
+ LDB  #$EE *D=$0DEE
+ STD  $030A,X
+ LDD  #$EEFF *D=$EEFF
+ STD  $0304,X
+ LDB  #$E0 *D=$EEE0
+ STD  $0410,X
+ LDD  #$DEFF *D=$DEFF
+ STD  $0505,X
+ STD  $060B,X
+ LDD  #$DDDE *D=$DDDE
+ STD  $060D,X
+ STD  $070A,X
+ DECB *D=$DDDD
+ STD  $0802,X
+ STD  $0804,X
+ STD  $0806,X
+ STD  $0808,X
+ STD  $080E,X
+ STD  $0810,X
+ STD  $0812,X
+ STD  $090E,X
+ STD  $0910,X
+ STD  $0A0E,X
+ STD  $0A10,X
+ LDA  #$FE *D=$FEDD
+ STD  $080C,X
+ LDA  #$D0 *D=$D0DD
+ STD  $0A0C,X
+ LDB  #$EF *D=$D0EF
+ STD  $080A,X
+ LDD  #$EFFE *D=$EFFE
+ STD  $060F,X
+ LDD  #$0221 *D=$0221
+ STD  $0903,X
+ STD  $0B03,X
+ INCB *D=$0222
+ STD  $0C04,X
+ LDA  #$11 *D=$1122
+ STD  $0905,X
+ STD  $0B05,X
+ LDB  #$13 *D=$1113
+ STD  $0A04,X
+ LDD  #$ED0D *D=$ED0D
+ STD  $090C,X
+ LDD  #$2221 *D=$2221
+ STD  $0A02,X
+ LDD  #$3336 *D=$3336
+ STD  $0A06,X
+ LDD  #$6555 *D=$6555
+ STD  $0A08,X
+ LDB  #$F0
+ STB  $0310,X
+ LDB  #$0F
+ STB  $0600,X
+ LDB  #$0E
+ STB  $0701,X
+ LDB  #$20
+ STB  $0907,X
+ STB  $0B07,X
+*BYTES: $0175
+*CYCLES: $02EE
+ RTS

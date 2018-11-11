@@ -1,0 +1,968 @@
+TIMEEND EQU 10938-50
+*TIMEEND EQU 300
+
+*WAVE, PITCH
+SND    MACR
+       LDA  SOUNDHOLD+(\0-1)*3
+       STA  W\0+1
+       LDX  SOUNDHOLD+(\0-1)*3+1
+       STX  P\0+1
+       ENDM
+SOUNDHOLD
+       FCB   FLUTE!>8
+       FDB   0
+       FCB   FLUTE!>8
+       FDB   0
+       FCB   FLUTE!>8
+       FDB   0
+       BSZ 3*6
+
+FSYNC  LDA   HLINE
+       CLRB
+AX@    INCB
+       CMPA  HLINE
+       BEQ   AX@
+       CMPB  #20
+       BHI   AY@
+       CMPB  #5
+       BHS   AZ@
+AY@    LDD   #$E00+(FIRQS!.$FF)
+       STD   [$FFF6]
+AZ@    LDA   #-17-42
+       STA   HLINE
+       LDA   $FF92
+       CLR   FRGO
+       LDA   #%00100001
+       STA   $FF91
+***DO FIRE PALETTES
+       LDX   FIRE1
+       LDA   ,X+
+       BNE   F1@
+       LDX   ,X
+       LDA   ,X+
+F1@    STX   FIRE1
+       STA   PALETTE+1
+       LDX   FIRE2
+       LDA   ,X+
+       BNE   F2@
+       LDX   ,X
+       LDA   ,X+
+F2@    STX   FIRE2
+       STA   PALETTE+2
+       LDX   FIRE3
+       LDA   ,X+
+       BNE   F3@
+       LDX   ,X
+       LDA   ,X+
+F3@    STX   FIRE3
+       STA   PALETTE+3
+       LDX   BACKCOLOR
+BC@    LDA   ,X+
+       STA   PALETTE
+       BEQ   YBC@
+       STX   BACKCOLOR
+       BRA   EBC@
+*YES, DO BACKGROUND
+YBC@
+       LDA   TOGCOLOR
+       STA   PALETTE
+EBC@
+*
+***********************
+***DO ALL SOUND
+       LDU   #0
+       STU   SOUNDHOLD+1
+       STU   SOUNDHOLD+4
+       STU   SOUNDHOLD+7
+       LDX   #SOUNDHOLD
+       LDA   EXPLOSIAN
+       BEQ   NE@
+       INCA
+       STA   EXPLOSIAN
+       NEGA
+       ROLA
+       ROLA
+       ROLA
+       ROLA
+       ANDA  #7
+       ADDA  #RNDSND!>8
+       STA   ,X+
+       LDD   #$107
+       STD   ,X++
+       LDA   #GUITAR!>8
+       STA   ,X+
+       LDA   EXPLOSIAN
+       NEGA
+       LDB   #5
+       MUL
+       STD   ,X++
+       STD   +1,X
+       LDA   #BLOWSND!>8
+       STA   ,X
+       LEAX  +3,X
+***DO BELL SOUND
+NE@    LDA   IS.BELL
+       BEQ   NB@
+       BPL   DB@ *DO BELL
+*INITIALIZE BELL
+       LDD   #$4000
+       STD   P1+1
+       LDD   #$FF00
+       STD   V1+1
+       LDA   #32
+DB@    DECA
+       STA   IS.BELL
+       LDA   #BELL!>8
+       STA   ,X+
+       LDD   #$4000
+       STD   ,X++
+       INC   V1+1 *SOFTER
+NB@
+*DO BLOWUP & HELL
+*TO START A BLOWUP,
+*STORE A $030A IN BLOW.AT
+NSB@   LDD   BLOW.ATS *A=VOLUME
+       BEQ   HELL@ *NO BLOWUP
+       DECB
+       BPL   BNT@ *NOT TIME
+       LDB   #10
+       DECA
+BNT@   STD   BLOW.ATS
+       INCA  *1-4
+HELL@  LDB   IS.HELL
+       BEQ   NHELL@
+       CLR   IS.HELL
+       LDB   IS.HELLAT
+       DECB
+       BPL   DHELL@
+       LDB   #4
+DHELL@ STB   IS.HELLAT
+       ADDA  IS.HELLAT
+NHELL@
+*BLOWUP = 0,1,2,3,4
+*HELL   = 0,1,2,3,4
+*BLOW+HELL = 0 - 8 (0=NO SOUND)
+       DECA
+       BMI   NXS@ *NEXT SOUND
+       ADDA  #RNDSND!>8
+       STA   ,X+
+       LDU   #$107
+       STU   ,X++
+NXS@
+***DO BOSS SOUND
+BOSS@  LDD   BOSSPITCH
+       BEQ   NXS2@
+       ADDD  BOSSVIB
+       SUBD  #$1000
+       BCC   BO@
+       ADDD  #$1000
+BO@    STD   BOSSVIB
+       STD   +1,X
+       LDA   BOSSINST
+       STA   ,X
+       LEAX  +3,X
+NXS2@
+***DO BOMB AND JET WITH WAVER
+       LDA   IS.BOMB
+       LDB   #255
+       STB   IS.BOMB
+       NEGA
+       CLRB
+       LSRA
+       BEQ   JET@ *NO BOMB
+       TFR   D,Y
+       LDA   #REED!>8
+       STA   ,X+
+       LDA   WAVERAT
+       ADDA  #2
+       STA   WAVERAT
+       ANDA  #%00011110
+       LDU   #WAVERTABLE
+       LDD   A,U
+       LEAU  D,Y
+       STU   ,X++
+       BRA   NXS3@
+*WAVER TABLE
+WAVERTABLE
+ FDB 2*114,2*212,2*277
+ FDB 2*300,2*277,2*212
+ FDB 2*114,2*0,-115*2
+ FDB -213*2,-278*2,-300*2
+ FDB -278*2,-213*2,-115*2,0
+JET@
+       LDA   IS.JET
+       BEQ   NXS3@
+       CLR   IS.JET
+       LDA   #JETSND!>8
+       STA   ,X+
+       LDU   #WAVERTABLE
+       LDA   WAVERAT
+       ADDA  #2
+       STA   WAVERAT
+       ANDA  #%00011110
+       LDD   A,U
+       ADDD  #$3A1
+       STD   ,X++
+NXS3@
+*DO SHOT SOUND
+       LDA   IS.SHOT
+       BEQ   NXS4@
+       SUBA  #4
+       STA   IS.SHOT
+       LDB   #SHIPSND!>8
+       STB   ,X+
+       STD   ,X++
+NXS4@
+ENDS@
+*
+*****SET VOICES
+       SND   1
+       SND   2
+       SND   3
+**********************
+
+*
+*** SET PALETTES
+*WE CAN COPY ONLY A PORTION
+*OF THE PALETTE COLORS
+*BY CHANGEING FFB0
+       LDX   #$FFB0
+COPYPORTION EQU *-2
+       LDU   #PALETTECONV
+P@     LDD   PALETTE-$FFB0,X
+       LDA   A,U
+       LDB   B,U
+       STD   ,X++
+       CMPX  #$FFC0
+       BLO   P@
+       LDA   PALETTE
+       LDA   A,U
+       STA   $FF9A
+******************
+***DO SCROLL
+       LDA   SCROLL
+       BEQ   SCROL@
+       LDB   SCRPOS+1
+       LSRB
+       ANDB  #31
+       ORB   #$80
+       STB   $FF9F
+       JMP   NS@
+SCROL@ LDD   TIMER
+       ADDD  #1
+       STD   TIMER
+       CMPD  [COLORPOINTER]
+       BLO   NOTOG@
+*** MUST NOT TOUCH THE D REG
+       LDX   COLORPOINTER
+       PSHS  A
+       LDA   +2,X
+       STA   TOGCOLOR
+       PULS  A
+       LEAX  +3,X
+       STX   COLORPOINTER
+NOTOG@ CMPD  #TIMEEND
+       BLO   NOSTOP@
+*WE ARE ALMOST DONE.  NOW WAIT
+*FOR ONE SCREEN
+       PSHS  X,Y,U,D
+       LDX   #SCRBLACK
+       STX   SCRLINE
+       LDA   SCRPOS+1
+       ANDA  #%11111110
+       BNE   NCD@
+*DO STOP, & INITIALIZE BOSS
+       LDX   #SCRBLACK
+       STX   SCRLINE
+       LDA   PRINTINGSCREEN
+       BNE   NCD@ *NOT OK
+       INC   SCROLL
+       LDA   #1
+       STA   DOBOSS
+NCD@   PULS  X,Y,U,D
+NOSTOP@ SUBD  #5*1024
+       BNE   NSBL@
+*SCROLL BLOCKS (IF OK)
+       LDA   PRINTINGSCREEN
+       BNE   NSBL@ *NOT OK
+       LDD   SCRPOS
+       SUBD   #8*1024
+       STD   SCRPOS
+       LDX   #SCREENBLOCKS
+ INC   ,X
+ INC  1,X
+ INC  2,X
+ INC  3,X
+ INC  4,X
+ INC  5,X
+ INC  6,X
+ INC  7,X
+ INC  8,X
+ INC  9,X
+ INC 10,X
+ INC 11,X
+ INC 12,X
+ INC 13,X
+ INC 14,X
+ INC 15,X
+NSBL@  LDD   SCRPOS
+       ADDD  #2
+       STD   SCRPOS
+B@     LSRB
+       ANDB  #31  *WAS 15
+       BNE   A@
+       LDD   SCRY
+       ADDD  #8 *WAS 4
+       STD   SCRY
+       STD   $FF9D
+*POSITION OF BOTTOM OF SCREEN
+*MUST BE MAINTAINED
+       LDB   SCRSTOP
+       SUBB  #32 *WAS 16
+       ORB   #$80
+       STB   SCRSTOP
+       CLRB
+A@     ORB   #$80
+       STB   $FF9F
+       ANDB  #1
+       STB   SCRO
+       JSR   SCRGRGOJMP
+*CUM
+*MOVE BAD LINE DOWN
+       LDD   SCRPOS
+SCROFFSET EQU STARTSCREEN!.$7F
+ ADDD #189*256+SCROFFSET*8-4
+       BITB  #%00011111
+       BNE   NSD@
+       SCREEN X
+       STX   $FFA8
+       BSR   MOVESCOREDOWN
+       TSTB
+       BNE   NSR@
+       TST   PRINTINGSCREEN
+       BNE   NSR@
+       JSR   PRINTSCORE
+NSR@   LDD   SCRGRBL
+       STD   $FFA8
+NSD@
+*      JSR   SCRGRGOJMP
+NO@
+*********************
+*MORE STUFF GOES HERE
+NS@    LDA   #%00100000
+       STA   $FF91
+       RTI
+
+MOVESCOREDOWN
+       PSHS  D
+       ADDD  #11*256-32
+       TFR   D,X
+       LDU   #0
+       STU   -16,X
+       STU   -14,X
+       STU   -12,X
+       STU   -10,X
+       STU   -8,X
+       STU   -6,X
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       STU   +6,X
+       STU   +8,X
+       STU   +10,X
+       STU   +12,X
+       STU   +14,X
+       LEAX  -512,X
+
+       LDB   #7
+A@     LDU   -16,X
+       STU   -16+256,X
+       LDU   -14,X
+       STU   -14+256,X
+       LDU   -12,X
+       STU   -12+256,X
+       LDU   -10,X
+       STU   -10+256,X
+       LDU   -8,X
+       STU   -8+256,X
+       LDU   -6,X
+       STU   -6+256,X
+       LDU   -4,X
+       STU   -4+256,X
+       LDU   -2,X
+       STU   -2+256,X
+       LDU   ,X
+       STU   +256,X
+       LDU   2,X
+       STU   2+256,X
+       LDU   4,X
+       STU   4+256,X
+       LDU   6,X
+       STU   6+256,X
+       LDU   8,X
+       STU   8+256,X
+       LDU   10,X
+       STU   10+256,X
+       LDU   12,X
+       STU   12+256,X
+       LDU   14,X
+       STU   14+256,X
+       LEAX  -256,X
+       DECB
+       BNE   A@
+       LEAX  +256,X
+
+       LDU   #0
+       STU   -16,X
+       STU   -14,X
+       STU   -12,X
+       STU   -10,X
+       STU   -8,X
+       STU   -6,X
+       STU   -4,X
+       STU   -2,X
+       STU   ,X
+       STU   2,X
+       STU   4,X
+       STU   6,X
+       STU   8,X
+       STU   10,X
+       STU   12,X
+       STU   14,X
+       PULS  D,PC
+
+PRINTSCORE
+       PSHS  X,Y,U,D
+       ADDD  #80+512
+       TFR   D,Y
+       LDB   CURSCORE
+       LSRB
+       LSRB
+       LSRB
+       LSRB
+       ADDB  #'0
+       JSR   PCHRB2
+       LDB   CURSCORE
+       ANDB  #$0F
+       ADDB  #'0
+       LEAY  +4,Y
+       JSR   PCHRB2
+       LDB   CURSCORE+1
+       LSRB
+       LSRB
+       LSRB
+       LSRB
+       ADDB  #'0
+       LEAY  +4,Y
+       JSR   PCHRB2
+       LDB   CURSCORE+1
+       ANDB  #$0F
+       ADDB  #'0
+       LEAY  +4,Y
+       JSR   PCHRB2
+       LDB   CURSCORE+2
+       LSRB
+       LSRB
+       LSRB
+       LSRB
+       ADDB  #'0
+       LEAY  +4,Y
+       JSR   PCHRB2
+       LDB   CURSCORE+2
+       ANDB  #$0F
+       ADDB  #'0
+       LEAY  +4,Y
+       JSR   PCHRB2
+       LEAY  +44+256*2,Y
+*DRAW FUEL LINE
+       LDU   #$EE00 *LIGHT GREY
+       CLRA
+       LDB   OFUEL
+       LEAY  D,Y
+       SUBB  FUEL
+       BCS   UP@ *GO UP
+       BEQ   FUEL@ *GO NO WHERE
+DOWN@  STU   +256*1,Y
+       STU   +256*3,Y
+       LDX   #$FF00 *WHITE
+       STX   +256*2+1,Y
+       LDX   #$DD00 *DARK GREY
+       STX   +256*4-1,Y
+       STX   ,-Y
+       DECB
+       BNE   DOWN@
+       BRA   FUEL@
+UP@    STU   +256*1+1,Y
+       STU   +256*3+1,Y
+       LDX   #$FF00 *WHITE
+       STX   +256*2+2,Y
+       LDX   #$DD00 *DARK GREY
+       STX   +256*4,Y
+       STX   ,Y+
+       INCB
+       BNE   UP@
+FUEL@  LDB   FUEL
+       STB   OFUEL
+       PULS  X,Y,U,D,PC
+
+
+*U ^ WAVER TABLE
+*B = MULTIPLIER
+CALCPITCH
+       LDA   ,X+
+       BPL   A@
+*DO MINUS
+       NEGA
+       BVS   G@ *128=GOTO
+       MUL
+       NEGD
+       RTS
+G@     LDX   ,X  *GOTO
+       BRA   CALCPITCH
+A@     MUL
+       RTS
+
+*ENTRY
+* X ^ BLOCK ON SCREEN
+* Y ^ BLOCK
+MOVEBLOCK
+       LEAX  +8,X
+       LDB   #255
+       LDU   ,Y
+       STU   -7,X
+       LDU   2,Y
+       STU   -5,X
+       LDU   4,Y
+       STU   -3,X
+       LDU   6,Y
+       STU   -1,X
+       ABX
+       LDU   8,Y
+       STU   -6,X
+       LDU   10,Y
+       STU   -4,X
+       LDU   12,Y
+       STU   -2,X
+       LDU   14,Y
+       STU   ,X
+       ABX
+       LDU   16,Y
+       STU   -5,X
+       LDU   18,Y
+       STU   -3,X
+       LDU   20,Y
+       STU   -1,X
+       LDU   22,Y
+       STU   +1,X
+       ABX
+       LDU   24,Y
+       STU   -4,X
+       LDU   26,Y
+       STU   -2,X
+       LDU   28,Y
+       STU   ,X
+       LDU   30,Y
+       STU   +2,X
+       ABX
+       LDU   32,Y
+       STU   -3,X
+       LDU   34,Y
+       STU   -1,X
+       LDU   36,Y
+       STU   1,X
+       LDU   38,Y
+       STU   3,X
+       ABX
+       LDU   40,Y
+       STU   -2,X
+       LDU   42,Y
+       STU   ,X
+       LDU   44,Y
+       STU   +2,X
+       LDU   46,Y
+       STU   +4,X
+       ABX
+       LDU   48,Y
+       STU   -1,X
+       LDU   50,Y
+       STU   1,X
+       LDU   52,Y
+       STU   3,X
+       LDU   54,Y
+       STU   5,X
+       ABX
+       LDU   56,Y
+       STU   ,X
+       LDU   58,Y
+       STU   +2,X
+       LDU   60,Y
+       STU   +4,X
+       LDU   62,Y
+       STU   +6,X
+       ABX
+       LDU   64,Y
+       STU   1,X
+       LDU   66,Y
+       STU   3,X
+       LDU   68,Y
+       STU   5,X
+       LDU   70,Y
+       STU   7,X
+       ABX
+       LDU   72,Y
+       STU   2,X
+       LDU   74,Y
+       STU   4,X
+       LDU   76,Y
+       STU   6,X
+       LDU   78,Y
+       STU   8,X
+       ABX
+       LDU   80,Y
+       STU   3,X
+       LDU   82,Y
+       STU   5,X
+       LDU   84,Y
+       STU   7,X
+       LDU   86,Y
+       STU   9,X
+       ABX
+       LDU   88,Y
+       STU   4,X
+       LDU   90,Y
+       STU   6,X
+       LDU   92,Y
+       STU   8,X
+       LDU   94,Y
+       STU   10,X
+       ABX
+       LDU   96,Y
+       STU   5,X
+       LDU   98,Y
+       STU   7,X
+       LDU   100,Y
+       STU   9,X
+       LDU   102,Y
+       STU   11,X
+       ABX
+       LDU   104,Y
+       STU   6,X
+       LDU   106,Y
+       STU   8,X
+       LDU   108,Y
+       STU   10,X
+       LDU   110,Y
+       STU   12,X
+       ABX
+       LDU   112,Y
+       STU   7,X
+       LDU   114,Y
+       STU   9,X
+       LDU   116,Y
+       STU   11,X
+       LDU   118,Y
+       STU   13,X
+       ABX
+       LDU   120,Y
+       STU   8,X
+       LDU   122,Y
+       STU   10,X
+       LDU   124,Y
+       STU   12,X
+       LDU   126,Y
+       STU   14,X
+       RTS
+
+*ENTRY
+* X ^ END OF BLOCK
+* Y ^ BLOCK
+MOVEBLOCKB
+       LEAX  +8,X
+       LDB   #255
+       LDU   120,Y
+       STU   -7,X
+       LDU   122,Y
+       STU   -5,X
+       LDU   124,Y
+       STU   -3,X
+       LDU   126,Y
+       STU   -1,X
+       ABX
+       LDU   112,Y
+       STU   -6,X
+       LDU   114,Y
+       STU   -4,X
+       LDU   116,Y
+       STU   -2,X
+       LDU   118,Y
+       STU   ,X
+       ABX
+       LDU   104,Y
+       STU   -5,X
+       LDU   106,Y
+       STU   -3,X
+       LDU   108,Y
+       STU   -1,X
+       LDU   110,Y
+       STU   +1,X
+       ABX
+       LDU   96,Y
+       STU   -4,X
+       LDU   98,Y
+       STU   -2,X
+       LDU   100,Y
+       STU   ,X
+       LDU   102,Y
+       STU   +2,X
+       ABX
+       LDU   88,Y
+       STU   -3,X
+       LDU   90,Y
+       STU   -1,X
+       LDU   92,Y
+       STU   1,X
+       LDU   94,Y
+       STU   3,X
+       ABX
+       LDU   80,Y
+       STU   -2,X
+       LDU   82,Y
+       STU   ,X
+       LDU   84,Y
+       STU   +2,X
+       LDU   86,Y
+       STU   +4,X
+       ABX
+       LDU   72,Y
+       STU   -1,X
+       LDU   74,Y
+       STU   1,X
+       LDU   76,Y
+       STU   3,X
+       LDU   78,Y
+       STU   5,X
+       ABX
+       LDU   64,Y
+       STU   ,X
+       LDU   66,Y
+       STU   +2,X
+       LDU   68,Y
+       STU   +4,X
+       LDU   70,Y
+       STU   +6,X
+       ABX
+       LDU   56,Y
+       STU   1,X
+       LDU   58,Y
+       STU   3,X
+       LDU   60,Y
+       STU   5,X
+       LDU   62,Y
+       STU   7,X
+       ABX
+       LDU   48,Y
+       STU   2,X
+       LDU   50,Y
+       STU   4,X
+       LDU   52,Y
+       STU   6,X
+       LDU   54,Y
+       STU   8,X
+       ABX
+       LDU   40,Y
+       STU   3,X
+       LDU   42,Y
+       STU   5,X
+       LDU   44,Y
+       STU   7,X
+       LDU   46,Y
+       STU   9,X
+       ABX
+       LDU   32,Y
+       STU   4,X
+       LDU   34,Y
+       STU   6,X
+       LDU   36,Y
+       STU   8,X
+       LDU   38,Y
+       STU   10,X
+       ABX
+       LDU   24,Y
+       STU   5,X
+       LDU   26,Y
+       STU   7,X
+       LDU   28,Y
+       STU   9,X
+       LDU   30,Y
+       STU   11,X
+       ABX
+       LDU   16,Y
+       STU   6,X
+       LDU   18,Y
+       STU   8,X
+       LDU   20,Y
+       STU   10,X
+       LDU   22,Y
+       STU   12,X
+       ABX
+       LDU   8,Y
+       STU   7,X
+       LDU   10,Y
+       STU   9,X
+       LDU   12,Y
+       STU   11,X
+       LDU   14,Y
+       STU   13,X
+       ABX
+       LDU   ,Y
+       STU   8,X
+       LDU   2,Y
+       STU   10,X
+       LDU   4,Y
+       STU   12,X
+       LDU   6,Y
+       STU   14,X
+       LDU   ,Y
+       RTS
+
+SCRXY  MACR
+       LDA   SCRGRXY
+       \0A   #16
+       STA   SCRGRXY
+       ENDM
+
+SCRBL  MACR
+       LDD   SCRGRBL
+       ADDD  #$0101
+       STD   SCRGRBL
+       STD   $FFA8
+       ENDM
+
+SCRGR  LDX   #SCRGR1
+       STX   SCRGRGO
+*FALL THROUGH TO SCRGR1
+
+SCRGR1 LDD   #SCRGR2
+       STD   SCRGRGO
+       LDD   SCRLINE
+       STD   SCR.GET.NEXT.BLOCK
+       LDD   SCRPOS
+       ADDD  #256-4
+       SCREEN X
+       STX   SCRGRBL
+       STD   SCRGRXY
+
+       STX   $FFA8
+       BSR   SCRGR.PRINT
+       SCRXY ADD
+       BSR   SCRGR.PRINT
+       SCRXY SUB
+       SCRBL
+       BRA   SCRGR.PRINT
+
+SCRGR2 LDD   #SCRGR3
+       STD   SCRGRGO
+       SCRXY ADD
+       BSR   SCRGR.PRINT
+       SCRXY SUB
+       SCRBL
+       BSR   SCRGR.PRINT
+       SCRXY ADD
+       BRA   SCRGR.PRINT
+
+*PRINTS A BLOCK
+SCRGR.PRINT
+       JSR SCR.GO.GET.NEXT.BLOCK
+       LDU   #MOVEBLOCK
+       TSTA
+       BPL   B@
+       ANDA  #%01111111
+       LDU   #MOVEBLOCKB
+B@     LDX   #GRBLOCKS
+       CLRB
+       LSRD
+       LEAY  D,X
+       LDX   SCRGRXY
+       JMP   ,U
+
+SCRGR3 LDD   #SCRGR4
+       STD   SCRGRGO
+       SCRXY SUB
+       SCRBL
+       BSR   SCRGR.PRINT
+       SCRXY ADD
+       BSR   SCRGR.PRINT
+       SCRXY SUB
+       SCRBL
+       BRA   SCRGR.PRINT
+
+
+
+SCRGR4 LDD   #SCRGR1
+       STD   SCRGRGO
+       SCRXY ADD
+       BSR   SCRGR.PRINT
+       SCRXY SUB
+       SCRBL
+       BSR   SCRGR.PRINT
+       SCRXY ADD
+       BRA   SCRGR.PRINT
+
+SCRGAME
+       PSHS  X,D
+       CLR   BLACK.BLOCK
+       LDD   #$4000
+*FIND BEGINING OF SCENERY
+       ADDD  LEVELADD
+       STD   SCRBLOCK
+       LDX   #SCRTITLE
+       STX   SCRLINE
+       STX   SCR.GET.NEXT.BLOCK
+       PULS  X,D
+*ALLOW TO FALL THROUGH
+*TO SELECT BLOCK
+
+*MASTER DECOMPRESS SCENERY
+SCRTITLE
+       LDA   BLACK.BLOCK
+       BEQ   A@
+       BMI   RND@
+*SEND BLACK BLOCKS OUT
+       DEC   BLACK.BLOCK
+       CLRA
+       RTS
+*SEND QUE CHAR'S OUT
+RND@   INC   BLACK.BLOCK
+       JSR   ARB *GET A RND BLK
+       ANDA  #$0F
+       LDU   #RNDBLOCK
+       LDA   A,U
+       RTS
+A@     LDX   SCRBLOCK
+       LDA   ,X+
+       BITA  #%01000000
+       BEQ   B@ *NO COMPRESS
+       BITA  #%00100000
+       BEQ   BL@ *BLACK
+*RND COMPRESSION
+       ANDA  #%00001111
+       INCA
+       NEGA
+       STA   BLACK.BLOCK
+       STX   SCRBLOCK
+       BRA   RND@
+*BLACK COMPRESSION
+BL@    ANDA  #%00001111
+       INCA
+       STA   BLACK.BLOCK
+       CLRA
+B@     STX   SCRBLOCK
+*A HAS SCENERY BLOCK
+OUT@   RTS
+
+
+SCRBLACK
+       CLRA
+       RTS

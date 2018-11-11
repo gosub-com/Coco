@@ -1,0 +1,91 @@
+       ORG   $E00
+       BSZ   100
+STACK  FDB   0
+       FDB   0
+
+INITIT MACR
+       LDY   #$2C
+       LDA   #1
+       STA   $FFA1
+       ENDM
+
+PRINT  PSHS  X,D
+       LDX   +4,S
+       LDA   ,X+
+A@     JSR   [$A002]
+       LDA   ,X+
+       BNE   A@
+       STX   +4,S
+       PULS  X,D,PC
+
+HITKEY PSHS  CC,DP
+       CLRA
+       TFR   A,DP
+       JSR   PRINT
+ FCC "(ENTER)=RECORD, (P)LAY,"
+ FCC "(S)AVE",13,0
+       CLR   $FFDE
+A@     JSR   [$A000]
+       BEQ   A@
+       CLR   $FFDF
+       PULS  CC,DP,PC
+
+EXEC   ORCC  #$50
+       SETDP $FF
+       LDA   #$FF
+       TFR   A,DP
+       LDS   #STACK
+       LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       CLR   65497
+R@     BSR   HITKEY
+       CMPA  #'S
+       LBEQ  SAVE
+       CMPA  #'P
+       BEQ   SPLAY
+       LDD   #$0100
+       STD   $FF7E
+       INITIT
+       LDX   #$2000
+B@     TFR   A,A
+       TFR   A,A
+F@     LDD   $FF7C *
+       STB   ,X+  *
+       LDA   #1    *
+       STA   $FF7E *
+       CMPX  #$4000
+       BLO   B@
+       INC   $FFA1
+       LDX   #$2000
+       LEAY  -1,Y
+       BNE   F@
+SPLAY  INITIT
+       LDX   #$2000
+G@     TFR   A,A
+       TFR   A,A
+H@     LDD   $FF50 *TIMING
+       LDB   ,X+
+       STB   $FF20
+       LDA   #1
+       CMPX  #$4000
+       BLO   G@
+       INC   $FFA1
+       LDX   #$2000
+       LEAY  -1,Y
+       BNE   H@
+      LBRA   R@
+
+SAVE   LDA   #$39
+       STA   $FFA1
+
+
+       END   EXEC
+
+
+
+
+

@@ -1,0 +1,50 @@
+*NOW LETS SAVE LEVELS
+*START AT BLOCK 10
+       LDA   #7 *LEVEL
+       PSHS  A
+A@     LDA   ,S
+       ADDA  #'1
+       JSR   [$A002]
+       LDB   ,S
+       ADDB  #3
+*GET LEVEL DESCRIPTOR
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKREAD
+*GET BLOCKS
+       LDA   ,S
+       LSLA
+       ADDA  #10
+       TFR   A,B
+       INCB
+       STD   $FFA2
+*SAVE POINTER/LENGTH
+       LDD   NEXTSECT
+       STD   BUFFER+138
+       LDA   #64
+       SUBA  $4000
+       STA   BUFFER+140
+*SAVE BUFFER
+       LDB   ,S
+       ADDB  #3
+       CLRA
+       LDU   #BUFFER
+       JSR   DISKWRITE
+*SAVE LEVEL
+       LDD   $4000
+       LDU   #$4000
+       LEAU  D,U
+*U ^  LEVEL
+*WHILE (MORE SECTORS LEFT)
+C@     JSR   DISKOUTS
+       LEAU  +256,U
+       DEC   BUFFER+140
+       BPL   C@
+*LEVEL HAS BEEN SAVED!
+       DEC   ,S
+       BPL   A@
+       PULS  A
+
+       RTS
+
+       END   EXEC

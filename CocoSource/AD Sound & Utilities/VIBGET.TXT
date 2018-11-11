@@ -1,0 +1,23 @@
+       ORG   $E00
+EXEC   ORCC  #$50
+       CLR   65497
+       LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       LDD   #$0100
+       STD   $FF7E
+A@     LDX   #$2000
+B@     TFR   A,A
+       LDD   $FF7C
+       LDA   #1
+       STA   $FF7E
+       STB   ,X+
+       CMPX  #$2000+8*256
+       BLO   B@
+       RTS
+
+       END   EXEC
+

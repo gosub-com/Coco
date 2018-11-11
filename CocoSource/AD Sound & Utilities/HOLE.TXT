@@ -1,0 +1,37 @@
+       ORG   $E00
+SCRPOS FDB   $400
+
+EXEC   CLR   65496
+       CLR   [$C006]
+       JSR   [$C004]
+       LDX   #$400
+
+       ORCC  #$50
+RERUN  LDA   $FF48
+       BITA  #2
+       BEQ   A@
+       LDA   #175
+       BRA   B@
+A@     LDA   #255
+       BRN   A@
+B@     STA   ,X+
+       CMPX  #$600
+       BLS   C@
+       LDX   #$400
+       BRA   D@
+C@     LDU   #$400
+       BRN   C@
+D@
+*MAIN CORE TAKES 40 CYCLES
+       LDY   #38
+
+****NOT MAIN CORE
+A@     LEAY  -1,Y
+       BNE   A@
+*
+       BRN   A@
+*****************
+
+       BRA   RERUN
+
+       END   EXEC

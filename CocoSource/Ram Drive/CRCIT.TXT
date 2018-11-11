@@ -1,0 +1,15 @@
+       ORG   $2000
+
+EXEC   LDD   $E03 *POSITION
+       ADDD  #$E00 *OFFSET
+       PSHS  D
+       LDX   #$E00
+       LDD   #0
+A@     ADDA  ,X
+       EORB  ,X+
+       CMPX  ,S
+       BLO   A@
+       STD   ,X
+       PULS  D,PC
+
+       END   EXEC

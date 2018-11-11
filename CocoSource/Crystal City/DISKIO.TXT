@@ -1,0 +1,752 @@
+*THIS IS THE DISK SYSTEM
+
+*ENTRY:
+* U ^ CRC
+* X ^ BYTES TO CRC
+* Y = # OF BYTES TO CRC
+*ALL REGISTERS PRESERVED
+* THE CRC AT U IS MODIFIED
+CRC    PSHS  D,X,Y
+A@     LDA   ,X+
+*CRC BEGIN
+*ENTRY:
+* A = BYTE TO CRC
+* U ^ CRC
+*PRESERVED:X,Y,U
+* A IS ADDED TO THE CRC AT U
+CRCA   EORA  ,U
+       PSHS  A
+       LDD   1,U
+       STD   ,U
+       CLRA
+       LDB   ,S
+       LSLB
+       ROLA
+       EORA  1,U
+       STD   1,U
+       CLRB
+       LDA   ,S
+       LSRA
+       RORB
+       LSRA
+       RORB
+       EORA  1,U
+       EORB  2,U
+       STD   1,U
+       LDA   ,S
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       EORA  ,S+
+       BPL   E@
+       LDD   #$8021
+       EORA  ,U
+       STA   ,U
+       EORB  2,U
+       STB   2,U
+E@
+*CRC END
+       LEAY  -1,Y
+       BNE   A@
+R@     PULS  D,Y,X,PC
+
+       BSZ   $100-(*!.$FF)
+
+ MSG "DSKON VARS AT $",*
+DRVON  FCB   0
+DSKDRV FCB   0
+DSKTRK FCB   0
+DSKSEC FCB   0
+DSKBUF FDB   0
+DSKSTA FCB   0
+SLOW   FCB   0
+RAMIM  FCB   0
+RW     FCB   0
+HEAD   FCB   $FF
+NMIGOTO FDB  0
+NMIOK  FCB   0
+
+*D=TRACK, SECTOR
+SETSECTOR
+       STD   DSKTRK
+       RTS
+
+NEXTSECTOR
+       LDD   DSKTRK
+       INCB
+       CMPB  #18
+       BHI   A@
+       STD   DSKTRK
+       RTS
+A@     LDB   #1
+       INCA
+       CMPA  #17
+       BNE   B@
+       INCA
+B@     STD   DSKTRK
+       RTS
+
+*ENTRY: U ^ BUFFER
+*EXIT:  BNE ERROR
+DISKNEXT
+       PSHS X,Y,U,D
+       CLR   65496
+       STU   DSKBUF
+       LDU   #READ
+       BSR   DOIT
+       PSHS  CC
+       BSR   NEXTSECTOR
+       CLR   65497
+       PULS  CC,X,Y,U,D,PC
+
+*ENTRY: A=TRACK
+*       B=SECTOR
+*       U=BUFFER
+*EXIT:  BNE ERROR
+DISKREAD
+       PSHS  X,Y,U,D
+       CLR   65496
+       STD   DSKTRK
+       STU   DSKBUF
+       LDU   #READ
+       BSR   DOIT
+       PSHS  CC
+       CLR   65497
+       PULS  CC,X,Y,U,D,PC
+
+DISKWRITE
+       PSHS  X,Y,U,D
+       CLR   65496
+       STD   DSKTRK
+       STU   DSKBUF
+       LDU   #WRITE
+       BSR   DOIT
+       PSHS  CC
+       CLR   65497
+       PULS  CC,X,Y,U,D,PC
+
+*THIS CALLS THE FUNCTION
+*TWICE, THEN RESETS THE HEAD,
+*AND TRIES AGAIN.
+DOIT   PSHS  U
+       JSR   [,S]
+       LDA   DSKSTA
+       BEQ   O@
+       JSR   [,S]
+       LDA   DSKSTA
+       BEQ   O@
+       LDB   #2
+       PSHS  B
+A@     JSR   GO0 *GOTO TRACK 0
+       JSR   [+1,S]
+       LDA   DSKSTA
+       BEQ   E@
+       ANDA  #%01000000
+       BNE   O2@
+       DEC   ,S
+       BNE   A@
+       LDA   #1
+E@     PULS  B
+O@     PULS  U,PC
+*WRITE PROTECT ERROR
+*IS NOT AN ERROR
+O2@    CLRA
+       PULS  B,U,PC
+
+*TURN DRIVE ON
+DRVGO
+       PSHS  X,Y,U,D
+       CLR   65496
+*SET MOTOR, DRIVE, AND DD FLAG
+       LDA   #1+8+$20
+       LDB   DSKTRK
+       CMPB  #22 *COMPENSATION?
+       BLO   C@
+       ORA   #$10
+C@     STA   RAMIM
+       STA   $FF40
+       CLR   DSKSTA
+       EXG   A,A
+       EXG   A,A
+       BSR   READY
+       BEQ   D@
+       BSR   LWAIT
+       BSR   READY
+D@     CLR   65497
+DSKRTS PULS  X,Y,U,D,PC
+
+DISKINIT
+       LDX   $FFFC
+       LDA   #$7E
+       STA   ,X
+       LDU   #NMISER
+       STU   +1,X
+       BSR   DRVGO
+       JSR   LWAIT
+       RTS
+
+DISKDEINIT
+       PSHS  X,Y,U,D,CC
+       LDD   #$3B3B
+       STD   [$FFFC]
+       CLR   $FF40
+       CLR   65497
+       PULS  X,Y,U,D,CC,PC
+
+*GO TO TRACK 0
+GO0    CLR   65496
+       CLR   HEAD
+       LDA   #3
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       BSR   READY
+       BSR   WAIT
+       ANDA  #$10
+       STA   DSKSTA
+TRTS   RTS
+
+*LONG WAIT
+LWAIT  BSR   WAIT
+       BSR   WAIT
+*FALL THROUGH TO DO IT 3X
+WAIT   PSHS  Y
+       LDY   #8750
+A@     LEAY  -1,Y
+       BNE   A@
+       PULS  Y,PC
+
+*IS DRIVE READY?
+READY  LDY   #0
+R@     LEAY  -1,Y
+       BEQ   FRCINT
+       LDA   $FF48
+       BITA  #1
+       BNE   R@
+       RTS
+FRCINT LDA   #$D0
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       LDA   $FF48
+       LDA   #$80
+       STA   DSKSTA
+       RTS
+
+SEEK   LDB   HEAD
+       CMPB  DSKTRK
+       BNE   FSEEK
+       STB   $FF49
+       EXG   A,A
+       RTS
+
+FSEEK  PSHS  X,Y,U,D
+       LDB   HEAD
+       STB   $FF49
+       COM   HEAD
+       BNE   N@
+       BSR   GO0
+N@     LDA   DSKTRK
+       STA   $FF4B
+       STA   HEAD
+       LDA   #$17
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       BSR   READY
+       BNE   O@
+       BSR   WAIT
+       ANDA  #$18
+       STA   DSKSTA
+O@     PULS  X,Y,U,D,PC
+
+READ   LDA   #$80
+       FCB   $8C *SKIP 2
+WRITE  LDA   #$A0
+       CLR   DSKSTA
+       PSHS  CC
+       PSHS  A *READ/WRITE
+       BSR   SEEK
+       LDA   DSKSTA
+       BEQ   ONTRK
+       PULS  A
+       PULS  CC,PC
+*SEND HEAD TO TRACK
+ONTRK  LDA   DSKSEC
+       STA   $FF4A
+       LDX   #NMIVEC
+       STX   NMIGOTO
+       LDX   DSKBUF
+       LDA   $FF48
+       LDA   RAMIM
+       ORA   #$80
+       PULS  B *READ/WRITE
+       LDY   #0
+       LDU   #$FF48
+       COM   NMIOK
+       ORCC  #$50
+       STB   $FF48
+       EXG   A,A
+       EXG   A,A
+       CMPB  #$80
+       BEQ   RSEC
+       BRA   WSEC
+
+JMPTBL FDB   GO0   *RESET HEAD
+       FDB   TRTS  *DO NOTHING
+       FDB   READ  *READ SECTOR
+       FDB   WRITE *WRITE SECTOR
+
+*NON MASKABLE INTERRUPT
+NMISER LDA   NMIOK
+       BEQ   NMIOUT
+       LDX   NMIGOTO
+       STX   10,S
+       CLR   NMIOK
+NMIOUT RTI
+
+*WRITE SECTOR
+WSEC   LDB   #2
+A@     BITB  ,U
+       BNE   B@
+       LEAY  -1,Y
+       BNE   A@
+       CLR   NMIOK
+       PULS  CC
+       JMP   FRCINT
+*NMI TAKES US OUT OF THIS LOOP
+B@     LDB   ,X+
+       STB   $FF4B
+       STA   $FF40
+       BRA   B@
+
+*READ SECTOR
+RSEC   LDB   #2
+A@     BITB  ,U
+       BNE   B@
+       LEAY  -1,Y
+       BNE   A@
+       CLR   NMIOK
+       PULS  CC
+       JMP   FRCINT
+*NMI TAKES US OUT OF THIS LOOP
+B@     LDB   $FF4B
+       STB   ,X+
+       STA   $FF40
+       BRA   B@
+
+NMIVEC LDA   $FF48
+       PULS  CC
+       ANDA  #$7C
+       STA   DSKSTA
+       RTS
+
+*THE FOLLOWING SUBROUGHTEENS
+*ARE CLOSELY LINKED WITH
+*THE OPERATION OF THE ENTIRE
+*VIDEO GAME!
+
+IOPROMPT
+       JSR   CLEARSCREEN
+       JSR   PUTSPCAT
+       FCB   80,128-2*27
+ FCC "DISK IO ERROR: USE "
+ FCC "A BACKUP",0
+       BRA   C@
+CRYSTALPROMPT
+       JSR   CLEARSCREEN
+C@     JSR   DISKDEINIT
+       JSR   PUTSPCAT
+       FCB   100,128-2*26
+ FCC "PLEASE INSERT CRYSTAL "
+ FCC "CITY",0
+       JSR   PUTSPCAT
+       FCB   110,128-2*26
+ FCC '"LEVELS" DISK INTO '
+ FCC "DRIVE 0",0
+       JSR   PUTSPCAT
+       FCB   120,128-2*15
+ FCC "AND HIT <ENTER>",0
+A@     JSR   INKEY
+       CMPA  #13
+       BNE   A@
+       RTS
+
+WORKBUFFER1
+WORKBUFFER BSZ 256
+WORKBUFFER2 BSZ 256
+
+CRYSTALNAME
+       FCB   $87,$CD
+       FCC   "CRYSTAL",0
+
+*X, U ^ STRINGS
+*ARE STRINGS EQUAL?
+STREQ  PSHS  X,U,D
+A@     LDA   ,X+
+       BEQ   Z@
+       CMPA  ,U+
+       BEQ   A@
+*STRING NOT EQUAL
+       PULS  X,U,D,PC
+*STRINGS COULD BE EQUAL
+Z@     CMPA  ,U
+       PULS  X,U,D,PC
+
+
+*GET LOGICAL SECTOR #1
+*TEST IT FOR CORRECTNESS
+ISCRYSTAL
+RE@    JSR   DISKINIT
+       LDD   #1
+       LDU   #WORKBUFFER
+       JSR   DISKREAD
+       BEQ   OK@
+*IO ERROR
+       JSR   IOPROMPT
+       BRA   RE@
+*CHECK FOR ERROR
+*U ^ WORKBUFFER
+OK@    LDX   #CRYSTALNAME
+*CHECK FOR NOT CORRECT DISK
+       BSR   STREQ
+       BEQ   DO@
+*FORCE USER TO INSERT CRYSTAL
+       JSR   CRYSTALPROMPT
+       BRA   RE@
+*WE HAVE SECTOR, DO PALETTES
+DO@    LDX   #PALETTECONV
+       LDB   #64
+       LDA   WORKBUFFER+67
+       BEQ    CMP@ *COMPOSITE
+*COPY RGB INTO PALETTECONV
+       CLRA
+DA@    STA   ,X+
+       INCA
+       DECB
+       BNE   DA@
+       BRA   Z@
+CMP@   LDU   #CMPPALETTES
+DB@    LDA   ,U+
+       STA   ,X+
+       DECB
+       BNE   DB@
+*WE ARE DONE WITH RGB/CMP
+*DO MONITOR FINE TUNE
+Z@     CLRA
+       LDB   WORKBUFFER+68
+       ANDB  #7
+       ADDD  #$3D1
+       STD   SPINT1+1
+       STD   SPINT2+1
+       CLRA  *SET OK STATUS
+       RTS
+
+
+CMPPALETTES
+ FCB 0,12,2,14,7,9,5,16,28,44
+ FCB 13,29,11,27,10,43
+ FCB 34,17,18,33,3,1,19,50,30
+ FCB 45,31,46,15,60,47,61
+ FCB 23,8,21,6,39,24,38,54,25
+ FCB 42,26,58,24,41,40,56
+ FCB 20,4,35,51,37,53,36,52
+ FCB 32,59,49,62,55,57,63,48
+
+ENCODESCORES
+DECODESCORES
+       LDD   #%10110001
+       LDX   #SCORES
+       PSHS  B
+A@     LDB   ,S
+       EORB  ,X
+       STB   ,X+
+       INC   ,S
+       DECA
+       BNE   A@
+       PULS  B,PC
+
+*MUST HAVE CALLED ISCRYSTAL
+LOADSCORES
+       LDD   #2
+       LDU   #SCORES
+       JSR   DISKREAD
+*CHECK FOR IO ERROR
+       BNE   ER@
+       BSR   DECODESCORES
+*CHECK FOR CRC ERROR
+       BSR   CRCSCORES
+       CMPA  WORKBUFFER+64
+       BNE   E@ *ERROR
+       CMPX  WORKBUFFER+65
+       BNE   E@
+*EQUAL FOR OK
+ER@    RTS   *ALL IS OK
+*ERROR - LEAVE BUFFER EMPTY
+E@     LDD   #0
+       LDX   #SCORES
+F@     STA   ,X+
+       DECB
+       BNE   F@
+*EQUAL FOR OK
+       RTS   *DONE
+
+*MUST HAVE CALLED ISCRYSTAL
+SAVESCORES
+       BSR   CRCSCORES
+       STA   WORKBUFFER+64
+       STX   WORKBUFFER+65
+       BSR   ENCODESCORES
+       LDD   #2
+       LDU   #SCORES
+       JSR   DISKWRITE
+*CHECK FOR IO ERROR
+       BNE   ER@
+       BSR   DECODESCORES
+       LDD   #1
+       LDU   #WORKBUFFER
+       JSR   DISKWRITE
+ER@    RTS   *DONE
+
+CRCSCORES
+       LDD   #$FFFF
+       PSHS  D
+       PSHS  A
+       LEAU  ,S
+       LDX   #SCORES
+       LDY   #$100
+       JSR   CRC
+       PULS  X,A
+       RTS
+
+*GET A BYTE (USED IN OBJECTS)
+GETOBYTE
+       LDA   ,U+
+       CMPU  #WORKBUFFER2+256
+       BLS   ?RTS
+       LDU   #WORKBUFFER2
+       JSR   DISKNEXT
+       LDA   ,U+
+       RTS
+
+*B=LEVEL TO LOAD
+LOADLEVEL
+       PSHS  B
+       JSR   CLEARSCREEN
+       JSR   PUTSPCAT
+       FCB   90,128-2*15
+ FCC "LOADING LEVEL ",0
+       LDA   ,S
+       ADDA  #'0
+       JSR   PCHRAP
+
+       PULS  B
+       ADDB  #2
+       CLRA
+       LDU   #WORKBUFFER
+       JSR   DISKREAD
+       BNE   ?RTS
+*WE NOW HAVE LEVEL DESCRIPTOR
+*GO GET SCENERY
+       LDD   WORKBUFFER+138
+*D ^ SCENERY
+       STD   DSKTRK
+*GET SCENERY BLOCKS
+       LDD   #$3C3D
+       STD   $FFA0
+*
+       LDA   #$3F
+       SUBA  WORKBUFFER+140
+       BCC   GO@   *BAD DATA
+       ORCC  #$50
+       CLR   $FFA0
+       STA   0
+SHIT@  BRA   SHIT@
+GO@    CLRB
+       TFR   D,U
+*PUT DISTANCE FROM BEGINING OF
+*SCENERY AT BEGINING OF SCENERY
+       STD   LEVELADD
+*U ^ WARE SCENERY GOES
+       LDA   WORKBUFFER+140
+A@     JSR   DISKNEXT
+       BNE   ?RTS *IO ERROR
+       LEAU  +256,U
+       DECA
+       BPL   A@
+*WE GOT THE SCENERY!
+
+*NOW GO GET OBJECTS
+*WE ALREADY HAVE LEVEL DESCRIPT.
+*GO GET OBJECTS
+       LDD   WORKBUFFER+142
+       STD   DSKTRK
+       LDU   #WORKBUFFER2+256
+*
+       LDD   #0
+       PSHS  D
+       PSHS  D
+       LDX   #OBJECTS *^ OBJECTS
+***READ IN OBJECTS
+OK@    CMPX  #ENDOBJECTS
+SHIT@  BHS   SHIT@
+       JSR   GETOBYTE
+       TSTA
+       BMI   A@
+*TWO BYTES
+       STA   +2,S
+       LSRA
+       LSRA
+       ANDA  #%00011110
+       STA   +2,X
+       JSR   GETOBYTE
+       STA   +3,S
+       LDB   +2,S
+       LSLA
+       ROLB
+       ANDB  #$0F
+       CLRA
+       ADDD  ,S
+       STD   ,S
+       STD   ,X
+       LDA   +3,S
+       ANDA  #%01111111
+       STA   +3,X
+       LEAX  +4,X
+       BRA   OK@
+A@     BITA  #%01000000
+       BNE   B@
+*THREE BYTES
+       PSHS  A
+       LSRA
+       ANDA  #%00011110
+       STA   +2,X
+       JSR   GETOBYTE
+       TFR   A,B
+       PULS  A
+       ANDA  #%00000011
+       ADDD  ,S
+       STD   ,S
+       STD   ,X
+       JSR   GETOBYTE
+       STA   +3,X
+       LEAX  +4,X
+       BRA   OK@
+*4 BYTES OR END
+B@     ANDB  #%00001111
+       STA   +2,X
+       JSR   GETOBYTE
+       PSHS  A
+       JSR   GETOBYTE
+       TFR   A,B
+       PULS  A
+       STD   ,S
+       STD   ,X
+       SUBD  #$FFFF
+       BEQ   Z@ *WE ARE DONE
+       JSR   GETOBYTE
+       STA   +3,X
+       LEAX  +4,X
+       JMP   OK@
+Z@     CMPX  #ENDOBJECTS
+SH2@   BHS   SH2@
+       PULS  D
+       PULS  D
+
+*WE GOT THE OBJECTS!
+
+*NOW GO GET BLOCKS
+       LDU   #WORKBUFFER2
+       LDA   #$30 *SCENERY BLOCK
+       STA   $FFA0
+       LDX   #0 * ^ BLOCK
+       LDY   #WORKBUFFER
+       STX   DSKTRK
+B@     LDD   ,Y *GET POINTER
+       BPL   C@
+       COMA     *REVERSE TRACK
+C@     CMPD  DSKTRK *HAVE?
+       BEQ   D@ *ALREADY HAVE
+       JSR   DISKREAD *GET SECT
+       BNE   ?RTS
+*WE NOW HAVE THE SECTOR
+*COPY IT INTO PLACE
+D@     PSHS  U
+       LDU   #WORKBUFFER2
+       LDA   ,Y++
+       BPL   E@
+       LDU   #WORKBUFFER2+128
+E@     LDB   #128 *COPY 128 BYTE
+F@     LDA   ,U+
+       STA   ,X+
+       DECB
+       BNE   F@
+       PULS  U
+       CMPY  #WORKBUFFER+128
+       BLO   B@
+
+*NOW GO GET COLOR SET
+       LDD   WORKBUFFER+132
+       LDU   #RNDBLOCK
+       JSR   DISKREAD *GET SECT
+       BNE   ?RTS *ERROR?
+
+*NOW GO GET THE BOSS
+       LDD   WORKBUFFER+128
+       STD   DSKTRK
+
+       LDU   #BOSSPICT
+       JSR   DISKNEXT *GET SECT
+       BNE   ?RTS
+       LEAU  256,U
+       JSR   DISKNEXT
+       BNE   ?RTS
+       LEAU  256,U
+       JSR   DISKNEXT
+       BNE   ?RTS
+       LEAU  256,U
+       JSR   DISKNEXT
+       BNE   ?RTS
+
+       CLRA  *OK STATUS
+       RTS
+
+
+COPYPROTECT
+       JSR   DISKINIT
+       BSR   PROTECTION
+       JSR   DISKDEINIT
+       RTS
+
+PROTECTION
+       LDA   #3
+       LDX   #$FFFF
+       PSHS  X,Y,U,A
+A@     LDA   #1 *TRACK 1
+       LDB   #8
+       LDU   #WORKBUFFER1
+       JSR   DISKREAD
+       LDB   #10
+       JSR   DISKREAD
+       LDU   #WORKBUFFER2
+       JSR   DISKREAD
+       LDD   WORKBUFFER1
+       SUBD  WORKBUFFER2
+       BNE   B@
+C@     DEC   ,S
+       BNE   A@
+       CLRB
+       PULS  X,Y,U,A,PC *BACKUP
+B@     SUBD  #$0202
+       BNE   C@
+       COMB
+       PULS  X,Y,U,A,PC
+

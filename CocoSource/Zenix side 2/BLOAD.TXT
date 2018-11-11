@@ -1,0 +1,446 @@
+*SECTOR IS LOADED AT $CD5
+
+       ORG   $3000
+       FDB   0
+       FDB   1001
+
+       ORG   $9F
+       JMP   $B277
+
+       ORG   $E00
+       JMP   $9F
+
+
+       ORG   $CD5+128
+       FCB   $0
+
+       ORG   $4000
+ FCC "ZENIX, "
+ FCC "WRITTEN BY "
+ FCC "JEREMY SPILLER.",13,13,0
+
+       FGOTO 128
+*ONE SECTOR
+
+       ORG   $E00
+       NOP
+       JMP   $9F
+
+******************************
+*BLOAD
+******************************
+       ORG   $8000
+       SETDP $80
+
+SCREEN EQU   $6000
+GRANULE EQU  $6300
+FAT    EQU   $6F00
+
+
+NMIFLG FCB   0
+NMIRTS FDB   0
+
+NMI    LDA   NMIFLG
+       BEQ   A@
+       LDX   NMIRTS
+       STX   10,S
+       CLR   NMIFLG
+A@     RTI
+
+SEXINGRAN FCB 9
+GRAN   FCB   0
+DSKBUF FDB   0
+OLDADD FDB   0
+DRIVE  FCB   0
+TRACK  FCB   0
+SECTOR FCB   0
+DSKERR FCB   0
+DSKREG FCB   0
+TRKPOS FCB   0
+LFFA1  FCB   0
+ID     FDB   $FFFF
+
+       ORG   $8100
+STK    BSZ   4
+
+GETBLOCK
+       ANDA  #1
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LDX   #$2000
+       LEAX  D,X
+       RTS
+
+GTWORD BSR   GTBYTE
+       TFR   B,A
+GTBYTE LDB   GRANULE
+BUFFP  EQU   *-2
+       INC   BUFFP+1
+       BNE   ?RTS
+       INC   BUFFP
+       DEC   SEXINGRAN
+       BNE   ?RTS
+*GET NEXT GRANULE!
+       PSHS  X,Y,U,D
+       LDX   #GRANULE
+       STX   BUFFP
+       LDB   #9
+       STB   SEXINGRAN
+       LDB   GRAN
+       LDU   #FAT
+       LDB   B,U
+       STB   GRAN
+       LDA   GRAN
+       LSRA
+       CMPA  #17
+       BLO   B@
+       INCA
+B@     ANDB  #1
+       BEQ   C@
+       LDB   #9
+C@     INCB
+       STD   TRACK
+       LDB   #9 *NUMBER OF SECTS
+D@     STX   DSKBUF
+       BSR   DSKON
+       INC   SECTOR
+       LEAX  +256,X
+       DECB
+       BNE   D@
+       PULS  X,Y,U,D,PC
+
+DSKON  CLR   65496
+       PSHS  A
+       LDA   TRACK
+       CMPA  #35
+A@     BHS   A@
+       BSR   DSKGO
+       CLR   65497
+       PULS  A,PC
+
+DSKGO  PSHS  X,Y,U,D
+       LEAS  -2,S
+       LDA   ID+1
+       LDB   #$55
+       MUL
+       STD   ,S
+       LDA   ID+1
+       LDB   #$62
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   ID
+       LDB   #$55
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   #13849
+       ADDD  ,S++
+       STD   ID
+       LDA   #7
+       PSHS  A
+REDO   LDA   #8+$20+1 *DRIVE 0
+       LDB   TRACK
+       CMPB  #22
+       BLO   A@
+       ORA   #$10
+A@     STA   DSKREG
+       STA   $FF40
+       BSR   UNBUSY
+       BNE   B@
+       CLR   DSKERR
+       BSR   READ
+B@     PULS  A
+       LDB   DSKERR
+       BNE   C@
+       PULS  X,Y,U,D,PC
+C@     DECA
+       BEQ   IOERR
+       PSHS  A
+       BSR   RHEAD
+       BRA   REDO
+
+IOERR  CLR   $FF40
+A@     BRA   A@
+
+RHEAD  CLR   TRKPOS
+       LDA   #3
+       STA   $FF48
+       BSR   UNBUSY
+       BSR   WAIT
+       RTS
+
+UNBUSY EXG   A,A
+       EXG   A,A
+       LDX   #0
+A@     LEAX  -1,X
+       BEQ   FRCINT
+       LDA   $FF48
+       BITA  #1
+       BNE   A@
+       RTS
+FRCINT LDA   #$D0
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       LDA   $FF48
+       LDA   #$80
+       STA   DSKERR
+       RTS
+
+WAIT   LDX   #8750
+A@     LEAX  -1,X
+       BNE   A@
+       RTS
+
+READ   LDB   TRKPOS
+       STB   $FF49
+       CMPB  TRACK
+       BEQ   ONTRK
+       LDA   TRACK
+       STA   $FF4B
+       LDA   #$17
+       STA   $FF48
+       BSR   UNBUSY
+       BNE   ?RTS
+       BSR   WAIT
+       ANDA  #$18
+       STA   DSKERR
+       BNE   ?RTS
+       LDB   TRACK
+       STB   TRKPOS
+ONTRK  LDA   SECTOR
+       STA   $FF4A
+       LDX   #OUTNMI
+       STX   NMIRTS
+       LDX   DSKBUF
+       LDA   $FF48
+       LDA   DSKREG
+       ORA   #$80
+       LDY   #0
+       LDU   #$FF48
+       LDB   #$FF
+       STB   NMIFLG
+       LDB   #$80
+       STB   $FF48
+       EXG   A,A
+       EXG   A,A
+       BITA  +1,X
+       LDB   #2
+A@     BITB  ,U
+       BEQ   A@
+       LDB   ID
+B@     EORB  $FF4B
+       STB   ,X+
+       STA   $FF40
+       BRA   B@
+OUTNMI LDA   $FF48
+       ANDA  #$7C
+       STA   DSKERR
+       RTS
+
+BLOAD  ORCC  #$50
+       TFR   PC,X
+C@     CMPX  #C@
+D@     BNE   D@
+       LDS   #STK
+       LDA   #$80
+       TFR   A,DP
+      LBSR   SETUP
+       LDA   GRAN
+       LSRA
+       CMPA  #17
+       BLO   X@
+       INCA
+X@     STA   TRKPOS
+       LDA   #$FF
+       STA   BUFFP+1
+       LDA   #1
+       STA   SEXINGRAN
+       JSR   GTBYTE
+
+*LOAD IN PROGRAM
+A@     JSR   GTBYTE
+       TSTB
+      LBNE   IOERR
+       JSR   GTWORD
+       PSHS  D      *LENGTH
+       TFR   D,U
+       JSR   GTWORD *ADDRESS
+       LEAU  D,U
+       SUBD  OLDADD
+       TFR   CC,B
+       STU   OLDADD
+       LDY   ,S++
+       TFR   B,CC
+       BEQ   B@
+*NEW ADDRESS!
+       JSR   GTWORD
+       SUBD  #0
+       BEQ   O@ *LOAD AT 0?
+       PSHS  A      *PLACE
+       LSRA
+       STA   $FFA1
+       STA   LFFA1
+       PULS  A      *PLACE
+       JSR   GETBLOCK
+       LEAY  -2,Y
+       BEQ   A@
+B@     JSR   GTBYTE
+       STB   ,X+
+       LEAY  -1,Y
+       BEQ   A@
+       CMPX  #$4000
+       BLO   B@
+       LDB   LFFA1
+       INCB
+       STB   LFFA1
+       STB   $FFA1
+       LDX   #$2000
+       BRA   B@
+O@     JSR   GTWORD *GET EXEC
+       PSHS  A
+       LSRA
+       STA   $FFA1
+       PULS  A
+       JSR   GETBLOCK
+       LDU   #FAT
+       LDB   GRAN
+       LDA   B,U
+       LDB   A,U
+       STD   $FE03
+       JMP   ,X
+
+SETUP  CLR   65497
+       LDX   #SCREEN
+       LDU   #$2020
+       LDB   #128+16
+E@     STU   ,X++
+       STU   ,X++
+       DECB
+       BNE   E@
+       LDU   $3000 *GET ID
+       LDD   #%0011010000111100
+       STA   $FF01
+       STA   $FF03
+       STA   $FF21
+       STB   $FF23
+*SET UP SCREEN
+       LDA   $FF02
+A@     LDA   $FF03
+       BPL   A@
+       LDD   #$003F
+       STD   $FFB0
+       LDD   #%0100110000100000
+       STD   $FF90
+       CLR   $FF92
+       CLR   $FF93
+       LDB   #%00000110
+       STB   $FF98
+       LDA   #$8E
+       STA   NC@
+*GET X TO ^ ID
+NC@    FCB   $20
+       FDB   ID
+       CLR   $FF99
+       CLR   $FF9A
+       CLR   $FF9C
+       LDD   #$EC00 *76000
+       STD   $FF9D
+       CLR   $FF9F
+       STX   ID@
+       LDD   #$0E00+(NMI!.$FF)
+       STD   [$FFFC] *NMI
+       LDD   #$3B3B
+       STD   [$FFFA]
+       STD   [$FFF8]
+       STD   [$FFF6]
+       STD   [$FFF4]
+       STD   [$FFF2]
+       CLR   113
+       CLR   114
+       CLR   115
+       CLR   $FEED
+       LDB   $6F
+*TRICK TO STORE U AT ID
+       FDB   $20FF
+ID@    NOP
+       NOP
+       LSLB
+       LDX   #$926
+       LDX   B,X
+       LDB   +1,X *B=DRIVE
+       CMPB  #0
+EL@    BNE   EL@
+*COPY FAT FOR THAT DRIVE
+       LDA   #74
+       MUL
+       ADDD  #$806
+       TFR   D,Y
+       LDA   +2,X
+       STA   GRAN
+       LDA   #$31
+       STA   $FFA1
+       LDX   #FAT
+D@     LDD   ,Y++
+       STD   ,X++
+       CMPX  #FAT+80
+       BLO   D@
+       RTS
+ MSG "BLOAD END @",*," ($FE00)"
+
+       ORG   $176
+       JMP   BLOAD
+
+       ORG   $5000
+*ALMOST NO BYTES LEFT!
+
+       FGOTO $3F8
+ FCC "HELLO $3E0"
+       ORG   $E00
+       NOP
+
+*4 SCTORS OF EMPTY SPACE
+
+       BSZ   1
+       FCB   13,13,13,13
+ FCC "ARE YOU TRYING TO ",13
+ FCC "PIRATE MY WONDERFUL ",13
+ FCC "PROGRAM?  THAT'S ",13
+ FCC "ILLEGAL!!! ",13,13
+
+
+ FCC "THIS PROGRAM WAS ",13
+ FCC "WRITTEN BY ",13
+ FCC "JEREMY SPILLER, ",13
+ FCC "AND IT TOOK ME MANY ",13
+ FCC "THOUSANDS OF HOURS ",13
+ FCC "TO WRITE!  ",13
+ FCC "PLEASE DON'T PIRATE ",13
+ FCC "ZENIX!!! ",13
+
+       BSZ   1
+       FCB   13
+
+ FCC "PLEASE WRITE TO: ",13
+ FCC "GOSUB SOFTWARE ",13
+ FCC "P.O. BOX 1094 ",13
+ FCC "TOWNSEND MA, 01469 ",13
+ FCB 13
+ FCC "WE LIKE TO READ YOUR "
+ FCC "LETTERS.",13
+ FCB   13,13,13,13
+
+
+       FGOTO 2298
+
+       ORG   $194
+       FCB   0
+
+*START OF PROGRAM

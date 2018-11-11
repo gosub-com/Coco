@@ -1,0 +1,497 @@
+DBOMB  LDD   NEWPOS,X
+       ISDEAD #-7,#-7
+       CLR   STATUS,X
+       LDD   #BOMBDIE
+       STD   TRKDRV,X
+       PULS  D,PC
+
+BOMBDIE JMP  TBLOW
+
+BOMBSMOKE
+       LDA   #10
+       BRA   B@
+BOMB   LDA   #$FF
+B@     STA   BOMB.SMOKE,Y
+       LDD   #$24*256+3
+       STD   POINTS,Y
+       LDD   #A@
+       STD   TRKDRV,Y
+A@     LDA   BOMB.SMOKE,Y
+       BMI   N@
+       DECA
+       BNE   C@
+*MAKE EXPLOSIOAN
+       LDD   NEWPOS,Y
+       JSR   MBLOW
+       LDA   #7
+C@     STA   BOMB.SMOKE,Y
+N@     RASTER
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+
+CBOMB
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF2,X
+ STA  $FFF4,X
+ ABX
+ STU  $FFF2,X
+ STU  $FFF4,X
+ ABX
+ STU  $FFF3,X
+ STU  $FFF5,X
+ STA  $FFF7,X
+ ABX
+ STU  $FFF4,X
+ STU  $FFF6,X
+ STA  $FFF8,X
+ ABX
+ STU  $FFF5,X
+ STU  $FFF7,X
+ STA  $FFF9,X
+ ABX
+ STU  $FFF6,X
+ STU  $FFF8,X
+ STA  $FFFA,X
+ ABX
+ STU  $FFF7,X
+ STU  $FFF9,X
+ ABX
+ STU  $FFF9,X
+ STA  $FFFB,X
+*BYTES: $0037
+*CYCLES: $0092
+
+*CALCULATE MOVEMENT
+***VELOCITY.X
+       LDD   BOMB.VEL.X,Y
+       ADDD  BOMB.X,Y
+       STD   BOMB.X,Y
+**ACCLELERATION.Y
+       LDD   #29 *ACCELERATION
+       ADDD  BOMB.VEL.Y,Y
+       STD   BOMB.VEL.Y,Y
+***VELOCITY.Y
+       ADDD  BOMB.Y,Y
+       STD   BOMB.Y,Y
+*A=Y POS
+       LDB   BOMB.X,Y
+*D=NEWPOS
+       STD   NEWPOS,Y
+       CMPB  #40
+       BHI   B@
+DIE@   JMP   TRKEND
+B@     CMPB  #255-40
+       BHI   DIE@
+       CMPA  #192-16
+       BHI   DIE@
+       CMPA  IS.BOMB
+       BHI   C@
+       STA   IS.BOMB
+C@     ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+
+       LDX   EPOS,Y
+       LDA   +2,X
+       ANDA  #%11001100
+       BNE   TST@
+       LDA   +7*256+2,X
+       ANDA  #%11001100
+       BEQ   C@
+TST@   LDD   NEWPOS,Y
+       ADDD  #2
+       JSR   POINTDEAD
+       BNE   HIT@
+       LDD   NEWPOS,Y
+       ADDD  #7*256+2
+       JSR   POINTDEAD
+       BNE   HIT@
+       LDX   EPOS,Y
+       COM   GROUND,Y
+       BMI   D@
+HIT@   LDD   NEWPOS,Y
+       ADDD  #$0302
+       STD   NEWPOS,Y
+       JMP   TBLOW
+C@     LDA   GROUND,Y
+       BMI   TST@
+D@
+
+RBOMB
+ LDA   BOMB.X+1,Y
+ LBMI  OBOMB
+ LDD  #$DDDD
+ STD  $0001,X
+ STD  $0701,X
+ LDD  #$0DEE
+ STD  $0100,X
+ STD  $0600,X
+ LDD  #$EED0
+ STD  $0102,X
+ STD  $0602,X
+ LDD  #$DEEF
+ STD  $0200,X
+ STD  $0500,X
+ LDB  #$FF
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$FEED
+ STD  $0202,X
+ STD  $0502,X
+ INCA
+ STD  $0302,X
+ STD  $0402,X
+*BYTES: $0048
+*CYCLES: $008E
+ RETURN
+OBOMB
+ LDD  #$0DDD
+ STD  $0001,X
+ STD  $0701,X
+ LDB  #$EE
+ STD  $0200,X
+ STD  $0500,X
+ INCB
+ STD  $0300,X
+ STD  $0400,X
+ LDD  #$DEEE
+ STD  $0101,X
+ STD  $0601,X
+ LDA  #$FF
+ STD  $0202,X
+ STD  $0502,X
+ LDB  #$FE
+ STD  $0302,X
+ STD  $0402,X
+ LDB  #$D0
+ STB  $0003,X
+ STB  $0204,X
+ STB  $0304,X
+ STB  $0404,X
+ STB  $0504,X
+ STB  $0703,X
+ LDB  #$ED
+ STB  $0103,X
+ STB  $0603,X
+*BYTES: $005D
+*CYCLES: $00B8
+ RETURN
+
+DGUISER LDD   NEWPOS,X
+       ISDEAD #-7,#-14
+       CLR   STATUS,X
+       LDD   #GUISERDIE
+       STD   TRKDRV,X
+       PULS  D,PC
+
+GUISERDIE LDD NEWPOS,Y
+          ADDD #$0702
+          STD NEWPOS,Y
+          JMP  TBLOW
+
+*STATUS SET TO 0
+GUISER JSR   ARB
+       LSRA
+       ADDA  #25
+       LSRA
+       STA   BOMB.VEL.X,Y
+       LDD   #$24*256+2
+       STD   POINTS,Y
+       LDD   #A@
+       STD   TRKDRV,Y
+A@     LDA   NEWPOS+1,Y
+       SUBA  #2
+       STA   NEWPOS+1,Y
+       DEC   BOMB.VEL.X,Y
+       BNE   ?RTS
+       LDA   #$80
+       STA   STATUS,Y
+       LDD   #N@
+       STD   TRKDRV,Y
+       LDD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       JSR   ARB
+       ORA   #%11111100
+       DECA
+       STD   BOMB.VEL.Y,Y
+N@     RASTER
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDX   EPOS,Y
+
+       TST   BOMB.VEL.Y,Y
+       BMI   U@
+*VELOCITY IS DOWN
+       JSR   CGUISERD
+       BRA   D@
+*VELOCITY IS UP
+U@     JSR   CGUISERU
+D@
+
+
+*CALCULATE MOVEMENT
+***VELOCITY.X
+       LDB   NEWPOS+1,Y *XPOS
+       SUBB  #2
+       STB   NEWPOS+1,Y
+**ACCLELERATION.Y
+       LDD   #29 *ACCELERATION
+       ADDD  BOMB.VEL.Y,Y
+       STD   BOMB.VEL.Y,Y
+***VELOCITY.Y
+       ADDD  BOMB.Y,Y
+       STD   BOMB.Y,Y
+*A=Y POS
+       LDB   NEWPOS+1,Y
+*D=NEWPOS
+       STD   NEWPOS,Y
+       CMPB  #40
+       BHI   B@
+DIE@   JMP   TRKEND
+B@     CMPB  #255-40
+       BHI   DIE@
+       CMPA  #192-14
+       BHI   DIE@
+       CMPA  IS.BOMB
+       BHI   C@
+       STA   IS.BOMB
+C@     ADDD  SCRPOS
+       JSR   SPRITE
+       STX   $FFA0
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       LDX   EPOS,Y
+
+*TEST FOR HIT
+       LDA   BOMB.VEL.Y,Y
+       BPL   T2@
+*FACEING UP
+       LDA   +2,X
+       ANDA  #%11001100
+       BEQ   Z@ *NOTHING HIT
+*WE HIT SOMETHING
+       LDD   NEWPOS,Y
+       ADDD  #2
+       JSR   POINTDEAD
+HIT@   LDD   NEWPOS,Y
+       ADDD  #$0207
+       STD   NEWPOS,Y
+       JMP   TBLOW
+T2@    LDA   +2+14*256,X
+       ANDA  #%11001100
+       BEQ   Z@ *NOTHING HIT
+*WE HIT SOMETHING
+       LDD   NEWPOS,Y
+       ADDD  #2+14*256
+       JSR   POINTDEAD
+       BRA   HIT@
+Z@
+
+
+       LDX   EPOS,Y
+       TST   BOMB.VEL.Y,Y
+       BMI   U@
+*VELOCITY IS DOWN
+       JSR   GUISERD
+       RTS
+*VELOCITY IS UP
+U@     JSR   GUISERU
+       RTS
+
+
+GUISERU
+ LDD  #$6666 *D=$6666
+ STD  $0001,X
+ STD  $0400,X
+ LDA  #$06 *D=$0666
+ STD  $0100,X
+ LDB  #$55 *D=$0655
+ STD  $0500,X
+ STD  $0600,X
+ STD  $0800,X
+ LDB  #$15 *D=$0615
+ STD  $0700,X
+ LDD  #$C165 *D=$C165
+ STD  $0102,X
+ STB  $0702,X
+ STB  $0802,X
+ LDA  #$C6 *D=$C665
+ STD  $0202,X
+ LDA  #$CC *D=$CC65
+ STD  $0302,X
+ LDA  #$61 *D=$6165
+ STD  $0402,X
+ LDA  #$65 *D=$6565
+ STD  $0901,X
+ LDA  #$63 *D=$6365
+ STD  $0A01,X
+ LDD  #$662C *D=$662C
+ STD  $0200,X
+ LDB  #$C3 *D=$66C3
+ STD  $0300,X
+ LDB  #$50 *D=$6650
+ STD  $0502,X
+ STD  $0B01,X
+ LDA  #$62 *D=$6250
+ STD  $0C01,X
+ LDB  #$35
+ STB  $0602,X
+ LDB  #$05
+ STB  $0D01,X
+ STB  $0E01,X
+*BYTES: $007D
+*CYCLES: $00EA
+ RTS
+GUISERD
+ LDD  #$6250 *D=$6250
+ STD  $0201,X
+ LDA  #$66 *D=$6650
+ STD  $0301,X
+ STD  $0902,X
+ LDB  #$66 *D=$6666
+ STD  $0A00,X
+ STD  $0E01,X
+ LDB  #$C3 *D=$66C3
+ STD  $0B00,X
+ LDB  #$2C *D=$662C
+ STD  $0C00,X
+ LDD  #$6365 *D=$6365
+ STD  $0401,X
+ STB  $0602,X
+ STB  $0702,X
+ LDA  #$65 *D=$6565
+ STD  $0501,X
+ LDA  #$61 *D=$6165
+ STD  $0A02,X
+ LDA  #$CC *D=$CC65
+ STD  $0B02,X
+ LDA  #$C6 *D=$C665
+ STD  $0C02,X
+ LDA  #$C1 *D=$C165
+ STD  $0D02,X
+ LDD  #$0655 *D=$0655
+ STD  $0600,X
+ STD  $0800,X
+ STD  $0900,X
+ LDB  #$15 *D=$0615
+ STD  $0700,X
+ LDB  #$66 *D=$0666
+ STD  $0D00,X
+ LDB  #$05
+ STB  $0001,X
+ STB  $0101,X
+ LDB  #$35
+ STB  $0802,X
+*BYTES: $007D
+*CYCLES: $00EA
+ RTS
+CGUISERD
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF2,X
+ ABX
+ STU  $FFF3,X
+ ABX
+ STU  $FFF4,X
+ ABX
+ STU  $FFF5,X
+ ABX
+ STU  $FFF6,X
+ STA  $FFF8,X
+ ABX
+ STU  $FFF7,X
+ STA  $FFF9,X
+ ABX
+ STU  $FFF7,X
+ STU  $FFF9,X
+ ABX
+ STU  $FFF8,X
+ STU  $FFFA,X
+ ABX
+ STU  $FFF9,X
+ STU  $FFFB,X
+ ABX
+ STU  $FFFA,X
+ STU  $FFFC,X
+ ABX
+ STU  $FFFB,X
+ STU  $FFFD,X
+ STA  $FFFF,X
+ ABX
+ STU  $FFFC,X
+ STU  $FFFE,X
+ STA  $0000,X
+ ABX
+ STU  $FFFD,X
+ STU  $FFFF,X
+ STA  $0001,X
+ ABX
+ STU  $FFFE,X
+ STU  $0000,X
+ STA  $0002,X
+ ABX
+ STU  $0000,X
+ STA  $0002,X
+*BYTES: $0052
+*CYCLES: $00DF
+ RTS
+CGUISERU
+ LDD  #255
+ LDU  #0
+ LEAX $000F,X
+ STU  $FFF2,X
+ STA  $FFF4,X
+ ABX
+ STU  $FFF2,X
+ STU  $FFF4,X
+ STA  $FFF6,X
+ ABX
+ STU  $FFF3,X
+ STU  $FFF5,X
+ STA  $FFF7,X
+ ABX
+ STU  $FFF4,X
+ STU  $FFF6,X
+ STA  $FFF8,X
+ ABX
+ STU  $FFF5,X
+ STU  $FFF7,X
+ STA  $FFF9,X
+ ABX
+ STU  $FFF6,X
+ STU  $FFF8,X
+ ABX
+ STU  $FFF7,X
+ STU  $FFF9,X
+ ABX
+ STU  $FFF8,X
+ STU  $FFFA,X
+ ABX
+ STU  $FFF9,X
+ STU  $FFFB,X
+ ABX
+ STU  $FFFB,X
+ STA  $FFFD,X
+ ABX
+ STU  $FFFC,X
+ STA  $FFFE,X
+ ABX
+ STU  $FFFD,X
+ ABX
+ STU  $FFFE,X
+ ABX
+ STU  $FFFF,X
+ ABX
+ STU  $0000,X
+*BYTES: $0052
+*CYCLES: $00E1
+ RTS

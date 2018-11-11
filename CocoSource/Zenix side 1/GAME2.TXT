@@ -1,0 +1,358 @@
+OHFUCK JMP   RESET
+
+INITLIST
+*INITILIZE LISTS
+       LDD   #$3334
+       STD   $FFA0
+       LDD   #0
+       STD   ELSTS
+       STD   ELSTS+2
+       STD   WLSTS
+       STD   WLSTS+2
+       STD   WLSTE
+       STD   WLSTE+2
+       LDX   #ELSTS *LINK SPOT
+       LDY   #$D000 *1ST SPOT
+X@     LINK  *LINK Y ON TO X
+       LEAY  OBLEN+1,Y
+       CMPY  #$E000-(OBLEN+9)
+       BLO   X@
+*** ALL LINKED UP
+
+*INSERT YOUR SHIP!
+       LDY   #WLSTE
+       LDX   #WLSTS
+       LINK
+       CLR   STATUS,Y
+       LDD   #DOSHIP
+       STD   TRKDRV,Y
+       NEWLINK OHFUCK
+       LDX   #STARS
+       STX   TRKDRV,Y
+
+*** INITILIZE SQUADRONS
+SQUAD1 LDD   #$3334
+       STD   $FFA0
+       LDX   #SQORDER
+       LDB   SQDON
+       CALCLEV
+       LDA   #SQORDERNUM
+       MUL
+       LEAX  D,X
+       LDB   #SQORDERNUM
+       LDU   #SHOOTIT
+C@     LDA   ,X+
+       STA   ,U+
+       DECB
+       BNE   C@
+       LDD   #$0080
+       STD   SQDMID
+       LDX   #SQSETUP
+       LDB   SQDON
+       CLRA
+       LSLB
+       LSLB
+       ROLA
+       JSR   [D,X]
+*INITILIZE STUFF
+       LDX   #SQDMV
+       CLR   ,X+
+       CLR   ,X+
+       STX   SQMVAT
+       LDD   #0
+       STD   SHOTS
+       STD   MISSES
+       STD   SEXS
+       LDA   #60
+       STA   TICKS
+
+RET@   LDD   BLUEBUL
+       BEQ   A@
+       SUBD  #1
+       STD   BLUEBUL
+A@     LDD   REDBUL
+       BEQ   B@
+       SUBD  #1
+       STD   REDBUL
+B@     LDD   YELBUL
+       BEQ   C@
+       SUBD  #1
+       STD   YELBUL
+C@     JSR   FRINI
+       BSR   ANIM
+       LDA   OBNUM
+       BNE   RET@
+       LDA   SHIELD
+       CMPA  SHLD
+       BNE   RET@
+       LDB   SQDON
+       LDX   #SQSETUP
+       CLRA
+       LSLB
+       INCB
+       LSLB
+       ROLA
+       CLRA
+       JSR   [D,X]
+       INC   SQDON
+       JMP   SQUAD1
+
+DTRK   PSHS  Y,D
+       JMP   [TRKDRV,Y]
+*** DO SHIPS
+ANIM   LDA   ONMENU
+       BNE   H@
+       DEC   TICKS
+       BNE   I@
+       LDA   #60
+       STA   TICKS
+       LDD   SEXS
+       ADDD  #1
+       STD   SEXS
+I@     LDB   ONMENU
+       BNE   H@
+       LDB   ONBONUS
+       BNE   H@
+       INC   FUELL
+       BNE   H@
+       SUBSHL #1 *TIMER
+       STA   RSHLD
+H@     COM   OFRAME
+       DEC   SQSYNC
+       BPL   D@
+       LDA   #5
+       STA   SQSYNC
+       DEC   SQGO
+       BPL   D@
+       LDA   #26
+       STA   SQGO
+D@     LDD   #$3334
+       STD   $FFA0
+       LDX   #FIFO
+       STX   FIFOP
+       LDY   WLSTS
+       CLRA
+*MAIN PROGRAM LOOP PER BUG
+B@     BSR   DTRK *EXEC BUG
+       LDB   STATUS,Y
+       LSRB
+       ADCA  #0
+       LDY   NLINK,Y
+       BNE   B@
+       STA   OBNUM
+F@     LDX   FIFOP
+       LDD   #0
+       STD   ,X++
+       STD   ,X++
+       LDX   #FIFO
+       STX   FIFOP
+       LDU   #FIFO
+*******EXEC FIFO
+       PSHS  U
+       BRA   J@
+G@     LDX   ,U++
+       STU   ,S
+       JSR   ,X
+       LDU   ,S
+J@     LDY   ,U++
+       BNE   G@
+       PULS  U
+********
+E@     LDX   FIFOP
+       CMPX  #FIFO
+       BNE   F@
+***************INTERUPT LINE
+       RTS
+
+SBLOW  LDD   #$3334
+       STD   $FFA0
+       LDA   #1
+       STA   ONMENU
+       STA   DEAD
+       LDD   #$8000
+       STD   STARSTOP+1
+       JSR   EXPLODE
+       LDX   #EXPLTB
+       PSHS  X
+A@     BSR   MKFRM
+       LDX   ,S
+       LDD   ,X++
+       BEQ   B@
+       STX   ,S
+       ADDD  SHIPOS
+       JSR   MBLOW
+       BRA   A@
+B@     PULS  X
+       LDB   #128
+       PSHS  B
+C@     BSR   MKFRM
+       DEC   ,S
+       BNE   C@
+       PULS  B
+D@     BSR   MKFRM
+       LDD   SCRSTK
+       BNE   D@
+       BRA   SBLW2
+
+S@
+ FCB 255,255,127,191,223,191
+ FCB 223,191,123,247,189,237
+ FCB 237,182,102,100,144,132
+ FCB 132,33,2,16,32,64,32,16
+ FCB 8,0
+MKFRM  PSHS  X,Y,U,D
+       LDX   #S@
+       LDA   STARSTOP+2 *AT
+       LDB   A,X *BYTE
+       BEQ   B@
+       ANDB  STARSTOP+1 *ANDING
+       STB   STARSTOP
+       LSR   STARSTOP+1
+       BCC   B@
+       ROR   STARSTOP+1
+       INC   STARSTOP+2
+B@     LDA   FRGO
+       BEQ   A@
+       JSR   FRSCR
+       BRA   B@
+A@     JSR   FRPAL
+       JSR   FRSCR
+       JSR   ANIM
+       PULS  X,Y,U,D,PC
+
+SBLW2  LDD   SCRSTK
+       BEQ   AB@
+       BSR   MKFRM
+       BRA   SBLW2
+AB@    LDD   SCR
+       CMPD  LOWSCR+1
+       LBLO  GMOVR
+       BHI   A@
+       LDA   SCR+2
+       CMPA  LOWSCR+3
+       LBLS  GMOVR
+A@     DO    WRITCS
+       FCB   GOTOXY
+       FDB   160*256+128-32
+       FCB   CHCOL
+       FDB   $0088 *RED
+ FCC "CONGRATULATIONS!",0
+       BSR   MKFRM
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00DD *YELLOW
+       FCB   GOTOXY
+       FDB   170*256+128-44
+ FCC "YOU HAVE BEEN ACCEPTED",0
+       JSR   MKFRM
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   180*256+128-40
+ FCC "TO THE HALL OF FAME!",0
+       JSR   MKFRM
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   190*256+128-32
+       FCB   CHCOL
+       FDB   $00FF *WHITE
+ FCC "ENTER YOUR NAME:",0
+       JSR   MKFRM
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00DD *YELLOW
+       FCB   GOTOXY
+       FDB   200*256+128-68
+       FCC   ">=->"
+       FCB   GOTOXY
+       FDB   200*256+128+56
+       FCC   "<-=<"
+       FCB   GOTOXY
+       FDB   200*256+128-52
+       FCB   CHCOL
+       FDB   $0088 *RED
+       FCB   0
+       JSR   MKFRM
+
+       LDX   #PARAMT+4
+       CLRB
+B@     DO    WRITCS
+       FCB   127,0
+A@     JSR   MKFRM
+       DO    INKEY
+       BEQ   A@
+       DO    WRITCS
+       FCB   8,0
+       CMPA  #32
+       BLO   C@
+       CMPB  #26
+       BHS   B@
+       STA   B,X
+       INCB
+P@     DO    WRITCA
+       BRA   B@
+C@     CMPA  #8
+       BNE   D@
+       DECB
+       BPL   P@
+       INCB
+       BRA   B@
+D@     CMPA  #21
+       BNE   E@
+       TSTB
+       BEQ   B@
+       LDA   #8
+Q@     JSR   MKFRM
+       DO    WRITCA
+       DECB
+       BNE   Q@
+       BRA   B@
+E@     CMPA  #13
+       BNE   B@
+
+*ENTER HAS BEEN HIT!
+       LDA   #32
+A@     CMPB  #32-4
+       BHS   B@
+       STA   B,X
+       INCB
+       BRA   A@
+B@     LEAX  -4,X
+       CLR   31,X
+       LDD   SCR
+       STD   +1,X
+       LDA   SCR+2
+       STA   +3,X
+       CLR   ,X
+
+       LDA   #$3C
+       STA   $FFA5
+       JMP   $B206
+
+GMOVR  LDD   #$0088
+       DO    WRCL
+       LDA   #3
+C@     DO    WRITCS
+       FCB   GOTOXY
+       FDB   160*256+128-18
+ FCC "GAME OVER",0
+       LDB   #60
+A@     JSR   MKFRM
+       DECB
+       BNE   A@
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   160*256+128-18
+ FCC "         ",0
+       LDB   #30
+B@     JSR   MKFRM
+       DECB
+       BNE   B@
+       DECA
+       BNE   C@
+       LDB   #60
+D@     JSR   MKFRM
+       DECB
+       BNE   D@
+       LDA   #$3C
+       STA   $FFA5
+       JMP   $B209

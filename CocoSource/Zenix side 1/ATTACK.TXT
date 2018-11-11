@@ -1,0 +1,310 @@
+ATKHIT BULHIT 17,5,10
+       LDA   TYPE,U
+       SUBA  #%00010000
+       CMPA  #%10000000
+       BHS   D@
+B@     CLR   [MOTHER,U] *DEAD
+       LDD   #STDHIT
+       STD   SPCDRV,U
+       JMP   STDREM
+D@     LDB   NOGREEN
+       BEQ   C@
+A@     STA   TYPE,U
+       RTS
+C@     CMPA  #%10000000
+       BEQ   B@
+       CMPA  #%10110000
+       BNE   A@
+       SUBA  #%00010000
+       STA   TYPE,U
+       RTS
+
+*[MOTHER,Y]= 0 = DEAD
+*            1 = ALIVE
+*           -? = NOT ARIVED
+*ON ENTRY [MOTHER,Y] = $FE
+*SPCDRV,Y = #ATKDRV
+EXLINE INC   ATTACKER
+       JSR   DLINE
+       JSR   DLINE
+       BEQ   A@
+       JSR   HITSHP
+       BEQ   HIT@
+       JMP   STDSQD
+A@     LDD   #B@
+       STD   TRKDRV,Y
+       CLR   ANGLE,Y
+*SEND READY SIGNAL
+       LDA   #1 *ALIVE & ARRIVED
+       STA   [MOTHER,Y]
+       PULS  Y,D,PC
+B@     INC   ATTACKER
+       JSR   HITSHP
+       BCS   R@
+       BNE   C@
+*OTHER SHIP HITS US
+HIT@   SUBSHL HSSB
+       LDD   NEWPOS,Y
+       JSR   MBLOW
+       LDA   TYPE,Y
+       SUBA  #%00010000
+       CMPA  #$80
+       BLS   DIE@
+       CMPA  #%10110000
+       BNE   D@
+       SUBA  #%00010000
+D@     STA   TYPE,Y
+C@     JMP   STDSQD
+*LAST SHIP = BLOWUP
+DIE@   LDD   #0
+       STD   NEWPOS,Y
+       CLR   [MOTHER,Y] *DEAD
+ NXTFRM STDPRN
+       JMP   TRKEND
+R@     CLR   [MOTHER,Y] *DEAD
+       LDD   #STDHIT
+       STD   SPCDRV,Y
+       JMP   REMAPNW
+
+ATTACKAAT PULS Y,D,PC
+ATTACK LDX   ELSTS
+       BEQ   ATTACKAAT
+       UNLINKX *MOTHER
+*X ^ MOTHER, Y ^ DAD
+       STX   MOTHER,Y
+*MOTHER DOES NOT NEED A
+*TRACK DRIVER, OR STATUS.
+*SHE IS NOT IN EXECUTION QUEUE.
+*STATUS OF DAD IS ALREADY SET.
+       LDD   #DAD
+       STD   TRKDRV,Y
+       PULS  Y,D,PC
+
+
+DAD
+*COLLECT KIDS
+       LDU   WLSTS
+      LBEQ   KILPAR
+       LDX   MOTHER,Y
+       CLRA  *0=DEAD
+       STA   CHILD*1+ALIVE,X
+       STA   CHILD*2+ALIVE,X
+       STA   CHILD*3+ALIVE,X
+       STA   CHILD*4+ALIVE,X
+       JSR   ARB
+       ANDB  #$3 *RND # OF KIDS
+       INCB
+       LDA   #%00000100 *ATTACK?
+A@     BITA  STATUS,U
+       BEQ   B@
+       LEAX  CHILD,X *ATTACK!
+       INC   ALIVE,X *ALIVE!
+       STU   APBUG,X
+       DECB
+       BEQ   O@ *FOUR FOUND!
+B@     LDU   ,U
+       BNE   A@
+*SOME KIDS MAY BE FOUND 1=ALIVE
+O@     LDU   #MEETP
+       JSR   ARB
+       ANDA  #%00011110
+       LDU   A,U *U ^ TRACK
+       LDX   MOTHER,Y
+       LDB   CHILD*1+ALIVE,X
+       BEQ   KILPAR *NONE FOUND!
+*MUST GO THRU WITH IT NOW
+       LDD   ,U++ *MEET PLACE
+       STU   GOTRACK,Y
+       STD   NEWPOS,Y
+       PSHS  D *D=POSITION
+       LDU   #MEETO *OFFSET
+       LDB   #4 *MAX CHILDREN
+       PSHS  B
+C@     LEAX  CHILD,X
+       LDA   ALIVE,X
+*ARE THERE ANY MORE CHILDREN?
+       BEQ   R@ *BRANCH IF NOT
+       LDY   APBUG,X *Y ^ CHILD
+       LDD   #EXLINE
+       STD   TRKDRV,Y
+       LDA   #%10010001
+       STA   STATUS,Y
+       LDD   #ATKHIT
+       STD   SPCDRV,Y
+       LDD   ,U++
+       STD   AOFSET,X
+       ADDD  +1,S *ADD POSITION
+       PSHS  X,U
+       LEAX  ALIVE,X
+       STX   MOTHER,Y
+       COM   ,X *(ALIVE,X) = $FE
+       JSR   ILINE
+       PULS  X,U
+       DEC   ,S
+       BNE   C@
+R@     LEAS  +3,S *CLEAN STACK
+       LDY   +2,S *Y ^ DAD
+       LDD   #EXECDAD
+       STD   TRKDRV,Y
+*FATHER IS DEAD UNTIL LATER
+D@     PULS  Y,D,PC
+
+
+KILPAR LDY   +2,S *GET FATHER
+       LDY   MOTHER,Y *GET MOM
+*MOTHER DOES NOT NEED TO BE
+*UNLINKED!  SHE ALREADY IS!!!
+       LDX   #ELSTS
+       LINK
+       LDY   +2,S
+       JMP   TRKEND *KILL HIM
+
+*ALL DADS MUST COME HERE
+*AFTER MOVEMENT ROUTINE!!!
+DADGO  LDX   MOTHER,Y
+       LDA   ONMENU
+       BEQ   G@
+*IF ONMENU, SEND KIDS DOWN!
+       LDB   NEWPOS,Y
+       ADDB  #3
+       STB   NEWPOS,Y
+G@     LDD   #$400 *UP TO 4 KIDS
+       PSHS  D
+C@     LEAX  CHILD,X
+       LDA   ALIVE,X
+       BEQ   E@ *CHILD DEAD?
+*CHILD(U)=MOM(X)+DAD(Y)
+       INC   +1,S *ALIVE!
+       LDU   APBUG,X *U ^ CHILD
+       LDD   AOFSET,X *X ^ MOM
+       ADDD  NEWPOS,Y *Y ^ DAD
+       STD   NEWPOS,U
+       LDA   ANGLE,Y
+       STA   ANGLE,U
+E@     DEC   ,S
+       BNE   C@
+       LDD   ,S++ *ARE THERE
+       BEQ   KILPAR *KIDS LEFT?
+D@     PULS  Y,D,PC
+
+D@     PULS  Y,D,PC
+*CONTINUATION OF FATHER (LATER)
+*WAIT FOR BUGS TO ARIVE
+EXECDAD LDX   MOTHER,Y
+       LDA   CHILD*1+ALIVE,X
+       BMI   D@
+       LDA   CHILD*2+ALIVE,X
+       BMI   D@
+       LDA   CHILD*3+ALIVE,X
+       BMI   D@
+       LDA   CHILD*4+ALIVE,X
+       BMI   D@
+*ALL BUGS HAVE ARIVED!
+*GOTRACK,Y = TRACK PLACE
+************************
+       DOTRACK B,ENDOFATTACK
+       JMP   DADGO
+*THIS IS THE OH SHIT ZONE!!!
+ENDOFATTACK
+       JMP   RESET
+
+TRACKJOINT
+       LDX   GOTRACK,Y
+       LDA   ,X
+       LDB   ,X+
+       STX   GOTRACK,Y
+       ROLB
+       ROLB
+       ROLB
+       ANDB  #3
+*B=SPEED
+       BEQ   OUT@
+       STB   TRACKSPEED,Y
+       STB   TRACKSP,Y
+       TFR   A,B
+       LSRB
+       LSRB
+       ANDB  #%00001100
+       ADDB  #4
+       STB   TRACKLEN,Y
+       ANDA  #%00001111
+       SUBA  #4
+       STA   ANGLE,Y
+       ADDA  #4
+       LSLA
+       LDX   #ANGLES@
+       LDX   A,X
+       STX   DOANGLE,Y
+OUT@   RTS
+ANGLES@
+ FDB A0@,A1@,A2@,A3@
+ FDB A4@,A5@,A6@,A7@
+ FDB A8@,A9@,AA@,AB@
+ FDB AC@,AD@,AE@,AF@
+UP     MACR
+       DEC   NEWPOS,Y
+       ENDM
+DN     MACR
+       INC   NEWPOS,Y
+       ENDM
+RT     MACR
+       COM   OFFSET,Y
+       BMI   RTA@
+       INC   NEWPOS+1,Y
+RTA@
+       ENDM
+LF     MACR
+       COM   OFFSET,Y
+       BPL   LFA@
+       DEC   NEWPOS+1,Y
+LFA@
+       ENDM
+A0@    RT
+       JMP   ,U
+AE@    RT
+       UP
+       JMP   ,U
+AC@    UP
+       JMP   ,U
+AA@    UP
+       LF
+       JMP   ,U
+A8@    LF
+       JMP   ,U
+A6@    DN
+       LF
+       JMP   ,U
+A4@    DN
+       JMP   ,U
+A2@    DN
+       RT
+       JMP   ,U
+MID@   MACR
+A@     \0
+       LDD   #B@
+       STD   DOANGLE,Y
+       JMP   ,U
+B@     \1
+C@     \2
+       LDD   #A@
+       STD   DOANGLE,Y
+       JMP   ,U
+       ENDM
+A1@    MID@  RT,RT,DN
+A3@    MID@  DN,DN,RT
+A5@    MID@  DN,DN,LF
+A7@    MID@  LF,LF,DN
+A9@    MID@  LF,LF,UP
+AB@    MID@  UP,UP,LF
+AD@    MID@  UP,UP,RT
+AF@    MID@  RT,RT,UP
+
+
+MEETO
+ FDB $0000,$0FF8,$1008,$2000
+MEETP
+ FDB TRACK0,TRACK1,TRACK2,TRACK3
+ FDB TRACK4,TRACK5,TRACK6,TRACK7
+ FDB TRACK8,TRACK9,TRACK10
+ FDB TRACK11,TRACK12,TRACK13
+ FDB TRACK14,TRACK15

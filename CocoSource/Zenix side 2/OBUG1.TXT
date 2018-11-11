@@ -1,0 +1,534 @@
+OBG2B  LDD   #$6006
+       LDX   #RBCTB
+       BRA   OBUG2
+OBG2R  LDD   #$9009
+       LDX   #RBCTR
+       BRA   OBUG2
+OBG2G  LDD   #$C00C
+       LDX   #RBCTG
+OBUG2
+*D=C00C
+       LEAU  +8*256,U
+       STD   -3*256+2,U
+       STD   +5*256-3,U
+       LDA   ,X *D=0C0C
+       STD   +6*256-3,U
+       LDB   -1,X *D=0CC0
+       STD   -5*256+0,U
+       STD   +4*256-3,U
+       LDA   +9,X *D=BCC0
+       STD   +3*256+1,U
+       STD   -2*256+2,U
+       STA   -1*256+2,U
+       STA   +0*256+2,U
+       STA   +1*256+2,U
+       STA   -4*256+1,U
+       STB   -6*256-1,U
+       STB   +2*256+2,U
+       STB   +4*256+1,U
+       STB   +7*256+1,U
+       LDD   +5,X *D=0CCB
+       STD   -4*256-1,U
+       SUBB  #$10 *D=0CBB
+       STD   -2*256-2,U
+       STD   -1*256-2,U
+       DECB  *D=0CBA
+       STD   +2*256-2,U
+       LDA   -5,X *D=CBBA
+       STD   +0*256-2,U
+       STD   +1*256-2,U
+       INCB  *D=CBBB
+       STD   -3*256-1,U
+       INCA  *D=CCBB
+       STD   +3*256-2,U
+       SUBA  #$22 *D=AABB
+       STD   +2*256+0,U
+       SUBB  #$10 *D=AAAB
+       STD   +1*256+0,U
+       STD   -2*256+0,U
+       STB   +3*256+0,U
+       DECB  *D=AAAA
+       STD   -1*256+0,U
+       STD   +0*256+0,U
+       ADDD  #$1112 *D=BBBC
+       STD   +4*256-1,U
+       ADDB  #$10 *D=BBCC
+       STD   +6*256-1,U
+       STA   -3*256+1,U
+       STB   +7*256-1,U
+       ANDB  #$0F *D=BB0C
+       STD   +5*256-1,U
+       STB   -7*256-1,U
+       STB   -5*256-1,U
+       STB   -4*256+3,U
+       STB   +8*256+0,U
+       RTS
+*377 CYCLES
+
+OBG4B  LDD   #$4444
+       LDX   #RBCTB
+       BRA   OBUG4
+OBG4R  LDD   #$7777
+       LDX   #RBCTR
+       BRA   OBUG4
+OBG4G  LDD   #$AAAA
+       LDX   #RBCTG
+OBUG4
+*D=AAAA
+       LEAU  +8*256,U
+       STD   +0*256+0,U
+       STD   +1*256+0,U
+       ADDA  #$10 *D=BAAA
+       STD   -1*256+0,U
+       INCA  *D=BBAA
+       STD   -2*256+0,U
+       STD   +2*256-1,U
+       ADDB  #$11 *D=BBBB
+       STD   +3*256-1,U
+       INCB  *D=BBBC
+       STD   +3*256+1,U
+       STD   -3*256+1,U
+       ADDA  #$F0 *D=ABBC
+       STD   -1*256+2,U
+       STD   +0*256+2,U
+       DECB  *D=ABBB
+       STD   +2*256+1,U
+       INCA  *D=ACBB
+       ANDA  #$0F *D=0CBB
+       STD   +3*256-3,U
+       STD   +2*256-3,U
+       ADDB  #$10 *D=0CCB
+       STD   -3*256-1,U
+       STD   +4*256-1,U
+       STB   -1*256-1,U
+       STB   +0*256-1,U
+       INCB  *D=0CCC
+       STD   -4*256+0,U
+       ANDB  #$F0 *D=0CC0
+       STD   -6*256+2,U
+       STD   +5*256+0,U
+       LDA   -1,X *D=C0C0
+       STD   +6*256-2,U
+       LDA   -9,X *D=ABC0
+       STD   +1*256+2,U
+       ADDA  #$10 *D=BBC0
+       STD   -2*256+2,U
+       INCA  *D=BCC0
+       STD   +4*256+1,U
+       ADDA  #$10 *D=CCC0
+       LDB   ,X *D=CC0C
+       STD   +2*256+3,U
+       STB   -2*256-1,U
+       STB   -1*256-3,U
+       STB   +7*256-2,U
+       LDD   +2,X *D=C0CC
+       STD   +0*256-3,U
+       STB   +4*256-2,U
+       STB   +5*256-1,U
+       ADDB  #$EE *D=C0BA
+       STD   +1*256-2,U
+       STA   -5*256+2,U
+       STA   -4*256+2,U
+       STA   +3*256+4,U
+       RTS
+*356 CYCLES
+
+OBG6B  LDD   #$0605
+       LDX   #RBCTB
+       BRA   OBUG6
+OBG6R  LDD   #$0908
+       LDX   #RBCTR
+       BRA   OBUG6
+OBG6G  LDD   #$0C0B
+       LDX   #RBCTG
+OBUG6
+*D=0C0B
+       LEAU  +8*256,U
+       STD   -1*256-3,U
+       INCB  *D=0C0C
+       STD   -6*256-3,U
+       STD   +0*256-4,U
+       LDB   -1,X *D=0CC0
+       STD   -5*256-2,U
+       STD   -4*256-3,U
+       LDA   -1,X *D=C0C0
+       STD   -2*256+3,U
+       LDB   ,X *D=C00C
+       STD   +1*256-3,U
+       STB   -3*256+3,U
+       STB   +5*256+1,U
+       LDD   +3,X *D=CCCC
+       STD   +4*256+0,U
+       SUBB  #$11 *D=CCBB
+       STD   +3*256-1,U
+       STD   -4*256-1,U
+       DECA  *D=CBBB
+       STD   -3*256-3,U
+       STD   -2*256-3,U
+       DECB  *D=CBBA
+       STD   +2*256-1,U
+       INCA  *D=CCBA
+       STD   +0*256-2,U
+       STA   -5*256+0,U
+       STA   -4*256+1,U
+       STA   +6*256+2,U
+       SUBD  #$2210 *D=AAAA
+       STD   -1*256-1,U
+       STD   +0*256+0,U
+       STD   +1*256+0,U
+       ADDB  #$12 *D=AABC
+       STD   -1*256+1,U
+       INCA  *D=ABBC
+       STD   +2*256+1,U
+       ADDA  #$10 *D=BBBC
+       STD   -2*256+1,U
+       DECB  *D=BBBB
+       STD   -3*256-1,U
+       LDB   -1,X *D=BBC0
+       STD   -3*256+1,U
+       STD   +0*256+2,U
+       STD   +1*256+2,U
+       STD   +3*256+1,U
+       STA   +1*256-1,U
+       STB   -7*256-2,U
+       DECA  *D=BAC0
+       LDB   +7,X *D=BAAA
+       STD   -2*256-1,U
+       RTS
+*342 CYCLES
+
+OBG8B  LDD   #$0606
+       LDX   #RBCTB
+       BRA   OBUG8
+OBG8R  LDD   #$0909
+       LDX   #RBCTR
+       BRA   OBUG8
+OBG8G  LDD   #$0C0C
+       LDX   #RBCTG
+OBUG8
+*D=0C0C
+       LEAU  +8*256,U
+       STD   -5*256-3,U
+       STD   +6*256-1,U
+       LDA   -1,X *D=C00C
+       STD   -4*256-3,U
+       LDB   +1,X *D=C0BB
+       STD   -3*256-2,U
+       LDA   ,X *D=0CBB
+       STD   +2*256-2,U
+       STD   +3*256-2,U
+       DECB  *D=0CBA
+       STD   -1*256-2,U
+       LDA   -5,X *D=CBBA
+       STD   +0*256-2,U
+       STD   +1*256-2,U
+       INCB  *D=CBBB
+       STD   +4*256-1,U
+       INCB  *D=CBBC
+       STD   +5*256+0,U
+       INCA  *D=CCBC
+       DECB  *D=CCBB
+       STD   -2*256-2,U
+       SUBA  #$22 *D=AABB
+       STD   -1*256+0,U
+       SUBB  #$10 *D=AAAB
+       STD   +0*256+0,U
+       STD   +3*256+0,U
+       STB   -2*256+0,U
+       DECB  *D=AAAA
+       STD   +1*256+0,U
+       STD   +2*256+0,U
+       ADDD  #$1122 *D=BBCC
+       STD   -5*256-1,U
+       STB   -6*256-1,U
+       ANDB  #$0F *D=BB0C
+       STD   -4*256-1,U
+       STB   -7*256+0,U
+       STB   -3*256-3,U
+       STB   +5*256-1,U
+       STB   +4*256+3,U
+       STB   +5*256+3,U
+       STB   +8*256-1,U
+       LDB   -1,X *D=BBC0
+       STD   +4*256+1,U
+       INCA  *D=BCC0
+       STD   -3*256+0,U
+       STD   -2*256+1,U
+       STD   +3*256+2,U
+       STA   +0*256+2,U
+       STA   +1*256+2,U
+       STA   +2*256+2,U
+       STB   -6*256+1,U
+       STB   -1*256+2,U
+       STB   +6*256+1,U
+       STB   +7*256-1,U
+       RTS
+*379 CYCLES
+
+OBG10B LDD   #$4444
+       LDX   #RBCTB
+       BRA   OBUG10
+OBG10R LDD   #$7777
+       LDX   #RBCTR
+       BRA   OBUG10
+OBG10G LDD   #$AAAA
+       LDX   #RBCTG
+OBUG10
+*D=AAAA
+       LEAU  +8*256,U
+       STD   -1*256+0,U
+       STD   +0*256+0,U
+       INCB  *D=AAAB
+       STD   +1*256+0,U
+       STD   +2*256+0,U
+       ADDB  #$11 *D=AABC
+       STD   -2*256+1,U
+       INCA  *D=ABBC
+       STD   -3*256+1,U
+       ANDA  #$0F *D=0BBC
+       STD   -5*256+1,U
+       INCA  *D=0CBC
+       ADDB  #$F *D=0CCB
+       STD   -6*256+0,U
+       ANDB  #$F0 *D=0CC0
+       STD   -7*256+1,U
+       LDA   +1,X *D=BBC0
+       STD   -1*256+2,U
+       STD   +0*256+2,U
+       STD   +3*256+1,U
+       STB   -7*256+0,U
+       STB   -5*256+4,U
+       STB   -3*256+3,U
+       STB   +6*256+2,U
+       LDB   -3,X *D=BBCC
+       STD   +4*256+0,U
+       ANDA  #$F0 *D=B0CC
+       STD   -4*256+2,U
+       LDD   -8,X *D=CBBB
+       STD   +3*256-1,U
+       INCA  *D=CCBB
+       STD   -4*256+0,U
+       STD   -3*256-1,U
+       STD   +2*256-2,U
+       ANDA  #$0F *D=0CBB
+       STD   -1*256-2,U
+       DECB  *D=0CBA
+       STD   +0*256-2,U
+       STD   +1*256-2,U
+       LDA   -5,X *D=CBBA
+       STD   -2*256-1,U
+       SUBA  #$F *D=BCBA
+       LDB   ,X *D=BC0C
+       STD   -6*256+2,U
+       STA   +1*256+2,U
+       STA   +2*256+2,U
+       ADDA  #$10 *D=CC0C
+       STD   +5*256+0,U
+       STB   -8*256+0,U
+       STB   -5*256+0,U
+       STB   +3*256-3,U
+       STB   +4*256-3,U
+       STB   +4*256-1,U
+       STB   +7*256+1,U
+       RTS
+*367 CYCLES
+
+OBG12B LDD   #$6066
+       LDX   #RBCTB
+       BRA   OBUG12
+OBG12R LDD   #$9099
+       LDX   #RBCTR
+       BRA   OBUG12
+OBG12G LDD   #$C0CC
+       LDX   #RBCTG
+OBUG12
+*D=C0CC
+       LEAU  +8*256,U
+       STD   -4*256+1,U
+       STD   -1*256-3,U
+       STD   -3*256+2,U
+       LDA   ,X *D=0CCC
+       STD   +5*256-1,U
+       SUBB  #$11 *D=0CBB
+       STD   +3*256-2,U
+       DECB  *D=0CBA
+       STD   +0*256-2,U
+       LDA   -5,X *D=CBBA
+       STD   +1*256-2,U
+       STD   +2*256-2,U
+       INCB  *D=CBBB
+       STD   -2*256-1,U
+       STD   +4*256-1,U
+       INCB  *D=CBBC
+       STD   -3*256+0,U
+       SUBD  #$1002 *D=BBBA
+       STD   -1*256-1,U
+       INCB  *D=BBBB
+       STD   -2*256+1,U
+       LDB   -1,X *D=BBC0
+       STD   -2*256+3,U
+       STD   -1*256+3,U
+       STD   +3*256+1,U
+       INCA  *D=BCC0
+       STD   +4*256+1,U
+       LDB   -3,X *D=BCCC
+       STD   +1*256+2,U
+       STA   +2*256+2,U
+       SUBD  #$1211 *D=AABB
+       STD   -1*256+1,U
+       SUBB  #$11 *D=AAAA
+       STD   +0*256+0,U
+       STD   +1*256+0,U
+       INCB  *D=AAAB
+       STD   +2*256+0,U
+       STA   +3*256+0,U
+       INCA  *D=ABAB
+       LDB   ,X *D=AB0C
+       STD   +0*256+2,U
+       INCA  *D=AC0C
+       ANDA  #$0F *D=0C0C
+       STD   -5*256+2,U
+       LDB   -1,X *D=0CC0
+       STD   +7*256-2,U
+       STA   -2*256-3,U
+       STA   -4*256+0,U
+       STA   -3*256-1,U
+       STA   +6*256-1,U
+       STA   +1*256+4,U
+       STB   -6*256+3,U
+       STB   +2*256+4,U
+       STB   +5*256+1,U
+       RTS
+*366 CYCLES
+
+OBG14B LDD   #$0606
+       LDX   #RBCTB
+       BRA   OBUG14
+OBG14R LDD   #$0909
+       LDX   #RBCTR
+       BRA   OBUG14
+OBG14G LDD   #$0C0C
+       LDX   #RBCTG
+OBUG14
+*D=0C0C
+       LEAU  +8*256,U
+       STD   +2*256-4,U
+       LDB   -1,X *D=0CC0
+       STD   +5*256+1,U
+       STD   +4*256+2,U
+       LDA   -1,X *D=C0C0
+       STD   +6*256+2,U
+       STD   +0*256+3,U
+       SUBA  #$10 *D=B0C0
+       STD   +1*256+2,U
+       LDA   +1,X *D=BBC0
+       STD   -1*256+1,U
+       STB   -5*256-1,U
+       STB   +3*256-3,U
+       LDB   -3,X *D=BBCC
+       STD   -3*256+0,U
+       STD   +4*256+0,U
+       SUBB  #$10 *D=BBBC
+       STD   +2*256+2,U
+       STD   +3*256+2,U
+       DECB  *D=BBBB
+       STD   +3*256+0,U
+       INCA  *D=BCBB
+       ANDA  #$0F *D=0CBB
+       STD   -3*256-2,U
+       STD   -1*256-3,U
+       STD   +0*256-3,U
+       STD   +3*256-2,U
+       STA   -1*256+3,U
+       STA   +7*256+2,U
+       LDA   -5,X *D=CBBB
+       STD   +2*256-2,U
+       DECB  *D=CBBA
+       STD   -2*256-2,U
+       SUBB  #$10 *D=CBAA
+       STD   +1*256-2,U
+       SUBA  #$21 *D=AAAA
+       STD   -1*256-1,U
+       STD   +0*256-1,U
+       STD   +1*256+0,U
+       INCB  *D=AAAB
+       STD   +2*256+0,U
+       ADDD  #$2221 *D=CCCC
+       STD   -4*256-1,U
+       STA   -6*256-2,U
+       STA   +4*256-1,U
+       STA   +5*256+0,U
+       SUBA  #$21 *D=ABCC
+       STD   +0*256+1,U
+       SUBB  #$10 *D=ABBC
+       STD   -2*256+0,U
+       RTS
+*340 CYCLES
+
+OBG16B LDD   #$0665
+       LDX   #RBCTB
+       BRA   OBUG16
+OBG16R LDD   #$0998
+       LDX   #RBCTR
+       BRA   OBUG16
+OBG16G LDD   #$0CCB
+       LDX   #RBCTG
+OBUG16
+*D=0CCB
+       LEAU  +8*256,U
+       STD   -2*256-3,U
+       STD   +3*256-2,U
+       STD   +4*256-1,U
+       SUBB  #$10 *D=0CBB
+       STD   -3*256-2,U
+       STD   +2*256-2,U
+       LDA   -1,X *D=C0BB
+       STD   +5*256+0,U
+       LDB   ,X *D=C00C
+       STD   +5*256+2,U
+       STA   -7*256+1,U
+       STA   -4*256-3,U
+       STA   -3*256-3,U
+       STA   +2*256+2,U
+       STA   +8*256+0,U
+       STB   -6*256+1,U
+       STB   -5*256-1,U
+       STB   +7*256-1,U
+       LDB   -1,X *D=C0C0
+       STD   -5*256+0,U
+       STD   +6*256+2,U
+       LDA   +1,X *D=BBC0
+       STD   -2*256+1,U
+       STD   -1*256+1,U
+       INCA  *D=BCC0
+       STD   -4*256+0,U
+       ANDA  #$0F *D=0CC0
+       STD   +4*256+2,U
+       LDD   -5,X *D=CBBA
+       STD   +1*256-2,U
+       SUBB  #$10 *D=CBAA
+       STD   +0*256-2,U
+       STD   -1*256-2,U
+       STA   -4*256-1,U
+       SUBA  #$11 *D=BAAA
+       STD   -2*256-1,U
+       ADDB  #$11 *D=BABB
+       STD   +3*256+0,U
+       ADDA  #$12 *D=CCBB
+       STD   +6*256+0,U
+       STA   +3*256+2,U
+       STA   +7*256+1,U
+       SUBD  #$2210 *D=AAAB
+       STD   +0*256+0,U
+       STD   +1*256+0,U
+       STD   +2*256+0,U
+       STA   -1*256+0,U
+       ADDD  #$1111 *D=BBBC
+       STD   -3*256+0,U
+       STA   +4*256+1,U
+       STB   +0*256+2,U
+       STB   +1*256+2,U
+       RTS
+*376 CYCLES
+
+

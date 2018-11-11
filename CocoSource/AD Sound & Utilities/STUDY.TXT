@@ -1,0 +1,50 @@
+       ORG   $E00
+       BSZ   100
+STACK  FDB   0
+       FDB   0
+
+
+EXEC   ORCC  #$50
+       LDS   #STACK
+       LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       CLR   $FF20
+       CLR   65497
+       LDD   #$0100
+       STD   $FF7E
+       LDX   #$1000
+       EXG   A,A
+       EXG   A,A
+       PSHS  D
+F@     LDA   ,S
+       CMPA  +1,S
+       BHI   G@
+       STA   +1,S
+       LDD   $FF7C
+       STB   ,S
+       CMPB  +1,S
+       BLS   O@
+       COM   ,X+
+       STB   $FF20
+       BRA   H@
+G@     STA   +1,S
+       LDD   $FF7C
+       STB   ,S
+       CMPB  +1,S
+       BHS   O@
+       COM   ,X+
+       STB   $FF20
+H@
+O@     LDA   #1
+       STA   $FF7E
+       CMPX  #$2600
+       BLO   P@
+       LDX   #$1000
+P@     EXG   A,A
+       BRA   F@
+
+       END   EXEC

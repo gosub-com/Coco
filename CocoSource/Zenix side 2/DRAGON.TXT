@@ -1,0 +1,521 @@
+DRAGON LEAX  +25,U
+       LDU   #0
+       LDD   #255
+       STU   -27,X
+       STU   -25,X
+       ABX   *X=1
+       LDY   #$000A
+       LDU   #$AA00
+       STY   -26,X
+       STU   -24,X
+       ABX   *X=2
+       STY   -25,X
+       STU   -23,X
+       ABX   *X=3
+       STY   -24,X
+       LDU   #$EA00
+       STU   -22,X
+       ABX   *X=4
+       STY   -23,X
+       STU   -21,X
+       ABX   *X=5   *100
+       STY   -22,X
+       STU   -20,X
+       ABX   *X=6
+       LDU   #$AA00
+       STY   -21,X
+       STU   -19,X
+       ABX   *X=7
+       STY   -20,X
+       LDU   #$EA00
+       STU   -18,X
+       ABX   *X=8
+       STY   -19,X
+       STU   -17,X
+       ABX   *X=9
+       STY   -18,X
+       STU   -16,X
+       ABX   *X=10
+       LDU   #$AA00
+       STY   -17,X
+       STU   -15,X
+       ABX   *X=11  *205
+       LDU   #$EA00
+       STY   -16,X
+       STU   -14,X
+       ABX   *X=12
+       STY   -15,X
+       STU   -13,X
+       ABX   *X=13
+       STY   -14,X
+       STU   -12,X
+       ABX   *X=14
+       STY   -13,X
+       LDU   #$AA00
+       STU   -11,X
+       LDU   #0
+       STU   -25,X
+       STU   -23,X
+       STU   -21,X
+       STU   -2,X
+       STU   ,X
+       STU   +2,X
+       ABX   *X=15
+       STU   -25,X
+       STU   -19,X
+       STU   -2,X
+       STU   +4,X
+       STY   -12,X
+       LDD   #$0CCC
+       STD   -23,X
+       LDA   #$CC
+       STD   -21,X
+       LDD   #$0BBB
+       STD   ,X
+       LDA   #$BB
+       STD   +2,X
+       LDU   #$EA00
+       STU   -10,X
+       LDD   #255
+       STA   -17,X
+       STA   -3,X
+       ABX   *X=16  *402
+       STU   -9,X
+       STY   -11,X
+       INCB  *D=0000
+       STD   -25,X
+       STD   -16,X
+       STD   -4,X
+       STD   +6,X
+       LDB   #$BB *D=0055
+       STD   -2,X
+       LDA   #$BB *D=5555
+       STD   ,X
+       STD   +2,X
+       STD   +4,X
+       LDD   #$0CCC
+       STD   -23,X
+       LDA   #$C0
+       STA   -17,X
+       LDA   #$CC *D=6666
+       STD   -19,X
+       STD   -21,X
+       LDB   #$FF
+       ABX   *X=17  *503
+       STY   -10,X
+       STU   -8,X
+       LDB   #$CC *D=6666
+       STD   -22,X
+       STD   -20,X
+       STD   -18,X
+       STD   -16,X
+       LDD   #$0000
+       STD   -14,X
+       STA   -12,X
+       STA   -4,X
+       LDB   #$0C *D=0009
+       STD   -24,X
+       DECB  *D=000B
+       STD   -3,X
+       LDD   #$BBBB
+       STD   +5,X
+       STD   +3,X
+       STD   +1,X
+       STD   -1,X
+       LDD   #$B000
+       STD   +7,X
+       DECB
+       ABX   *X=18
+       INCB  *D=8000
+       STD   +8,X
+       LDD   #$BBBB
+       STD   +6,X
+       STD   +4,X
+       STD   +2,X
+       STD   ,X
+       STD   -2,X
+       LDD   #$CCCC
+       STD   -21,X
+       STD   -19,X
+       STD   -17,X
+       STD   -15,X
+       LDB   #$C0 *X=6660
+       STD   -13,X
+       LDD   #$000C
+       STD   -23,X
+       LDB   #$0A *D=0004
+       STD   -9,X
+       CLRB  *D=0000
+       STD   -11,X
+       STD   -4,X
+       STD   -6,X
+       LDD   #$AAFF
+       STA   -7,X
+       ABX   *X=19  *740
+       LDU   #$0
+       STU   -22,X
+       STU   +9,X
+       STU   -4,X
+       LDD   #$CCCC
+       STD   -20,X
+       STD   -18,X
+       STD   -16,X
+       STD   -14,X
+       STD   -12,X
+       LDD   #$BBBB
+       STD   -2,X
+       STD   ,X
+       STD   +2,X
+       STD   +4,X
+       STD   +6,X
+       STA   +8,X
+       LDD   #$C000
+       STD   -10,X
+       LDD   #$00AE
+       STD   -8,X
+       LDD   #$EEA0
+       STD   -6,X
+       LDB   #255
+       ABX   *X=20
+       LDB   #$A0 *D=DD40
+       STD   -5,X
+       LDD   #$BBBB
+       STD   -2,X
+       STD   ,X
+       STD   +2,X
+       STD   +4,X
+       STD   +6,X
+       LDD   #$00AE
+       STD   -7,X
+       LDD   #$CCCC
+       STD   -10,X
+       STD   -12,X
+       STD   -14,X
+       STD   -16,X
+       LDD   #$00CC
+       STD   -18,X
+       STA   -3,X
+       STA   +10,X
+       STU   -20,X
+       STU   +8,X
+       LDD   #$C0FF
+       STA   -8,X
+       ABX   *X=21  *981
+       LDD   #$0CCC
+       STD   -14,X
+       LDA   #$CC
+       STD   -12,X
+       STD   -10,X
+       STD   -8,X
+       LDD   #$CAEE
+       STD   -6,X
+       LDD   #$EEEA
+       STD   -4,X
+       LDD   #$BBBB
+       STD   -2,X
+       STD   ,X
+       STD   +2,X
+       STD   +4,X
+       LDD   #$B000
+       STD   +6,X
+       STB   -15,X
+       STU   -17,X
+       STU   +8,X
+       DECB
+       ABX   *X=22
+       STU   -15,X
+       STU   -13,X
+       STU   -11,X
+       STU   +8,X
+       STU   +6,X
+       STU   +4,X
+       LDD   #$BBB0
+       STD   +2,X
+       LDB   #$BB
+       STD   ,X
+       LDD   #$0CCC
+       STD   -9,X
+       LDA   #$CC
+       STD   -7,X
+       LDD   #$AAEE
+       STD   -5,X
+       LDD   #$EAAB
+       STD   -2,X
+       LDD   #$EEFF
+       STA   -3,X
+       ABX   *X=23  *1183
+       STU   -17,X
+       STU   -15,X
+       STU   -7,X
+       STU   +11,X
+       STU   +1,X
+       LDB   #$A0 *D=DD40
+       STD   -1,X
+       LDB   #$EE *D=DDDD
+       STD   -3,X
+       LDD   #$00AE
+       STD   -5,X
+       LDB   #$0C *D=0006
+       STD   +3,X
+       LDD   #$CCCC
+       STD   +5,X
+       STD   +7,X
+       LDD   #$BBB0
+       STD   -9,X
+       LDB   #$BB *D=5555
+       STD   -11,X
+       STD   -13,X
+       LDD   #$C000
+       STD   +9,X
+       DECB
+       ABX   *X=24  *1298
+       STU   +13,X
+       STU   -17,X
+       LDD   #$0BBB
+       STD   -15,X
+       LDA   #$BB *D=5555
+       STD   -13,X
+       STD   -11,X
+       STD   -9,X
+       STD   -7,X
+       STD   -5,X
+       LDD   #$AEEE
+       STD   -3,X
+       LDA   #$EE *D=DDDD
+       STD   -1,X
+       LDD   #$ACCC
+       STD   +1,X
+       LDA   #$CC *D=6666
+       STD   +3,X
+       STD   +5,X
+       STD   +7,X
+       STD   +9,X
+       STD   +11,X
+       LDB   #255
+       ABX   *X=25
+       STU   +15,X
+       LDB   #$CC *D=6666
+       STD   +13,X
+       STD   +11,X
+       STD   +9,X
+       STD   +7,X
+       STD   +5,X
+       STD   +3,X
+       LDD   #$EEEE
+       STD   ,X
+       LDA   #$AE *D=4DDD
+       STD   -2,X
+       LDD   #$000B
+       STD   -16,X
+       LDD   #$BBBB
+       STD   -14,X
+       STD   -12,X
+       STD   -10,X
+       STD   -8,X
+       STD   -6,X
+       STD   -4,X
+       LDD   #$ACFF
+       STA   +2,X
+       ABX   *X=26  *1533
+       LDB   #$CC *D=4666
+       STD   +3,X
+       LDA   #$CC *D=6666
+       STD   +5,X
+       STD   +7,X
+       STD   +9,X
+       STD   +11,X
+       STD   +13,X
+       LDB   #$C0 *D=6660
+       STD   +15,X
+       LDD   #$EEEE
+       STD   +1,X
+       LDA   #$AE
+       STD   -1,X
+       LDD   #$00BB
+       STD   -15,X
+       STA   +17,X
+       LDA   #$BB *D=5555
+       STD   -13,X
+       STD   -11,X
+       STD   -9,X
+       STD   -7,X
+       STD   -5,X
+       STD   -3,X
+       LDB   #255
+       ABX   *X=27
+       LDB   #$B0 *D=5550
+       STD   -2,X
+       LDB   #$BB *D=5555
+       STD   -4,X
+       STD   -6,X
+       STD   -8,X
+       STD   -10,X
+       STD   -12,X
+       CLRA  *D=0055
+       STD   -14,X
+       LDD   #$AEEE
+       STD   ,X
+       LDA   #$EE *D=DDDD
+       STD   +2,X
+       LDD   #$C000
+       STD   +17,X
+       LDD   #$CCCC *D=6666
+       STD   +15,X
+       STD   +13,X
+       STD   +11,X
+       STD   +9,X
+       STD   +7,X
+       STD   +5,X
+       LDD   #$A0FF
+       STA   +4,X
+       ABX   *X=28  *1777
+       STA   +5,X
+       LDD   #$AEEE
+       STD   +1,X
+       LDA   #$EE
+       STD   +3,X
+       LDD   #$BBBB
+       STD   -3,X
+       STD   -5,X
+       STD   -7,X
+       STD   -9,X
+       STD   -11,X
+       CLRA  *D=0088
+       STD   -13,X
+       LDB   #$0C *D=0006
+       STD   +6,X
+       LDD   #$CCCC
+       STD   +8,X
+       STD   +10,X
+       STD   +12,X
+       STD   +14,X
+       STD   +16,X
+       LDD   #$C000
+       STD   +18,X
+       STU   -1,X
+       DECB
+       ABX   *X=29
+       STU   -12,X
+       STU   -2,X
+       STU   ,X
+       STU   +8,X
+       STU   +19,X
+       STA   +18,X
+       LDD   #$CCCC
+       STD   +16,X
+       STD   +14,X
+       STD   +12,X
+       LDA   #$0C
+       STD   +10,X
+       LDD   #$BBBB
+       STD   -10,X
+       STD   -8,X
+       STD   -6,X
+       STD   -4,X
+       LDD   #$AAEE
+       STD   +2,X
+       LDD   #$EEEA
+       STD   +4,X
+       LDD   #$A000
+       STD   +6,X
+       DECB
+       ABX   *X=30  *2023
+       STU   -10,X
+       STU   -4,X
+       STU   -2,X
+       STU   +7,X
+       STU   +10,X
+       STU   +12,X
+       STU   +18,X
+       LDD   #$BBBB
+       STD   -6,X
+       CLRA  *D=0088
+       STD   -8,X
+       LDB   #$0A *D=0004
+       STD   +2,X
+       STA   +20,X
+       LDD   #$EEEA
+       STD   +5,X
+       STA   +4,X
+       LDD   #$0CCC
+       STD   +14,X
+       LDD   #$CCC0
+       STD   +16,X
+       LDB   #$FF
+       ABX   *X=31
+       STU   -7,X
+       STU   -5,X
+       STU   +2,X
+       STU   +8,X
+       STU   +14,X
+       STU   +16,X
+       STU   +18,X
+       LDU   #$0AAE
+       STU   +4,X
+       LDU   #$EEAA
+       STU   +6,X
+       CLRA
+       STA   -3,X
+       ABX   *X=32  *2195
+       LDU   #0
+       STU   +10,X
+       LDU   #$A0AA
+       STU   +8,X
+       STU   +5,X
+       LDU   #$000A
+       STU   +3,X
+       LDA   #$AA
+       STA   +7,X
+       ABX   *X=33
+       LDB   #$DD *D=44EE
+       STD   +9,X
+       LDB   #$EA *D=44D4
+       STD   +7,X
+       LDD   #$ADDA
+       STD   +5,X
+       LDD   #$A000
+       STD   +11,X
+       STB   +4,X
+       DECB
+       ABX   *X=34  *2282
+       INCB
+       STD   +12,X
+       STB   +5,X
+       LDU   #$AD0A
+       STU   +6,X
+       LDU   #$AA0D
+       STU   +10,X
+       LDU   #$AEEE
+       STU   +8,X
+       DECB
+       ABX   *X=35
+       STU   +9,X
+       LDD   #$0AAA
+       STD   +7,X
+       LDA   #$AA
+       STD   +11,X
+       CLRB
+       STB   +6,X
+       LDU   #0
+       STU   +13,X
+       DECB
+       ABX   *X=36  *2365
+       STU   +7,X
+       STU   +13,X
+       LDU   #$00AA
+       STU   +9,X
+       LDU   #$EAA0
+       STU   +11,X
+       ABX   *X=37
+       STA   +12,X
+       LDU   #$000A
+       STU   +10,X
+       LDU   #$0
+       STU   +13,X
+       ABX   *X=38
+       STU   +11,X
+       STU   +13,X
+       RTS
+*2456 CYCLES
+
+

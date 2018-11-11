@@ -1,0 +1,161 @@
+*RAM DRIVE BACK UP
+TRACK0 EQU   $E00
+TRACK1 EQU   $E00+18*256
+FAT    EQU   $E00+18*256*2
+
+ ORG $E00+18*256*2+256
+
+WRITESTAT FCB 0
+FROM   FCB   0
+TO     FCB   3
+
+RDB    LDY   $C006
+       LDD   #$200 *READ
+       STD   ,Y *OP / DSK
+       LDD   #17*256+2 *FAT
+       STD   +2,Y
+       LDD   #FAT
+       STD   +4,Y
+       JSR   [$C004]
+       LDA   +6,Y
+       BNE   IOERR
+       LDU   #FAT+160
+A@     LDB   ,-U
+       STB   +2,U
+       CMPU  #FAT+34
+       BNE   A@
+       CLR   ,U
+       CLR   +1,U
+
+
+       LDU   #FAT
+       CLRA  *TRACK 0
+A@     CLR   WRITESTAT
+*DO TRACK 0
+       LDB   ,U++
+       COMB
+       BNE   C@ *NOT FREE
+       LDB   -1,U
+       COMB
+       BEQ   N@ *FREE!!!
+C@     LDX   #TRACK0
+       STA   +2,Y *TRACK
+       JSR   READFROM
+       INC   WRITESTAT
+N@     INCA  *TRACK 1
+*DO TRACK 1
+       LDB   ,U++
+       COMB
+       BNE   C1@ *NOT FREE
+       LDB   -1,U
+       COMB
+       BEQ   N1@
+C1@    LDX   #TRACK1
+       STA   +2,Y *TRACK
+       JSR   READFROM
+       INC   WRITESTAT
+       INC   WRITESTAT
+N1@    DECA  *TRACK 0
+*WRITE TRACK
+       LSR   WRITESTAT
+       BCC   W@
+       STA   +2,Y *TRACK
+       LDX   #TRACK0
+       JSR   WRITETO
+W@     INCA  *TRACK 1
+       LSR   WRITESTAT
+       BCC   W1@
+       STA   +2,Y *TRACK
+       LDX   #TRACK1
+       JSR   WRITETO
+W1@    INCA  *NEXT TRACK
+       CMPA  #80
+       BLO   A@
+       RTS
+
+IOERR  JMP   $A619
+
+READFROM
+       PSHS  B
+       LDB   FROM
+       STB   +1,Y
+       BSR   READTRACK
+       PULS  B,PC
+
+*DSKON PARAMS ALREADY SET
+*X ^ BUFFER (FOR TRACK)
+*Y ^ DSKON VARS
+READTRACK
+       PSHS  X,Y,U,D
+       LDA   #2
+       STA   ,Y  *READ
+       LDU   #READ.TAB
+       CLRB
+       LDA   ,U+
+A@     STA   +3,Y
+       LDX   +2,S
+       DECA
+       LEAX  D,X
+       STX   +4,Y
+       JSR   [$C004]
+       LDA   +6,Y
+       BNE   IOERR
+       LDA   ,U+
+       BNE   A@
+       PULS  X,Y,U,D,PC
+
+WRITETO
+       PSHS  B
+       LDB   TO
+       STB   +1,Y
+       BSR   WRITETRACK
+       PULS  B,PC
+
+*DSKON PARAMS ALREADY SET
+*X ^ BUFFER (FOR TRACK)
+*Y ^ DSKON VARS
+WRITETRACK
+       PSHS  X,Y,U,D
+       LDA   #3
+       STA   ,Y  *WRITE
+       LDU   #WRITE.TAB
+       LDA   +2,Y
+       LSRA
+       BCC   E@
+       LDU   #WRITEO.TAB
+E@     CLRB
+       LDA   ,U+
+A@     STA   +3,Y
+       LDX   +2,S
+       DECA
+       LEAX  D,X
+       STX   +4,Y
+       JSR   [$C004]
+       LDA   +6,Y
+       BNE   IOERR
+       LDA   ,U+
+       BNE   A@
+       PULS  X,Y,U,D,PC
+
+
+
+
+READ.TAB
+ FCB 1,12,5,16,9,2,13,6,17,10
+ FCB 3,14,7,18,11,4,15,8,0
+
+WRITE.TAB
+ FCB 1,5,9,13,17,3,7,11,15,12
+ FCB 16,2,6,10,14,18,4,8,0
+
+WRITEO.TAB
+ FCB 12,16,2,6,10,14,18,4,8,1
+ FCB 5,9,13,17,3,7,11,15,0
+
+ MSG "END AT $",*
+       END   RDB
+
+
+
+
+

@@ -1,0 +1,60 @@
+       ORG   $F00
+PHONEM FCB   0
+
+EXEC   LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       LDU   #$1000
+A@     LDA   ,U
+       LSRA
+       LSRA
+       LSRA
+       ADDA  #2
+       STA   $FFA1
+       LDA   ,U
+       ANDA  #%00000111
+       LSLA
+       LSLA
+       CLRB
+       ADDD  #$2000
+       TFR   D,X
+       LDB   ,U+
+       PSHS  X,Y,U,D
+       LDU   #$E00
+       LDB   B,U
+       JSR   PLAY
+       PULS  X,Y,U,D
+       TST   ,U
+       BPL   A@
+       RTS
+
+
+*PLAY A PHONEM
+*X ^ PHONEM
+*B = DURATION IN MS
+PLAY   PSHS  Y,X,DP,CC
+       ORCC  #$50
+       LDA   #60 *TO MS
+       MUL
+       TFR   D,Y
+       LDB   #$FF
+       TFR   B,DP
+A@     LDX   +2,S
+B@     LDA   ,X+
+       BEQ   A@
+       STA   <$20
+       TFR   A,A
+       LEAY  -1,Y
+       BNE   B@
+*FINISH PLAYING VIBARATION (21)
+C@     LDA   ,X+
+       BEQ   O@
+       STA   <$20
+       LEAY  -1,Y
+       TFR   A,A
+       BRA   C@
+O@     PULS  Y,X,DP,CC,PC
+

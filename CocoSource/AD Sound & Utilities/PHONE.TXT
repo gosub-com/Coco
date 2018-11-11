@@ -1,0 +1,28 @@
+       ORG   $E00
+EXECG  LDX   #$2000
+       BSR   EXEC
+       LDA   #$23
+       STA   65410
+       BSR   EXEC
+       RTS
+
+EXEC   PSHS  CC
+       ORCC  #$50
+       CLR   65497
+       LDD   #$0100
+       STD   $FF7E
+       EXG   A,A
+R@     LDY   #$2000
+A@     LDD   $FF7C
+       LDA   #1
+       STA   $FF7E
+       STB   ,X+
+       EXG   A,A
+       LEAY  -1,Y
+       BNE   A@
+       LDD   $FF7C
+       LDD   #$FFFF
+       STD   $FF7E
+       CLR   65496
+       PULS  CC,PC
+       END   EXECG

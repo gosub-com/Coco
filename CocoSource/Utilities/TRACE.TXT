@@ -1,0 +1,116 @@
+BLOKON FCB   2
+BLOKAT FDB   $A000
+*THIS IS A TRACEING PROGRAM.
+*IT STORES EVERY COMMAND IN
+*MEMORY.
+*IT CAN ALSO CHECK MEMORY.
+TRACE  PSHS  X,Y,U,D
+       LEAY  ,S *Y ^ REG'S
+       LDD   $FFA4
+       PSHS  D
+*SUPER FIFO!
+       LDA   BLOKON *GET BLOCK
+       LDX   BLOKAT
+       LDB   #1
+       STB   $FFA5
+       STA   $A000
+       STX   $A001
+       STA   $FFA5
+
+****COPY REGISTERS
+       LDU   ,Y    *D
+       STU   ,X
+       LDU   +2,Y  *X
+       STU   +2,X
+       LDU   +4,Y  *Y
+       STU   +4,X
+       LDU   +6,Y  *U
+       STU   +6,X
+       LDA   +8,Y  *CC
+       STA   +8,X
+       LDU   +9,Y  *PC
+       STU   +9,X
+*PC MUST NOT BE IN THAT RANGE
+       CMPU  #$A000
+       BLO   A@
+       CMPU  #$BFFF
+B@     BLS   B@
+A@
+
+****COPY PROGRAM - U=PC
+       LDD   +2,U
+       STD   +26,X
+       LDD   +4,U
+       STD   +28,X
+       LDD   ,U
+Z@     BEQ   Z@
+       STD   +24,X
+****COPY PIA'S
+       LDU   $FFA0
+       STU   +16,X
+       LDU   $FFA2
+       STU   +18,X
+       LDU   ,S *FFA4
+       STU   +20,X
+       LDU   $FFA6
+       STU   +22,X
+*******************
+       LDB   BLOKON *GET BLOCK
+       LEAX  +32,X
+       CMPX  #$C000
+       BLO   A@
+       LDX   #$A000
+       INCB
+       CMPB  #$2F
+       BLO   A@
+       LDB   #2
+A@     STB   BLOKON
+       STX   BLOKAT
+       LDX   #OKCOMS
+       LDA   A,X
+B@     BEQ   B@
+
+*******************
+N@     PULS  D
+       STD   $FFA4 *THIER BLOCK
+*EXECUTE ONE COMMAND
+       LDD   #50
+       STD   $FF94
+       LDA   $FF93
+       PULS  X,Y,U,D
+       RTI
+
+
+ FCB 1,1,1,1,1,1,1,0 *87
+ FCB 1,1,1,1,1,1,1,0 *8F
+ FCB 1,1,1,1,1,1,1,1 *97
+ FCB 1,1,1,1,1,1,1,1 *9F
+ FCB 1,1,1,1,1,1,1,1 *A7
+ FCB 1,1,1,1,1,1,1,1 *AF
+ FCB 1,1,1,1,1,1,1,1 *B7
+ FCB 1,1,1,1,1,1,1,1 *BF
+ FCB 1,1,1,1,1,1,1,0 *C7
+ FCB 1,1,1,1,1,0,1,0 *CF
+ FCB 1,1,1,1,1,1,1,1 *D7
+ FCB 1,1,1,1,1,1,1,1 *DF
+ FCB 1,1,1,1,1,1,1,1 *E7
+ FCB 1,1,1,1,1,1,1,1 *EF
+ FCB 1,1,1,1,1,1,1,1 *F7
+ FCB 1,1,1,1,1,1,1,1 *FF
+OKCOMS
+ FCB 1,0,0,1,1,0,1,1 *7
+ FCB 1,1,1,0,1,1,1,1 *F
+ FCB 1,1,1,1,0,0,1,1 *17
+ FCB 0,1,1,0,1,1,1,1 *1F
+ FCB 1,1,1,1,1,1,1,1 *27
+ FCB 1,1,1,1,1,1,1,1 *2F
+ FCB 1,1,1,1,1,1,1,1 *37
+ FCB 0,1,1,1,1,1,0,1 *3F
+ FCB 1,0,0,1,1,0,1,1 *47
+ FCB 1,1,1,0,1,1,0,1 *4F
+ FCB 1,0,0,1,1,0,1,1 *57
+ FCB 1,1,1,0,1,1,0,1 *5F
+ FCB 1,0,0,1,1,0,1,1 *67
+ FCB 1,1,1,0,1,1,1,1 *6F
+ FCB 1,0,0,1,1,0,1,1 *77
+ FCB 1,1,1,0,1,1,1,1 *7F

@@ -1,0 +1,193 @@
+       INCL  MACROS:3
+
+
+       ORG   $FE00-2
+       FDB   $7FE0
+
+VSYNCA
+VHOLDA BSR   VSYNC
+       DECA
+       BNE   VHOLDA
+       RTS
+VSYNC  TST   $FF02
+A@     TST   $FF03
+       BPL   A@
+       RTS
+
+COPYZ  PSHS  X,A,U
+       LDX   +5,S
+       LDU   ,X++
+       LDA   ,X+
+A@     STA   ,U+
+       LDA   ,X+
+       BNE   A@
+       STX   +5,S
+       PULS  X,A,U,PC
+
+COPY   PSHS  X,D,U
+       LDX   +6,S
+       LDU   ,X++
+       LDA   ,X+
+A@     LDB   ,X+
+       STB   ,U+
+       DECA
+       BNE   A@
+       STX   +6,S
+       PULS  X,D,U,PC
+
+COPYS  PSHS  X,U,B
+       LDU   +5,S *GET PC
+       LDX   ,U++
+       BRA   CS@
+*MOVE FROM ,PC TO ,X
+MOVEPC PSHS  X,U,B
+       LDU   +5,S *GET PC
+CS@    LDB   ,U+
+A@     STB   ,X+
+       LDB   ,U+
+       BNE   A@
+       STU   +5,S *PUT PC
+       PULS  X,U,B,PC
+
+*MOVE ACCB BYTES FROM X TO U
+MOVE   PSHS  X,U,D
+A@     LDA   ,X+
+       STA   ,U+
+       DECB
+       BNE   A@
+       PULS  X,U,D,PC
+
+
+RESET  ORCC  #$50
+       LDX   #$FFB0
+       LDA   #16
+       BSR   VSYNC
+A@     CLR   ,X+
+       DECA
+       BNE   A@
+       LDB   #45
+B@     BSR   VSYNC
+       DECB
+       BNE   B@
+       LDA   #%00001110
+       STA   $FF90
+       CLR   $FFDE *ROM
+       CLR   65496
+       JMP   [$FFFE]
+
+PALETTE
+       BSZ   16
+
+PALETTECONV
+       BSZ   64
+
+BUG    BSZ   7
+
+
+ MSG *," !MUST BE UNDER $FED0!"
+ MSG "     !AND OVER $FE80"
+
+
+       ORG   $C000-2
+       FDB   $7C00
+       SETDP $C0
+DPG    EQU   $C0
+
+GMEBG
+OBLEN  EQU   32
+*GAME MUST COME FIRST
+       INCL  GAME:3
+       INCL  FSYNC:3
+       INCL  SWI:3
+       INCL  DISKIO:3
+*PUT ON 256 BYTE BOUNDARY
+       BSZ   $100-(*!.$FF)
+MUSICWAVES
+OBOE   BINF  OBOE
+FLUTE  BINF  FLUTE
+REED   BINF  REED
+GUITAR BINF  GUITAR
+*TAKES 5 SOUND SLOTS
+RNDSND BINF  RNDSOUND
+JETSND
+BLOWSND BINF BLOWSND
+BELL   BINF  BELL
+SIN    BINF  SIN
+SHIPSND BINF SHIPSND
+
+       INCL  PITCH
+
+ MSG "FREE GAME ",$3E00-*+GMEBG
+
+*** TRACKS
+       ORG   $4000-2
+       FDB   $6200
+A@
+OBJECTS
+       BSZ   3*1024+5
+ENDOBJECTS
+       INCL  DRYSHIP:3
+       INCL  BLOWUP:3
+       INCL  TRACKS:3
+       INCL  BOMB:3
+ MSG *-A@," MUST BE OVER 2000"
+CMINE  EQU   *+0*3
+RMINE  EQU   *+1*3
+CMISSLEF EQU   *+2*3
+RMISSLEF EQU   *+3*3
+CHELL  EQU   *+4*3
+RHELL  EQU   *+5*3
+OHELL  EQU   *+6*3
+CJET   EQU   *+7*3
+RJET   EQU   *+8*3
+OJET   EQU   *+9*3
+RSHOOTER EQU   *+10*3
+CSHOOTER EQU   *+11*3
+RPARA  EQU   *+12*3
+CPARA  EQU   *+13*3
+RSHIELD EQU  *+14*3
+CSHIELD EQU  *+15*3
+RSAUCER EQU  *+16*3
+CSAUCER EQU  *+17*3
+*NEXT TWO ICONS NOT USED
+*GSAUCER EQU  *+18*3
+*GRSAUCER EQU *+19*3
+SAW1   EQU   *+20*3
+SAW2   EQU   *+21*3
+SAW3   EQU   *+22*3
+SAW4   EQU   *+23*3
+CSAW1  EQU   *+24*3
+CSAW2  EQU   *+25*3
+CSAW3  EQU   *+26*3
+CSAW4  EQU   *+27*3
+CHELL2 EQU   *+28*3
+RHELL2 EQU   *+29*3
+OHELL2 EQU   *+30*3
+       BINF  ICONS:3
+       INCL  BOSS:3
+       INCL  BOSSLINE:3
+       INCL  FIREWORK:3
+       INCL  OBJECTS:3
+SPRITES EQU  *
+       BSZ   $1000
+SPRITEND EQU *-OBLEN*2
+ MSG "FREE TRACKS $",$8000-*+A@
+
+       ORG   $A000-2
+       FDB   $6000
+GRBLOCKS
+       BINF  BLOCKS0:3
+
+
+       ORG   0
+       FDB   $7800
+       BINF  LEVEL0:3
+
+
+
+       ORG   0
+
+       FDB   0
+       FDB   $7C00
+
+       END   $7C00

@@ -1,0 +1,45 @@
+*ENTRY:B=BYTE OUT
+*      RS232 = 1
+BOUT   ORCC  #$50
+       PSHS  B
+       LDX   #$FF20
+       LDA   ,X
+       EORA  #2
+       STA   ,X  *4
+       LDB   #8
+R@     LSR   ,S  *6
+       BCS   A@  *3
+       ANDA  #%11111101
+       BRA   C@  *3
+A@     ORA   #2
+       BRN   A@
+C@     STA   ,X  *4
+       DECB      *2
+       BNE   R@  *3
+       EXG   A,A
+       EXG   A,A
+       EXG   A,A
+       ORA   #2
+       STA   ,X
+       PULS  B,PC
+
+*ENTRY B=BYTEIN
+BIN    ORCC  #$50
+       PSHS  B
+       LDX   #$FF22
+       LDA   #1
+A@     BITA  ,X
+       BNE   A@
+       LDB   #8
+       TFR   A,A
+       BRN   A@
+       NOP
+       BRN   A@
+       EXG   A,A
+B@     LDA   ,X *4
+       LSRA     *2
+       ROR   ,S *6
+       TFR   A,A *6
+       DECB     *2
+       BNE   B@ *3
+       PULS  B,PC

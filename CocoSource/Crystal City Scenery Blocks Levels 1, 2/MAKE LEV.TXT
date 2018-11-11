@@ -1,0 +1,33 @@
+       ORG   $E00
+TRACK  FCB   0
+SECTOR FCB   3
+*BEGINING OF LEVEL TRACK
+LTRK   FCB   0
+LSEC   FCB   4
+LBUF   BSZ   256
+BUF    BSZ   256
+
+*PUT SECTOR
+PUTS   LDD   #LBUF
+       STD   $EE
+       LDD   TRACK
+       STD   $EC
+       JSR   [$C004]
+       INCB  *NEXT SECTOR
+       CMPB  #19
+       BLO   Z@
+       LDB   #1
+       INCA
+       CMPA  #17
+       BNE   Z@
+       INCA
+Z@     STD   TRACK
+       RTS
+
+EXEC   LDA   #3
+       STA   $EA
+       LDA   #2
+       STA   $EB
+
+
+

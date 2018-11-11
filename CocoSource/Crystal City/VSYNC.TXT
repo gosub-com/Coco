@@ -1,0 +1,82 @@
+       ORG   $E00
+TIMER  FDB   $388
+FIRQ   COM   $FFB0
+       TST   $FF93
+       COM   $FFB0
+       RTI
+IRQ    LDD   TIMER
+       LDA   $FF92
+       RTI
+RUN    CLR   65497
+       ORCC  #$50
+
+       LDA   #%00101100
+       STA   $FF03
+       LDA   $FF02
+
+       LDX   $FFF8
+       LDA   #$7E
+       STA   ,X+
+       LDU   #IRQ
+       STU   ,X
+       LDX   $FFF6
+       STA   ,X+
+       LDU   #FIRQ
+       STU   ,X
+
+       LDA   #%01111100
+       STA   $FF90
+
+       LDA   #%00100000
+       STA   $FF91
+
+       LDA   #%00001000
+       STA   $FF92
+
+       LDA   #%00100000
+       STA   $FF93
+       ANDCC #$AF
+
+RET@   JSR   [$A000]
+       BEQ   RET@
+       CMPA  #'U
+       BNE   A@
+       LDD   TIMER
+       ADDD  #1
+       STD   TIMER
+       BRA   C@
+A@     CMPA  #'D
+       BNE   RET@
+       LDD   TIMER
+       SUBD  #1
+       STD   TIMER
+C@     STD   $FF94
+       JSR   PRHEXD
+       LDA   #13
+       JSR   [$A002]
+       BRA   RET@
+
+
+PRHEXD BSR   PRHEXA
+       TFR   B,A
+
+PRHEXA PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   PRHEX
+       PULS  A
+       ANDA  #$0F
+
+PRHEX  ADDA  #'0
+       CMPA  #'9
+       BHI   A@
+B@     JSR   [$A002]
+       RTS
+A@     ADDA  #-'0-10+'A
+       BRA   B@
+
+       END   RUN
+
+

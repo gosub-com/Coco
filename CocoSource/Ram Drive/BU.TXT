@@ -1,0 +1,38 @@
+*ENTRY:TRK & DRV HAS BEEN SET
+*      U ^ DATA
+*      Y ^ SECTOR TABLE
+PUTTRK LDX   $C006
+       LEAX  +4,X
+       PSHS  X
+       LEAX  +1,X
+       PSHS  X
+       LDD   #18*256
+       PSHS  A
+B@     LDA   ,Y++
+       LEAX  D,X
+       STX   [+3,S]
+       JSR   [$C004]
+       LDA   [+1,S]
+       BNE   R@
+       DEC   ,S
+       BNE   B@
+       LDA   [+1,S]
+R@     PULS  X,Y,A,PC
+
+GETTRK LDX   $C006
+       LEAX  +4,X *POSITION
+       PSHS  X
+       LEAX  +1,X *STATUS
+       PSHS  X
+       LDD   #18*256
+       PSHS  A
+B@     LDA   ,Y+ *SECTOR
+       LEAX  D,X *PLACE
+       STX   [+3,S]
+       JSR   [$C004]
+       LDA   [+1,S]
+       BNE   R@
+       DEC   ,S
+       BNE   B@
+       LDA   [+1,S]
+R@     PULS  X,Y,A,PC

@@ -1,0 +1,134 @@
+BUGPLANEBLOW
+       FDB   256
+       FDB   +6*256-11
+       FDB   +6*256+11
+       FDB   +10*256-9
+       FDB   +10*256+9
+       FDB   +18*256-20
+       FDB   +18*256+20
+       FDB   +18*256+10
+       FDB   +18*256-10
+       FDB   +18*256
+       FDB   +27*256-24
+       FDB   +27*256+24
+       FDB   +27*256-9
+       FDB   +27*256+9
+       FDB   +30*256
+       FDB   0
+
+C@     PULS  D,Y,PC
+BUGPLANE
+       LDA   OBNUM
+       CMPA  #15
+       BHS   C@
+       LDD   #D@
+       STD   TRKDRV,Y
+       LDD   #$1000
+       STD   NEWPOS,Y
+       LDD   #BUGPLANEHIT
+       STD   SPCDRV,Y
+       LDA   #%10010001
+       STA   STATUS,Y
+A@     JSR   DRAGSPOT
+       JSR   ILINE
+D@     LDA   SHIPOS
+       SUBA  NEWPOS,Y
+       ADDA  #18
+       CMPA  #45
+       BHI   N@
+       LDA   SHIPOS+1
+       SUBA  NEWPOS+1,Y
+       ADDA  #17
+       CMPA  #17*2
+       BHI   N@
+       CLR   SHIELD
+       CLR   SHLD
+       BRA   BUGPLANEDIE
+N@     LDA   SHIPOS
+       SUBA  NEWPOS,Y
+       ADDA  #4
+       CMPA  #20+9
+       BHI   T@
+       LDA   SHIPOS+1
+       SUBA  NEWPOS+1,Y
+       ADDA  #23
+       CMPA  #23*2
+       BHI   T@
+       CLR   SHIELD
+       CLR   SHLD
+       BRA   BUGPLANEDIE
+T@     DEC   DRAGHITINC,Y
+       BNE   U@
+       LDA   #100
+       STA   DRAGHITINC,Y
+       INC   DRAGHITS,Y
+       BNE   U@
+       DEC   DRAGHITS,Y
+U@     JSR   DLINE
+       BNE   DRAW@
+       BRA   A@
+DRAW@  JMP   DRAWBUGPLANE
+
+BUGPLANEHIT
+       BULHIT 32,24,48
+       DEC   DRAGHITS,U
+       BNE   ?RTS
+       LDD   #A@
+       STD   TRKDRV,U
+       RTS
+BUGPLANEDIE
+A@     JSR   EXPLODE
+       LDA   #128
+       STA   EXPLEN
+       ADDSCR #250
+       LDX   #BUGPLANEBLOW
+B@     LDD   ,X++
+       BEQ   C@
+       ADDD  NEWPOS,Y
+       SUBA  #5
+       JSR   MBLOW
+       BRA   B@
+C@     LDA   #30
+       STA   IWAIT2,Y
+       NXTFRM NOPRN
+       DEC   IWAIT2,Y
+       BEQ   D@
+       PULS  Y,D,PC
+D@     JMP   TRKEND
+
+X@     PSHS  Y,D
+DRAWBUGPLANE
+       LDA   NEWPOS,Y
+       LDB   #58
+       MUL
+       SUBA  HLINE
+       ADDA  #6
+       CMPA  #15
+       BHI   A@
+*PUT ON FIFO
+       LDX   FIFOP
+       LDY   +2,S
+       STY   ,X++
+       LDD   #X@
+       STD   ,X++
+       STX   FIFOP
+       PULS  Y,D,PC
+*DRAW BUGPLANE
+A@     LDX   #BIGBLOCK
+       LDA   NEWPOS,Y
+       ANDA  #%11100000
+       LSRA
+       LSRA
+       LSRA
+*PLACE GRAPHICS IN MEMORY
+       LDU   A,X
+       STU   $FFA3
+       ADDA  #2
+       LDB   A,X
+       STB   $FFA5
+       LDD   NEWPOS,Y
+       ANDA  #%00011111
+       ADDA  #$60
+       TFR   D,U
+       JSR   DRBUGPLANE
+       PULS  Y,D,PC

@@ -1,0 +1,907 @@
+BUGPLANE
+       LEAX  +20,U
+       LDD   #255
+       LDU   #0
+       STU   -24,X
+       STU   -22,X
+       STU   -20,X
+       STU   -18,X
+       ABX   *X=1
+       STU   -23,X
+       STU   -21,X
+       STU   -19,X
+       STU   -17,X
+       STA   -15,X
+       ABX   *X=2
+       STU   -19,X
+       STU   -15,X
+       STA   -22,X
+       LDU   #$0444
+       STA   -22,X
+       STU   -21,X
+       STU   -17,X
+       ABX   *X=3
+       LDU   #$4000
+       STU   -18,X
+       LDU   #$4445
+       STU   -16,X
+       LDU   #$6000
+       STU   -14,X
+       LDU   #$6544
+       STA   -21,X
+       STU   -20,X
+       ABX   *X=4
+       STU   -18,X
+       LDU   #$0445
+       STU   -16,X
+       LDU   #$6600
+       STU   -14,X
+       STA   -12,X
+       LDU   #$0006
+       STU   -20,X
+       LDU   #0
+       STU   -22,X
+       STU   -24,X
+       STU   -26,X
+       STU   -28,X
+       STU   -9,X
+       STU   -7,X
+       STA   -5,X
+       ABX   *X=5
+       STU   -27,X
+       STU   -25,X
+       STU   -23,X
+       STU   -21,X
+       STU   -19,X
+       STU   -12,X
+       STU   -10,X
+       STU   -8,X
+       STU   -6,X
+       STU   -4,X  *300
+       LDA   #$04
+       STA   -15,X
+       LDD   #$5654
+       STD   -17,X
+       LDB   #$50
+       STD   -14,X
+       LDB   #255
+       ABX   *X=6
+       LDB   #$65 *D=BCCB
+       STD   -16,X
+       LDD   #$4566
+       STD   -14,X
+       LDD   #$0444
+       STD   -25,X
+       LDA   #$44 *D=AAAA
+       STD   -6,X
+       LDB   #$40 *D=AAA0
+       STD   -23,X
+       CLRB  *D=AA00
+       STB   -17,X
+       STD   -4,X
+       CLRA  *D=0000
+       STD   -27,X
+       STD   -21,X
+       STD   -19,X
+       STD   -10,X
+       STD   -8,X
+       STD   -2,X
+       LDA   #$50 *D=B000
+       STD   -12,X
+       DECB
+       ABX   *X=7
+       INCB  *D=B000
+       STD   -11,X
+       LDD   #$5665
+       STD   -15,X
+       LDD   #$4566
+       STD   -13,X
+       LDD   #0
+       STD   -27,X
+       STD   -17,X
+       STD   ,X
+       LDA   #$44 *D=AA00
+       STD   -19,X
+       STD   -2,X
+       LDB   #$44 *D=AAAA
+       STD   -23,X
+       STD   -21,X
+       STD   -6,X
+       STD   -4,X
+       STA   -9,X
+       LDA   #$04 *D=0AAA
+       STD   -9,X
+       STD   -25,X
+       LDB   #255
+       ABX   *X=8
+       LDB   #$44 *D=0AAA
+       STD   -9,X
+       LDA   #$44 *D=AAAA
+       STD   -20,X
+       STD   -18,X
+       STD   -7,X
+       INCB  *D=AAAB
+       STD   -5,X
+       STD   -24,X
+       CLRB  *D=AA00
+       STD   -16,X
+       LDB   #$40 *D=AAA0
+       STD   -1,X
+       LDD   #$5065
+       STA   -10,X
+       LDA   #$45 *D=ABCB
+       STD   -12,X
+       LDA   #$55 *D=BBCB
+       STD   -14,X
+       LDB   #$55 *D=BBBB
+       STD   -22,X
+       STD   -3,X
+       STU   -26,X
+       STU   +1,X
+       LDB   #255
+       ABX   *X=9
+       STU   -26,X
+       LDB   #$66 *D=BBCC
+       STD   -11,X
+       STD   -3,X
+       STD   -22,X
+       LDB   #$55 *D=BBBB
+       STD   -18,X
+       STD   -5,X
+       LDA   #$45 *D=ABBB
+       STD   -24,X
+       LDA   #$65 *D=CBBB
+       STD   -20,X
+       STD   -1,X
+       LDD   #$5665
+       STD   -13,X
+       LDD   #$5444
+       STD   -9,X
+       LDA   #$44 *D=AAAA
+       STD   -16,X
+       STA   -14,X
+       INCB  *D=AAAB
+       STD   -7,X
+       LDD   #$5540
+       STD   +1,X
+       CLRA
+       STA   +3,X
+       LDB   #255
+       ABX   *X=10
+       LDB   #$55 *D=00BB
+       STD   -24,X
+       STA   -25,X
+       STA   +4,X
+       LDA   #$55 *D=BBBB
+       STD   -16,X
+       STD   -6,X
+       STD   -4,X
+       LDA   #$65 *D=CBBB
+       STD   -18,X
+       LDB   #$44 *D=CBAA
+       STD   -8,X
+       LDB   #$50 *D=CBB0
+       STD   +2,X
+       LDD   #$5445
+       STD   -14,X
+       LDD   #$5656
+       STD   -10,X
+       LDA   #$66 *D=CCBC
+       STD   -12,X
+       LDB   #$66 *D=CCCC
+       STD   -22,X
+       STD   -20,X
+       STD   -2,X
+       STD   ,X
+       LDB   #255
+       ABX   *X=11
+       LDB   #$66 *D=CCCC
+       STD   -18,X
+       STD   -16,X
+       STD   -3,X
+       STD   -1,X
+       LDA   #$55 *D=BBCC
+       STD   -9,X
+       LDB   #$56 *D=BBBC
+       STD   -12,X
+       STD   -5,X
+       DECB  *D=BBBB
+       STD   -14,X
+       STD   -7,X
+       LDD   #$5000
+       STD   +1,X
+       LDD   #$0065
+       STD   -20,X
+       STA   +5,X
+       STB   -10,X
+       LDB   #$05 *D=000B
+       STD   -24,X
+       STD   +3,X
+       STU   -22,X
+       LDB   #255
+       ABX   *X=12  *1014
+       STU   -23,X
+       STU   -21,X
+       STU   -19,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       LDB   #$05 *D=000B
+       STD   -17,X
+       STA   +6,X
+       LDD   #$5455
+       STD   -11,X
+       STD   -6,X
+       LDA   #$66 *D=CCBB
+       STD   -13,X
+       INCB  *D=CCBC
+       STD   -9,X
+       LDB   #$65 *D=CCCB
+       STD   -2,X
+       STB   -7,X
+       INCB  *D=CCCC
+       STD   -15,X
+       LDA   #$56 *D=BCCC
+       STD   -4,X
+       LDB   #255
+       ABX   *X=13
+       LDB   #$65 *D=BCCB
+       STD   -12,X
+       LDD   #$5000
+       STD   -2,X
+       STB   -23,X
+       LDD   #$5545
+       STD   -10,X
+       STD   -6,X
+       LDB   #$55 *D=BBBB
+       STD   -8,X
+       LDB   #$66 *D=BBCC
+       STD   -4,X
+       STU   -22,X
+       STU   -20,X
+       STU   -18,X
+       STU   -16,X
+       STU   -14,X
+       STU   ,X
+       STU   +2,X
+       STU   +4,X
+       STU   +6,X
+       STU   +8,X
+       LDB   #255
+       ABX   *X=14
+       STU   -24,X
+       STU   -22,X
+       STU   -20,X
+       STU   -18,X
+       STU   -16,X
+       STU   -14,X
+       STU   +1,X
+       STU   +3,X
+       STU   +5,X
+       STU   +7,X
+       STU   +9,X
+       STU   +11,X
+       LDB   #$56 *D=BBBC
+       STD   -4,X
+       LDD   #$6655
+       STD   -10,X
+       LDD   #$5444
+       STD   -8,X
+       STD   -6,X
+       LDD   #$6540
+       STD   -2,X
+       LDD   #$0045
+       STD   -12,X
+       STA   ,X
+       LDB   #255
+       ABX   *X=15  *1375
+       LDB   #$04 *D=000A
+       STD   +4,X
+       LDB   #$44 *D=00AA
+       STD   -21,X
+       INCB  *D=00AB
+       STD   -11,X
+       LDA   #$54 *D=BAAB
+       STD   -5,X
+       LDD   #$4000
+       STD   ,X
+       STD   +10,X
+       LDD   #$4444
+       STD   -19,X
+       STD   -17,X
+       STD   +6,X
+       STD   +8,X
+       LDA   #$55 *D=BBAA
+       STD   -7,X
+       LDD   #$5666
+       STD   -3,X
+       LDA   #$65 *D=CBCC
+       STA   -1,X
+       INCA  *D=CCCC
+       STD   -9,X
+       STU   +2,X
+       STU   +12,X
+       STU   +14,X
+       STU   -25,X
+       STU   -23,X
+       STU   -15,X
+       STU   -13,X
+       LDB   #255
+       ABX   *X=16
+       LDB   #$66 *D=CCCC
+       STD   -8,X
+       STD   -2,X
+       LDB   #$55 *D=CCBB
+       STD   -6,X
+       LDD   #$4440
+       STD   -13,X
+       STD   +12,X
+       LDB   #$44
+       STD   -21,X
+       STD   -19,X
+       STD   -17,X
+       STD   -15,X
+       STD   +4,X
+       STD   +6,X
+       STD   +8,X
+       STD   +10,X
+       LDD   #$0445
+       STD   -10,X
+       LDD   #$4556
+       STD   -4,X
+       LDD   #$6544
+       STD   ,X
+       STU   -25,X
+       STU   -23,X
+       STU   +2,X
+       STU   +14,X
+       STU   +16,X
+       LDD   #255
+       STA   -11,X
+       ABX   *X=17  *1680
+       STU   -25,X
+       STU   +18,X
+       LDB   #$44 *D=00AA
+       STD   -23,X
+       STD   -10,X
+       STA   +17,X
+       LDA   #$44 *D=AAAA
+       STD   -21,X
+       STD   -12,X
+       STD   +5,X
+       STD   +13,X
+       LDB   #$40 *D=AAA0
+       STD   +15,X
+       STA   -13,X
+       LDA   #$54 *D=BAA0
+       STD   +2,X
+       LDD   #$5656
+       STD   -8,X
+       STD   -6,X
+       STD   ,X
+       LDA   #$66 *D=CCBC
+       STD   -2,X
+       LDD   #$6545
+       STD   -4,X
+       LDA   #$40
+       STA   +4,X
+       LDA   #$45 *D=ABAB
+       STD   -19,X
+       STD   -17,X
+       STD   -15,X
+       STD   +7,X
+       STD   +9,X
+       STD   +11,X
+       LDB   #255
+       ABX   *X=18 *1845
+       LDB   #$65 *D=ABCB
+       STD   -8,X
+       LDB   #$54 *D=ABBA
+       STD   +7,X
+       DECA  *D=AABA
+       STD   -20,X
+       LDB   #$40 *D=AAA0
+       STD   -10,X
+       STD   +17,X
+       STB   +4,X
+       LDB   #$45 *D=AAAB
+       STD   +5,X
+       DECB  *D=AAAA
+       STD   -22,X
+       LDA   #$54 *D=BAAA
+       STD   +15,X
+       LDD   #$5545 *D=BBAB
+       STD   -12,X
+       LDB   #$54 *D=BBBA
+       STD   -14,X
+       STD   +13,X
+       INCB  *D=BBBB
+       STD   -18,X
+       STD   -16,X
+       STD   +9,X
+       STD   +11,X
+       LDA   #$65 *D=CBBB
+       STD   -6,X
+       STD   ,X
+       LDB   #$65 *D=CBCB
+       STD   +2,X
+       INCB  *D=CBCC
+       STD   -4,X
+       LDD   #$4665 *D=ACCB
+       STD   -2,X
+       STU   -24,X
+       STU   +19,X
+       LDD   #255
+       STA   -25,X
+       ABX   *X=19
+       LDD   #$5555
+       STD   -19,X
+       STD   -17,X
+       STD   -15,X
+       STD   -13,X
+       STD   +9,X
+       STD   +11,X
+       STD   +13,X
+       STD   +15,X
+       LDB   #$45 *D=BBAB
+       STD   -5,X
+       STD   +1,X
+       DECA  *D=BAAB
+       STD   +5,X
+       DECB  *D=BAAA
+       STD   +17,X
+       LDA   #$45 *D=ABAA
+       STD   -9,X
+       DECA  *D=AAAA
+       STD   -21,X
+       LDB   #$54 *D=AABA
+       STD   +7,X
+       LDA   #$54 *D=BABA
+       STD   -11,X
+       LDD   #$5656
+       STD   -7,X
+       STD   -3,X
+       STD   -1,X
+       STD   +3,X
+       LDD   #$4440
+       STD   +19,X
+       STA   -22,X
+       STU   -24,X
+       STU   +21,X
+       LDB   #255
+       ABX   *X=20
+       LDB   #$44 *D=AAAA
+       STD   +20,X
+       INCB  *D=AAAB
+       STD   -21,X
+       LDD   #$5404
+       STD   -4,X
+       STD   +2,X
+       LDB   #$54 *D=BABA
+       STD   +6,X
+       STD   -8,X
+       STB   +8,X
+       INCA  *D=BBBA
+       STD   -10,X
+       STA   -19,X
+       STA   +19,X
+       INCB  *D=BBBB
+       STD   +9,X
+       STD   +11,X
+       STD   +17,X
+       STD   -12,X
+       STD   -18,X
+       LDB   #$66 *D=BBCC
+       STD   +4,X
+       INCA  *D=BCCC
+       STD   -2,X
+       LDB   #$65 *D=BCCB
+       STD   -6,X
+       LDA   #$65 *D=CBCB
+       STD   -16,X
+       STD   -14,X
+       STD   +13,X
+       STD   +15,X
+       LDD   #$0004
+       STD   -23,X
+       STU   +22,X
+       LDD   #$6666
+       STD   ,X
+       LDB   #255
+       ABX   *X=21 *2371
+       LDB   #$66 *D=CCCC
+       STD   -15,X
+       STD   +15,X
+       LDB   #$56 *D=CCBC
+       STD   -13,X
+       STD   +17,X
+       LDA   #$55 *D=BBBC
+       STD   +11,X
+       INCA  *D=BCBC
+       STD   -17,X
+       STD   +13,X
+       LDB   #$65 *D=BCCB
+       STD   -5,X
+       STD   -1,X
+       DECA  *D=BBCB
+       STD   -19,X
+       STD   +19,X
+       INCB  *D=BBCC
+       STD   +5,X
+       LDB   #$44 *D=BBAA
+       STD   +21,X
+       LDB   #$55 *D=BBBB
+       STD   -9,X
+       INCA  *D=BCBB
+       STD   -11,X
+       LDA   #$45 *D=ABBB
+       STD   +9,X
+       LDB   #$44 *D=ABAA
+       STD   -7,X
+       LDD   #$4445
+       STD   -21,X
+       LDA   #$54 *D=BAAB
+       STD   +7,X
+       LDB   #$0F *D=BA0F
+       STD   +3,X
+       LDD   #$5F04
+       STD   -3,X
+       LDD   #$4000
+       STD   +23,X
+       LDD   #$6566
+       STD   +1,X
+       STU   -23,X
+       LDB   #255
+       ABX   *X=22
+       LDB   #$65 *D=CBCB
+       STD   -10,X
+       STD   +12,X
+       LDB   #$55 *D=CBBB
+       STD   -8,X
+       LDA   #$55 *D=BBBB
+       STD   +10,X
+       INCB  *D=BBBC
+       STD   -20,X
+       LDA   #$66 *D=CCBC
+       STD   +20,X
+       LDB   #$66 *D=CCCC
+       STD   -16,X
+       STD   -14,X
+       STD   -12,X
+       STD   +14,X
+       STD   +16,X
+       STD   +18,X
+       STD   +2,X
+       LDA   #$56 *D=BCCC
+       STD   -4,X
+       STD   ,X
+       STD   +6,X
+       LDB   #$56 *D=BCBC
+       STD   -18,X
+       DECB  *D=BCBB
+       STD   +22,X
+       LDD   #$5454
+       STD   -6,X
+       STD   +8,X
+       LDA   #$50
+       STA   +24,X
+       LDD   #$55F5
+       STD   +4,X
+       STD   -2,X
+       STU   -22,X
+       STU   +25,X
+       LDB   #255
+       ABX   *X=23 *2739
+       LDB   #$54 *D=BBBA
+       STD   +18,X
+       LDB   #$56 *D=BBBC
+       STD   ,X
+       LDB   #$66 *D=BBCC
+       STD   +6,X
+       INCA  *D=BCCC
+       STD   -12,X
+       LDA   #$66 *D=CCCC
+       STD   +14,X
+       STD   +16,X
+       STD   -10,X
+       DECB  *D=CCCB
+       STD   -2,X
+       LDB   #$55 *D=CCBB
+       STD   -8,X
+       STD   +4,X
+       STD   +8,X
+       DECA  *D=CBBB
+       STD   -6,X
+       INCB  *D=CBBC
+       STD   +12,X
+       LDA   #$45 *D=ABBC
+       STD   -4,X
+       DECB  *D=ABBB
+       STD   +10,X
+       STD   +22,X
+       DECA  *D=AABB
+       STD   -14,X
+       STB   -17,X
+       LDB   #$44 *D=AAAA
+       STD   +20,X
+       STD   -16,X
+       LDD   #$6565
+       STD   +2,X
+       STD   +24,X
+       STD   -19,X
+       LDD   #$0005
+       STD   -21,X
+       STU   +26,X
+       LDB   #255
+       ABX   *X=24 *2924
+       STU   -16,X
+       STU   -14,X
+       STU   -12,X
+       STU   +18,X
+       STU   +20,X
+       STU   +22,X
+       LDB   #$56 *D=00BC
+       STD   -20,X
+       LDA   #$66 *D=CCBC
+       STD   +4,X
+       LDA   #$56 *D=BCBC
+       STD   +2,X
+       STD   +12,X
+       DECB  *D=BCBB
+       STD   -5,X
+       LDA   #$64 *D=CABB
+       STD   +10,X
+       LDA   #$66 *D=CCBB
+       STD   ,X
+       LDB   #$66 *D=CCCC
+       STD   -9,X
+       STD   -7,X
+       STD   -2,X
+       STD   +8,X
+       STD   +14,X
+       DECB  *D=CCCB
+       STD   +16,X
+       LDD   #$5556
+       STD   +6,X
+       LDB   #$44 *D=BBAA
+       STD   -18,X
+       LDD   #$5650
+       STD   +26,X
+       LDD   #$0445
+       STD   +24,X
+       LDD   #$5405
+       STA   -3,X
+       STB   -10,X
+       LDD   #255
+       STA   +28,X
+       ABX   *X=25
+       LDB   #$55 *D=00BB
+       STD   -19,X
+       LDA   #$66 *D=CCBB
+       STD   +15,X
+       DECA  *D=CBBB
+       STD   -3,X
+       STD   +11,X
+       LDB   #$65 *D=CBCB
+       STD   +2,X
+       STD   +4,X
+       STD   +6,X
+       INCB  *D=CBCC
+       STD   +13,X
+       LDA   #$05 *D=0BCC
+       STD   ,X
+       LDB   #$56 *D=0BBC
+       STD   -7,X
+       INCA  *D=0CBC
+       STA   +10,X
+       LDD   #$4550
+       STD   +27,X
+       LDD   #$4000
+       STD   -17,X
+       STB   +29,X
+       STU   -15,X
+       STU   -13,X
+       STU   -11,X
+       STU   -9,X
+       STU   +17,X
+       STU   +19,X
+       STU   +21,X
+       STU   +23,X
+       STU   +25,X
+       LDD   #$6665
+       STD   -5,X
+       STD   +8,X
+       STA   -1,X
+       LDB   #255
+       ABX   *X=26 *3294
+       STU   -18,X
+       STU   -16,X
+       STU   -11,X
+       STU   -9,X
+       STU   -7,X
+       STU   +17,X
+       STU   +19,X
+       STU   +25,X
+       STU   +27,X
+       STU   +29,X
+       INCB  *D=CC00
+       STD   ,X
+       LDB   #$50 *D=CCB0
+       STD   +9,X
+       LDB   #$55 *D=CCBB
+       STD   -3,X
+       INCB  *D=CCBC
+       STD   +4,X
+       LDA   #$55 *D=BBBC
+       STD   +13,X
+       LDD   #$0666
+       STD   +11,X
+       LDD   #$6000
+       STD   +15,X
+       LDD   #$5666
+       STD   +2,X
+       STD   +7,X
+       STA   +6,X
+       STA   -1,X
+       LDB   #255
+       ABX   *X=27
+       LDB   #$60 *D=BCC0
+       STD   ,X
+       LDB   #$55 *D=BCBB
+       STD   -2,X
+       LDB   #$66 *D=BCCC
+       STD   +4,X
+       CLRA  *D=00CC
+       STD   +12,X
+       LDA   #$66 *D=CCCC
+       STD   +8,X
+       LDD   #$6565
+       STD   +6,X
+       LDD   #$5556
+       STD   +14,X
+       LDD   #$5000
+       STD   +16,X
+       STD   +10,X
+       CLRA
+       STD   -17,X
+       STD   -15,X
+       STD   -6,X
+       STD   -4,X
+       STD   +2,X
+       STD   +18,X
+       STD   +28,X
+       STD   +30,X
+       DECB
+       ABX   *X=28 *3568
+       STU   +3,X
+       STU   +11,X
+       STU   +18,X
+       LDB   #$66 *D=00CC
+       STD   +13,X
+       LDB   #$04 *D=000A
+       STD   -3,X
+       LDB   #$56 *D=00BC
+       STD   +5,X
+       LDA   #$66 *D=CCBC
+       STD   ,X
+       STD   +7,X
+       LDB   #$50 *D=CCB0
+       STD   +9,X
+       LDD   #$5666
+       STD   +15,X
+       STA   -1,X
+       LDB   #$54
+       STB   +17,X
+       LDB   #$60
+       STB   +2,X
+       LDB   #255
+       ABX   *X=29
+       LDB   #$66 *D=BCCC
+       STD   +8,X
+       LDA   #$45 *D=ABCC
+       STD   -1,X
+       LDA   #$66 *D=CCCC
+       STD   +15,X
+       LDA   #$06 *D=0CCC
+       STD   +1,X
+       DECB  *D=0CCB
+       STD   +17,X
+       STU   -3,X
+       STU   +4,X
+       STU   +6,X
+       STU   +11,X
+       STU   +13,X
+       STU   +20,X
+       LDA   #$60
+       STA   +3,X
+       LDA   #$50
+       STA   +10,X
+       LDA   #$40
+       STA   +19,X
+       LDB   #255
+       ABX   *X=30 *3766
+       STU   +7,X
+       STU   +11,X
+       STU   +21,X
+       STU   +9,X
+       INCB  *D=A000
+       STD   +4,X
+       STB   +13,X
+       STB   +15,X
+       LDD   #$5660
+       STD   ,X
+       LDA   #$45 *D=ACC0
+       STD   +16,X
+       LDD   #$5466
+       STA   +20,X
+       CLRA  *D=00CC
+       STD   +2,X
+       STD   +18,X
+       LDB   #$04 *D=000A
+       STD   -2,X
+       LDB   #255
+       ABX   *X=31
+       LDB   #$46 *D=00AC
+       STD   +16,X
+       STA   -1,X
+       STA   +6,X
+       STA   +9,X
+       LDD   #$5566
+       STD   ,X
+       LDD   #$6640
+       STD   +4,X
+       LDD   #$0665
+       STD   +20,X
+       STU   +2,X
+       STU   +12,X
+       STU   +10,X
+       LDD   #$5000
+       STD   +22,X
+       LDA   #$60 *D=C000
+       STD   +18,X
+       DECB
+       ABX   *X=32
+       STU   +2,X
+       INCB  *D=C000
+       STD   +19,X
+       STD   +23,X
+       LDA   #$40 *D=A000
+       STD   +6,X
+       LDD   #$0066
+       STD   ,X
+       STD   +4,X
+       LDB   #$46 *D=00AC
+       STD   +17,X
+       LDB   #$06 *D=000C
+       STD   +21,X
+       LDB   #255
+       ABX   *X=33
+       LDB   #$06 *D=000C
+       STD   +5,X
+       LDB   #$66 *D=00CC
+       STD   +18,X
+       LDD   #$6000
+       STD   +7,X
+       STU   +1,X
+       STU   +3,X
+       STU   +20,X
+       STU   +22,X
+       STU   +24,X
+       LDD   #255
+       ABX   *X=34 *4060
+       STU   +2,X
+       STU   +6,X
+       STU   +8,X
+       STU   +19,X
+       STU   +23,X
+       STU   +25,X
+       STA   +4,X
+       STA   +21,X
+       ABX   *X=35
+       STU   +7,X
+       STU   +9,X
+       STU   +20,X
+       STA   +22,X
+       RTS
+*4142 CYCLES
+       MSG   *

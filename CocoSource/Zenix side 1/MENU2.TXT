@@ -1,0 +1,495 @@
+MENUCONT
+*** PRINT TITLE ON SCREEN
+       DO    WRITCS
+       FCB   CHMODE
+       FDB   160
+       FCB   CHCOL
+       FDB   $00FF
+       FCB   GOTOXY
+       FDB   4+76-50
+ FCC "WRITTEN "
+ FCC "BY JEREMY SPILLER"
+       FCB   GOTOXY
+       FDB   160*9+4+76-30
+ FCC "AND MIKE NEWELL"
+       FCB   0
+
+       LDU  #160*3*9+4*2
+       LDY   #4
+       LDX   #SCORES
+A@     LDD   #$EE00
+       BSR   L@
+       LDD   #$FF00
+       BSR   L@
+       LEAY  -1,Y
+       BNE   A@
+       BRA   Z@
+*DRAW A LINE OF SCORE BOARD
+L@     DO    WRCL
+       TFR   U,D
+       DO    WRXY
+       LEAX  +4,X
+       DO    WRITCX
+       DO    WRITCS
+ FCC " ",0
+       CLRB
+       LDA   -4,X
+       BSR   B@
+       LDA   -3,X
+       BSR   B@
+       LDA   -2,X
+       BSR   B@
+       LDA   -1,X
+       BSR   B@
+       LEAU  +160*9,U
+       LEAX  +32-4,X
+       RTS
+B@     PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   C@
+       PULS  A
+       ANDA  #$0F
+C@     BEQ   X@
+       INCB
+D@     ADDA  #'0
+       DO    WRITCA
+       RTS
+X@     TSTB
+       BNE   D@
+       LDA   #32-'0
+       BRA   D@
+Z@
+
+*CODE IT SO IT CAN'T BE SEEN
+       LDY   #$2000
+       LDX   #0
+A@     LDD   ,X
+       EORA  #%11001100
+       EORB  #%11001100
+       STD   ,X++
+       LEAY  -1,Y
+       BNE   A@
+
+***FADE IN!
+       JSR   VSYNC
+       LDD   #$3C39
+       STD   LFFB0+$E
+       LDX   #PALETTES
+       LDA   A,X
+       LDB   B,X
+       STD   $FFBE
+       JSR   VSYNC
+       JSR   VSYNC
+       CLRA
+       CLRB
+       LDY   #$8000
+       STD   RND
+B@     LDD   RND
+       LSRA
+       EORA  RND
+       COMA
+       LSLA
+       LSLA
+       LSLA
+       LDA   RND
+       ROLB
+       ROLA
+       ANDA  #$7F
+       STD   RND
+       LSRA
+       RORB
+       TFR   D,X
+       BCS   C@
+       LSRA
+       LDA   ,X
+       EORA  #%11000000
+       ANDA  #%11110000
+       ORA   +$4000-64,X
+       STA   +$4000-64,X
+       LEAY  -1,Y
+       BNE   B@
+       BRA   D@
+C@     LSRA
+       LDA   ,X
+       EORA  #%00001100
+       ANDA  #%00001111
+       ORA   +$4000-64,X
+       STA   +$4000-64,X
+       LEAY  -1,Y
+D@     BNE   B@
+
+*** KILL LOWER DISPLAY
+       LDX   #$4000
+A@     CLR   ,X
+       LEAX  -1,X
+       BNE   A@
+       CLR   ,X
+B@     LEAX  -1,X
+       BNE   B@
+
+*** SET INTERUPTS (MUSIC)
+       LDA   #%00001000
+       STA   $FF93
+       ANDCC #%10101111
+
+*** ROTATE ZENIX
+       CLRA
+A@     BSR   RZSC
+       JSR   RZPF
+FF1    NEGA
+       COMA
+       INCA
+       INCA
+       CMPA  #64
+       BLO   A@
+       LDA   #128
+B@     BSR   RZSC
+       BSR   RZPF
+FF2    NEGA
+       COMA
+       INCA
+       INCA
+       CMPA  #128+64
+       BLO   B@
+       CLRA
+       BRA   A@
+
+***ROT. ZEN. SET COLOR
+RZSC   JSR   VSYNC
+       PSHS  A
+       LDU   #RCOLS
+       PSHS  A
+       TSTA
+       BPL   B@
+       LDU   #BCOLS
+       ANDA  #$7F
+B@     PSHS  A
+       LDA   #63
+       SUBA  ,S+
+       CLRB
+       LSRA
+       RORB  *1
+       LSRA
+       RORB  *2
+       LSRA
+       RORB  *3
+       LSRA
+       RORB  *4
+       LSRA
+       RORB  *5
+       LSRA
+       RORB  *6
+       STD   INK
+       CLRA
+       CLRB
+       STD   VAL
+       PULS  A
+       LDY   #8
+       TSTA
+       BPL   CLBACK
+       LDX   #LFFB0+1
+C@     LDD   VAL
+       ADDD  INK
+       STD   VAL
+       LDA   A,U
+       STA   ,X+
+       LEAY  -1,Y
+       BNE   C@
+       PULS  A,PC
+CLBACK LDX   #LFFB0+9
+D@     LDD   VAL
+       ADDD  INK
+       STD   VAL
+       LDA   A,U
+       STA   ,-X
+       LEAY  -1,Y
+       BNE   D@
+       PULS  A,PC
+
+***ROT. ZEN. PRINT FRAME
+RZPF   PSHS  A
+       TSTA
+       LBMI  RZPFB
+       CMPA  #31
+       BLS   R@
+       SUBA  #32
+       BRA   A@
+R@     PSHS  A
+       LDA   #31
+       SUBA  ,S+
+A@     PSHS  A
+       ADDA  #15
+       LDB   #160
+       MUL
+       TFR   D,U
+       JSR   BLANK
+       PULS  A
+       LSLA
+       LDY   #$E000
+       LDY   A,Y
+B@     LDA   ,Y+
+       BNE   C@
+       BSR   BLANK
+       PULS  A,PC
+C@     BSR   PLINE
+       BRA   B@
+
+BLANK  PSHS  X,Y
+       LDY   #20
+       LDX   #0
+A@     STX   ,U
+       STX   2,U
+       STX   4,U
+       STX   6,U
+       LEAU  +8,U
+       LEAY  -1,Y
+       BNE   A@
+       PULS  X,Y,PC
+
+PLINE  PSHS  X,Y,D
+       LDY   #8
+       LDB   #160
+       MUL
+       ADDD  #$8000
+       TFR   D,X
+       LEAU  +24,U
+       LEAX  +24,X
+A@     LDD   ,X *2
+       STD   ,U
+       LDD   2,X *4
+       STD   2,U
+       LDD   4,X *6
+       STD   4,U
+       LDD   6,X *8
+       STD   6,U
+       LDD   8,X *10
+       STD   8,U
+       LDD   10,X *12
+       STD   10,U
+       LDD   12,X *14
+       STD   12,U
+       LEAU  +14,U
+       LEAX  +14,X
+       LEAY  -1,Y *14 X 8 = 112
+       BNE   A@
+       LEAU  +24,U *U=NEXT LINE
+       PULS  X,Y,D,PC
+
+RZPFB  ANDA  #$7F
+       CMPA  #31
+       BLS   R@
+       SUBA  #32
+       BRA   A@
+R@     PSHS  A
+       LDA   #31
+       SUBA  ,S+
+A@     PSHS  A
+       ADDA  #15
+       LDB   #160
+       MUL
+       TFR   D,U
+       BSR   BLANK
+       PULS  A
+       INCA
+       LSLA
+       LDY   #$E000
+       LDY   A,Y
+       LEAY  -1,Y
+B@     LDA   ,-Y
+       BNE   C@
+       JSR   BLANK
+       PULS  A,PC
+C@     BSR   PLINE
+       BRA   B@
+
+BUTTON PSHS  X,Y,U,D
+       CLRB
+       COMB
+       STB   $FF02
+       LDB   $FF00
+       COMB
+FF3    PULS  X,Y,U,D,PC
+FF4    ANDB  #$3
+       BNE   PL@
+       DO    INKEY
+       TSTA
+       BEQ   RET@
+       CMPA  #3
+       BEQ   BREAK@
+       CMPA  #'4
+       BHI   RGB@
+       CMPA  #'1
+       BLO   RGB@
+       TFR   A,B
+       SUBB  #'0
+       LSLB
+       LSLB
+       LSLB
+PLAY@  ORCC  #$50
+       LDY   SCORES+7*32
+       LDU   SCORES+7*32+2
+       COM   MUSON
+       LDA   MUSON
+       STA   PARAMT
+       LDA   #$3F
+       STA   $FFA7
+*IS MODIFIED TO JUMP TO $E000
+FF0    JMP   EXEC   *$E000
+PL@    CLRB
+       BRA   PLAY@
+RGB@   CMPA  #'r
+       BNE   CMP@
+       LDX   #PALETTES
+       LDB   #63
+       ORCC  #$50
+C1@    STB   B,X
+       SUBB  #1
+       BCC   C1@
+       ANDCC #$AF
+       BRA   RET@
+CMP@   CMPA  #'c
+       BNE   RET@
+       LDX   #PALETTES
+       LDU   #CMPPALETTES
+       LDB   #63
+       ORCC  #$50
+C2@    LDA   B,U
+       STA   B,X
+       SUBB  #1
+       BCC   C2@
+       ANDCC #$AF
+RET@   PULS  X,Y,U,D,PC
+BREAK@ JSR   RESET
+       JSR   BUTTON
+       JSR   FF4
+       RTS
+
+CMPPALETTES
+ FCB 0,12,2,14,7,9,5,16,28,44
+ FCB 13,29,11,27,10,43
+ FCB 34,17,18,33,3,1,19,50,30
+ FCB 45,31,46,15,60,47,61
+ FCB 23,8,21,6,39,24,38,54,25
+ FCB 42,26,58,24,41,40,56
+ FCB 20,4,35,51,37,53,36,52
+ FCB 32,59,49,62,55,57,63,48
+
+PRINT  RTS
+
+
+ENTSCR ORCC  #$50
+       LDA   #$3C
+       STA   $FFA6
+       JMP   A@
+A@     LDS   #STACK
+       LDA   #$D2
+       TFR   A,DP
+       LDX   #LFFB0
+       LDD   #16
+       JSR   VSYNC
+B@     STA   ,X+
+       DECB
+       BNE   B@
+
+*BUBBLE SORT
+       LDX   #PARAMT
+       LDY   #SCRSEN
+       BSR   W@
+       LDB   #10
+A@     LDX   #SCORES
+       LDY   #SCORES+32
+       LDA   #8
+B@     BSR   S@
+       LEAX  +32,X
+       LEAY  +32,Y
+       DECA
+       BNE   B@
+       DECB
+       BNE   A@
+*SAVE SCORE TO DISK
+       JMP   REXEC
+*SWAP IF X^ IS LOWER
+S@     PSHS  D
+       LDD   ,X
+       CMPD  ,Y
+       BLO   X@
+       BHI   N@
+       LDD   +2,X
+       CMPD  +2,Y
+       BHS   N@
+X@     PULS  D
+*SWAP
+W@     PSHS  X,Y,D
+       LDA   #32
+       PSHS  A
+Z@     LDA   ,X
+       LDB   ,Y
+       STA   ,Y+
+       STB   ,X+
+       DEC   ,S
+       BNE   Z@
+       LEAS  +1,S
+       PULS  X,Y,D,PC
+N@     PULS  D,PC
+
+DFU
+ FDB X0,X1,X2,X3,X4,X5
+
+*MESS UP BUTTON FUNCTION
+
+X0     PSHS  X,Y,U,D
+       FDB   $108E *LDY #
+       PULS  X,Y,U,D,PC
+       LDD   #DFU-FF3
+       LDX   #DFU
+       NEGD
+       STY   D,X
+       PULS  X,Y,U,D,PC
+X1
+X2
+X3     RTS
+
+*COPY DISK ID TO ,U
+X4     PSHS  X,Y,U,D
+       PULS  X,Y,U,D,PC
+
+
+FIX@   BCC   R@
+       NEGD
+R@     RTS
+X5     PSHS  X,Y,U,D
+       TFR   X,D
+       STD   ,S
+       CMPD  #400
+       BHI   O@
+*FIX STUFF
+       LDY   #$1212
+       LDD   #DFU-FF3
+       LDX   #DFU
+       NEGD
+       STY   D,X
+ LDY #$BD00+BUTTON!>8
+       LDD   #DFU-FF1
+       NEGD
+       LEAU  D,X
+       STY   ,U++
+       LDA   #BUTTON!.$FF
+       STA   ,U
+       LDD   #DFU-FF2
+ LDY #$BD00+BUTTON!>8
+       NEGD
+       LEAU  D,X
+       STY   ,U++
+       LDA   #BUTTON!.$FF
+       STA   ,U
+       LDD   #DFU-FF0
+       NEGD
+       ADDD  #1
+       LEAX  D,X
+       LDA   #$E0
+       STA   ,X
+       CLR   +1,X
+O@     PULS  X,Y,U,D,PC

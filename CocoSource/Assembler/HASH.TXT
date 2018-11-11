@@ -1,0 +1,88 @@
+*ENTRY:Y ^ OP
+*EXIT :B = TOKEN;0=BAD
+*     :X ^ COMMAND DATA (IF OK)
+*     :Y ^ END OF OP (ALWAYS)
+*ALTERNATES FOR HASH TABLE
+*ALT1  ALT2  ALT3  ALT4  ALT5
+* $1B   $8A   $1B   $2F   $75<<<
+* $35   $50   $35   $F5   $8F
+* $9B   $8A   $9B   $2F   $F5
+* $F5   $D0   $F5   $75   $4F
+
+HASH   PSHS  Y *SAVE Y
+A@     LDA   ,Y+
+       CMPA  #32
+       BHI   B@
+       CLRB
+       PULS  Y,PC
+B@     SUBA  #$1B *SEE ALT 1
+       LDB   #32
+       LSLA
+       LSLA
+       LSLA
+C@     CMPB  ,Y
+       BHS   H@
+       EORA  ,Y+
+       ADDA  #$8A *SEE ALT 2
+       CMPB  ,Y
+       BHS   H@
+       EORA  ,Y+
+       ADDA  #$1B *SEE ALT 3
+       CMPB  ,Y
+       BHS   H@
+       EORA  ,Y+
+       ADDA  #$2F *SEE ALT 4
+       CMPB  ,Y
+       BHS   H@
+       EORA  ,Y+
+       ADDA  #$75 *SEE ALT 5
+       BRA   C@
+*HASH INDEX IN A
+H@     LDY   ,S *Y ^ OP (AGAIN)
+       LEAU  HASTAB,PCR
+       LDB   A,U *B = TOKEN
+       PSHS  D
+       BEQ   E@
+       LEAX  COMTAB,PCR
+       ABX
+       ABX
+       LDD   ,X
+       LEAX  D,X
+I@     LDA   ,X+
+       BMI   M@
+       CMPA  ,Y+
+       BEQ   I@
+*ERROR-OP CODE NOT FOUND
+*A RE HASH MUST BE DONE
+REHASH LDB   ,S *B = HASH INDEX
+       LDY   +2,S *Y = OP
+       LEAU  REHTAB,PCR
+       LDB   B,U *B = TOKEN
+       STB   +1,S
+       BEQ   E@
+       LEAX  COMTAB,PCR
+       ABX
+       ABX
+       LDD   ,X
+       LEAX  D,X
+J@     LDA   ,X+
+       BMI   N@
+       CMPA  ,Y+
+       BEQ   J@
+*ERROR-OP CODE NOT FOUND
+E@     CLR   +1,S *TOKEN = 0
+       PULS  D,Y,PC
+M@     ANDA  #$7F
+       CMPA  ,Y+
+       BNE   REHASH
+       LDA   ,Y
+       CMPA  #33
+       BHS   REHASH
+       PULS  D,U,PC
+N@     ANDA  #$7F
+       CMPA  ,Y+
+       BNE   E@
+       LDA   ,Y
+       CMPA  #33
+       BHS   E@
+       PULS  D,U,PC

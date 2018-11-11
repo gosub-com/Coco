@@ -1,0 +1,46 @@
+       ORG   $E00
+SPEED  FDB   $400
+
+EXEC   ORCC  #$50
+       LDD   SPEED
+       STD   SPEED1
+       LSLB
+       ROLA
+       STD   SPEED2
+       LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       LDD   #$0100
+       STD   $FF7E
+       EXG   A,A
+A@     LDX   #$2000
+       LDU   #$2000
+       LDY   #$80
+SPEED2 EQU   *-2
+B@     LDD   $FF7C
+       LDA   #1
+       STA   $FF7E
+       STB   ,X+
+       STB   ,X+
+       LDB   ,U+
+       STB   $FF20
+       LEAY  -1,Y
+       BNE   B@
+       LDY   #$40
+SPEED1 EQU   *-2
+C@     LDD   $FF7C
+       LDA   #1
+       STA   $FF7E
+       STB   ,X+
+       STB   ,X+
+       LDB   ,U
+       LEAU  +4,U
+       STB   $FF20
+       LEAY  -1,Y
+       BNE   C@
+       BRA   A@
+
+       END   EXEC

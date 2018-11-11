@@ -1,0 +1,466 @@
+OFFSET FCB   0
+X1     FDB   0
+Y1     FDB   0
+X2     FDB   80
+Y2     FDB   90
+CLEAR  FCB   0
+BACKGROUND FCB 0
+
+       INCL  SPROUT
+
+SHPOINT
+       TST   CLEAR
+       LBEQ  HPOINT
+       PSHS  X,Y
+       JSR   HPOINT
+       CMPA  BACKGROUND
+       BNE   R@
+       CMPX  #0
+       BEQ   R@
+       LEAX  -1,X
+       JSR   HPOINT
+R@     PULS  X,Y,PC
+
+
+HBYTE  PSHS  X,Y
+       JSR   SHPOINT
+       LEAX  +1,X
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       PSHS  A
+       JSR   SHPOINT
+       ORA   ,S+
+       PULS  X,Y,PC
+
+
+PC     SET   8
+YY2    SET   PC+9
+XX2    SET   PC+7
+YY1    SET   PC+5
+XX1    SET   PC+3
+BACK   SET   PC+2
+HX     SET   0
+LX     SET   2
+HY     SET   4
+LY     SET   6
+FINDCORDINATES
+       LEAS  -PC,S
+       LDX   #0
+       STX   HX,S
+       STX   HY,S
+       LDX   #$FFFF
+       STX   LX,S
+       STX   LY,S
+       LDY   [YY1,S]
+A@     LDX   [XX1,S]
+B@     JSR   SHPOINT
+       CMPA  BACK,S
+       BEQ   C@
+       CMPX  LX,S
+       BHI   D@
+       STX   LX,S
+D@     CMPX  HX,S
+       BLO   E@
+       STX   HX,S
+E@     CMPY  LY,S
+       BHI   F@
+       STY   LY,S
+F@     CMPY  HY,S
+       BLO   C@
+       STY   HY,S
+C@     LEAX  +1,X
+       CMPX  [XX2,S]
+       BLS   B@
+       LEAY  +1,Y
+       CMPY  [YY2,S]
+       BLS   A@
+       LDX   LX,S
+       STX   [XX1,S]
+       LDX   LY,S
+       STX   [YY1,S]
+       LDX   HX,S
+       STX   [XX2,S]
+       LDX   HY,S
+       STX   [YY2,S]
+       LEAS  PC,S
+       RTS
+
+
+
+
+PC     SET   8
+YY2    SET   PC+11
+XX2    SET   PC+9
+YY1    SET   PC+7
+XX1    SET   PC+5
+BACK   SET   PC+4
+LIST   SET   PC+2
+CX     SET   0
+CY     SET   2
+COUNT  SET   4
+LAST   SET   6
+MAKELIST
+       LEAS  -PC,S
+       LDY   YY1,S
+A@     LDX   XX1,S
+G@     JSR   HBYTE
+       CMPA  BACK,S
+       BEQ   N@
+       LDD   #0
+       STD   COUNT,S
+       LDU   LIST,S
+       STU   LAST,S
+       LEAU  2,U  *END OF LIST
+       TFR   X,D
+       SUBD  XX1,S
+       LSRA
+       RORB
+       STD   ,U++
+       TFR   Y,D
+       SUBD  YY1,S
+       STD   ,U++
+       LEAU  2,U *COUNT
+       JSR   HBYTE
+B@     STA   ,U+
+       LEAX  +2,X
+       JSR   HBYTE
+       INC   COUNT+1,S
+       BNE   C@
+       INC   COUNT,S
+C@     CMPA  BACK,S
+       BNE   B@
+       STU   LIST,S
+       STU   [LAST,S]
+       LDU   LAST,S
+       LDD   COUNT,S
+       STD   +6,U
+N@     LEAX  +2,X
+       CMPX  XX2,S
+       BLS   G@
+       LEAY  +1,Y
+       CMPY  YY2,S
+       BLS   A@
+       LDU   LIST,S
+       LDD   #0
+       STD   ,U
+       LDD   LIST,S
+       ADDD  #2
+       LEAS  PC,S
+       RTS
+
+
+PC     SET   2
+LENGTH SET   PC+6
+LINE   SET   PC+4
+WORD   SET   PC+2
+COUNT  SET   0
+COUNT.WORDS.IN.LINE
+       LEAS  -PC,S
+       LDD   #0
+       STD   COUNT,S
+       LDD   LENGTH,S
+       BITB  #1
+       BEQ   EVEN@
+       LDU   LENGTH,S
+       LEAU  -1,U *U IS EVEN
+       LDX   LINE,S
+       LEAX  +1,X *X ^ NEXT
+       LDD   WORD,S
+       PSHS  U,X,D
+       BSR   COUNT.WORDS.IN.LINE
+       LEAS  +6,S
+       STD   COUNT,S
+EVEN@  LDU   LINE,S
+       LDX   WORD,S
+       LDD   LENGTH,S
+       LSRA
+       RORB  *D=D/2
+       TFR   D,Y
+       LDD   #0
+       CMPY  #0
+       BEQ   O@
+A@     CMPX  ,U++
+       BNE   B@
+       ADDD  #1
+B@     LEAY  -1,Y
+       BNE   A@
+O@     ADDD  COUNT,S
+       LEAS  PC,S
+       RTS
+
+PC     SET   2
+WORD   SET   PC+2
+LIST   SET   PC+4
+COUNT  SET  0
+COUNT.WORDS.IN.LIST
+       LEAS  -PC,S
+       LDD   #0
+       STD   COUNT,S
+       LDX   LIST,S
+A@     LDU   +6,X
+       LEAX  +8,X *X ^ LINE
+       LDD   WORD,S
+       PSHS  U,X,D
+       JSR   COUNT.WORDS.IN.LINE
+       LEAS  +6,S
+       ADDD  COUNT,S
+       STD   COUNT,S
+       LDX   [LIST,S]
+       STX   LIST,S
+       LDU   ,X
+       BNE   A@
+       LEAS  PC,S
+       RTS
+
+PC     SET   6
+LIST   SET   PC+2
+LINE   SET   PC+4
+SPLIT.NUM SET PC+6
+COUNT  SET   0
+WORD   SET   2
+LENGTH SET   4
+COUNT.SPLIT
+       LEAS  -PC,S
+       LDD   #0
+       STD   COUNT,S
+       LDU   LINE,S
+       LDD   +6,U
+       LSRA
+       RORB
+       STD   LENGTH,S
+       BEQ   Z@
+       LEAU  +8,U *U ^ DATA
+       STU   LINE,S
+A@     LDX   LINE,S
+       LDD   SPLIT.NUM,S
+       BNE   B@
+       LEAX  +1,X
+B@     SUBD  #1
+       STD   SPLIT.NUM,S
+       LDD   ,X++
+       STX   LINE,S
+       LDX   LIST,S
+       PSHS  X,D
+       JSR   COUNT.WORDS.IN.LIST
+       LEAS  +4,S
+       ADDD  COUNT,S
+       STD   COUNT,S
+       LDD   LENGTH,S
+       SUBD  #1
+       STD   LENGTH,S
+       BNE   A@
+Z@     LDD   COUNT,S
+       LEAS  PC,S
+       RTS
+
+PC     SET   8
+LIST   SET   PC+2
+LINE   SET   PC+4
+SPLIT.NUM SET 0
+HOLD   SET   2
+BEST.SPLT SET 4
+BEST.NUM SET 6
+BEST.SPLIT
+       LEAS  -PC,S
+       LDD   #0
+       STD   BEST.SPLT,S
+       STD   BEST.NUM,S
+       LDU   LINE,S
+       LDD   +6,U *LENGTH
+       LSRA
+       RORB
+       SUBD  #0
+       BEQ   Z@
+A@     STD   SPLIT.NUM,S
+       LDD   LIST,S
+       LDX   LINE,S
+       LDU   SPLIT.NUM,S
+       PSHS  D,X,U
+       JSR   COUNT.SPLIT
+       LEAS  +6,S *D=HOLD
+       CMPD  BEST.NUM,S
+       BLS   B@
+       STD   BEST.NUM,S
+       LDX   SPLIT.NUM,S
+       STX   BEST.SPLT,S
+B@     LDD   SPLIT.NUM,S
+       SUBD  #1
+       BHS   A@
+Z@     LDD   BEST.SPLT,S
+       LEAS  PC,S
+       RTS
+
+
+PC     SET   4
+LINE   SET   PC+2
+SPLITAT SET  PC+4
+MALLOC SET   PC+6
+LENGTH SET   0
+SPLIT.LINE
+       LEAS  -PC,S
+       LDD   SPLITAT,S
+       LDU   LINE,S
+       CMPD  +6,U
+       BLS   X@
+       LDD   +6,U
+       STD   SPLITAT,S
+X@     LDX   +6,U *X = LENGTH
+       STX   LENGTH,S
+       STD   +6,U *NEW LENGTH
+       LDX   MALLOC,S
+       LDD   ,U
+       STD   ,X
+       STX   ,U
+       LDY   +2,U *X
+       LDD   SPLITAT,S *NEW X
+       LEAY  D,Y
+       STY   +2,X
+       LDD   +4,U
+       STD   +4,X
+       LDD   LENGTH,S
+       SUBD  SPLITAT,S
+       STD   +6,X
+       TFR   D,Y
+       LEAX  +8,X
+       LEAU  +8,U
+       LDD   SPLITAT,S
+       LEAU  D,U
+       CMPY  #0
+       BEQ   Z@
+A@     LDA   ,U+
+       STA   ,X+
+       LEAY  -1,Y
+       BNE   A@
+Z@     TFR   X,D
+       LEAS  PC,S
+       RTS
+
+PC     SET   8
+LIST   SET   PC+2
+MALLOC SET   PC+4
+SPLITAT SET  0
+LINE   SET   2
+SPLIT.LIST
+       LEAS  -PC,S
+       LDD   LIST,S
+       STD   LINE,S
+A@     LDU   LINE,S
+       LDD   6,U
+       BITB  #1
+       BEQ   B@
+       CMPD  #2
+       BLO   B@
+       LDX   LIST,S
+       PSHS  X,U
+       JSR   BEST.SPLIT
+       LEAS  +4,S
+       LSLB
+       ROLA
+       LDU   MALLOC,S
+       TFR   D,X
+       LDD   LINE,S
+       PSHS  X,D,U
+       JSR   SPLIT.LINE
+       LEAS  +6,S
+       TFR   D,U
+       LDY   #1
+       LDX   LINE,S
+       LDX   ,X *X ^ NEXT PART
+       STX   LINE,S
+       PSHS  X,Y,U
+       JSR   SPLIT.LINE
+       LEAS  +6,S
+       STD   MALLOC,S
+B@     LDD   MALLOC,S
+       LDX   LINE,S
+       LDX   ,X
+       STX   LINE,S
+       LDX   ,X
+       BNE   A@
+       LEAS  PC,S
+       RTS
+
+PC     SET   0
+LIST   SET   PC+2
+MALLOC SET   PC+4
+BREAK.LIST
+       LEAS  -PC,S
+A@     LDX   LIST,S
+       LDD   +6,X
+       CMPD  #2
+       BLS   B@
+       LDY   #2
+       LDU   MALLOC,S
+       PSHS  X,Y,U
+       JSR   SPLIT.LINE
+       LEAS  +6,S
+       STD   MALLOC,S
+       BRA   A@
+B@     LDX   ,X
+       STX   LIST,S
+       LDU   ,X
+       BNE   A@
+       LEAS  PC,S
+       RTS
+
+
+
+EXEC   LDU   #Y2
+       LDX   #X2
+       PSHS  X,U
+       LDU   #Y1
+       LDX   #X1
+       PSHS  X,U
+       LDA   BACKGROUND
+       ANDA  #$0F
+       PSHS  A
+       JSR   FINDCORDINATES
+       LEAS  +9,S
+
+       LDU   Y2
+       LDX   X2
+       PSHS  X,U
+       LDU   Y1
+       LDX   X1
+       LDA   OFFSET
+       BEQ   A@
+       LEAX  -1,X
+A@     PSHS  X,U
+       LDA   BACKGROUND
+       PSHS  A
+       LDX   #MEMARRAY
+       PSHS  X
+       JSR   MAKELIST
+       LEAS  +11,S
+
+       TST   CLEAR
+       BNE   A@
+       TFR   D,U
+       LDX   #MEMARRAY
+       PSHS  X,U
+       JSR   SPLIT.LIST
+       LEAS  4,S
+A@
+
+       TFR   D,U
+       LDX   #MEMARRAY
+       PSHS  U,X
+       JSR   BREAK.LIST
+       LEAS  +4,S
+
+       LDD   #MEMARRAY
+       PSHS  D
+       LDA   CLEAR
+       BNE   A@
+       JSR   MAKE.CODE
+       BRA   B@
+A@     JSR   MAKE.ABX
+B@     LEAS  +2,S
+
+       RTS
+
+MEMARRAY
+
+       END   EXEC

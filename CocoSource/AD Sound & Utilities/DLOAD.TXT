@@ -1,0 +1,7 @@
+EXEC   LDU   #0
+       LDX   #$400
+       JSR   $8D7C
+       RTS
+
+
+

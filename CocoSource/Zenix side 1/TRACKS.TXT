@@ -1,0 +1,1032 @@
+DOTRACK MACR
+       LDD   #D@
+       STD   TRKDRV,Y
+      \0SR   TRACKJOINT
+D@     LDU   #R@
+G@     JMP   [DOANGLE,Y]
+R@     DEC   TRACKLEN,Y
+       BPL   A@
+      \0SR   TRACKJOINT
+       BNE   G@
+       BRA   \1
+A@     DEC   TRACKSP,Y
+       BPL   G@
+       LDA   TRACKSPEED,Y
+       STA   TRACKSP,Y
+       ENDM
+
+BULHIT MACR
+       LDD   NEWPOS,Y
+       SUBA  NEWPOS,U
+       CMPA  #\0
+       BLO   A@
+B@     JMP   ,X
+A@     SUBB  NEWPOS+1,U
+       ADDB  #\1
+       CMPB  #\2
+       BHS   B@
+       ENDM
+
+LNT
+LN1    COM   OFFSET,Y
+       BMI   R@
+       INC   NEWPOS+1,Y
+R@     RTS
+LN2    INC   NEWPOS,Y
+       RTS
+LN3    COM   OFFSET,Y
+       BPL   R@
+       DEC   NEWPOS+1,Y
+       RTS
+LN4    DEC   NEWPOS,Y
+       RTS
+
+ILINE  LDX   NEWPOS,Y
+       PSHS  D
+       JSR   FANGLE
+       STA   ANGLE,Y
+       CLRA
+       LDU   #LN2-LNT
+       LDB   ,S
+       SUBB  NEWPOS,Y
+       BHS   B@
+       NEGB
+       LDU   #LN4-LNT
+B@     STD   LND,Y
+       LDX   #LN1-LNT
+       LDB   +1,S
+       SUBB  NEWPOS+1,Y
+       BHS   A@
+       NEGB
+       LDX   #LN3-LNT
+A@     LSLB
+       ROLA
+       STD   LMD,Y
+       CMPD  LND,Y
+       BHS   C@
+       PSHS  U
+       LDU   LND,Y
+       STD   LND,Y
+       STU   LMD,Y
+       TFR   U,D
+       TFR   X,U
+       PULS  X
+C@     STD   LCD,Y
+D@     STD   LLEN,Y
+       TFR   X,D
+       STB   LCOM,Y
+       TFR   U,D
+       STB   LCOM+1,Y
+       PULS  X,PC
+
+DLINE
+D@     LDD   LLEN,Y
+       BEQ   ?RTS
+       SUBD  #1
+C@     STD   LLEN,Y
+CLINE  LDU   #LNT
+       LDB   LCOM,Y
+       JSR   B,U *BUMP MD
+       LDD   LCD,Y
+       ADDD  LND,Y
+       CMPD  LMD,Y
+       BLO   F@
+       SUBD  LMD,Y
+       STD   LCD,Y
+       LDB   LCOM+1,Y
+       JSR   B,U *BUMP ND
+       LDA   #1
+       RTS
+F@     STD   LCD,Y
+       LDA   #1
+       RTS
+
+BONUS  LDD   IWAIT,Y
+       SUBD  #1
+       STD   IWAIT,Y
+       BEQ   A@
+       PULS  Y,D,PC
+A@     INC   BUGSTOTAL
+       LDX   #0
+       STX   IBLOCK,Y
+       LDA   #%10000001
+       STA   STATUS,Y
+       LDA   BONUSTRACK
+       ANDA  #%00001110
+       LDX   #BONUSES
+       LDX   A,X
+       LDD   ,X++
+       STX   GOTRACK,Y
+       STD   NEWPOS,Y
+       DOTRACK J,BONUSEND
+       LDX   BOFLASH,Y
+       BEQ   B@
+       LDA   ,X+
+       BNE   C@
+       LDX   ,X
+       LDA   ,X+
+C@     STX   BOFLASH,Y
+       STA   TYPE,Y
+B@     JMP   STDSQD
+BONUSEND
+       INC   BUGSALIVE
+       JMP   TRKEND
+
+*IWAIT, GOTRACK, IWAIT2
+*TYPE/COLOR, NEWPOS, ARE FILLED
+*MUST DRAW SQUAD LINES FIRST.
+GOSQD  INC   ALLBUGSINSQUAD
+       DEC   IWAIT2,Y
+       BMI   C@
+       PULS  Y,D,PC
+C@     LDX   #0
+       STX   IBLOCK,Y
+
+*MUST SAVE.  LINE DESTROYES!
+       LDX   IWAIT,Y
+       LDU   GOTRACK,Y
+       PSHS  X,U
+       LDD   NEWPOS,Y *TO
+       SUBA  #10
+       LDX   SQDMID   *FROM
+       STX   NEWPOS,Y
+       LDU   SQMVAT
+       STU   SQDPOS,Y
+       PSHS  U
+*SET UP SQUAD LINE POSITIONS
+       JSR   ILINE
+A@     JSR   DLINE
+       BNE   A@
+       PULS  U
+*DESTINATION FOUND
+       LDB   #13
+       PSHS  B
+B@     LDA   OFFSET,Y
+       ROLA
+       LDD   NEWPOS,Y
+       ROLB
+       ROLA
+       STD   ,U++
+       PSHS  U
+       JSR   CLINE
+       PULS  U
+       DEC   ,S
+       BNE   B@
+       LEAS  +1,S
+       CLR   ,U+
+       CLR   ,U+
+       STU   SQMVAT
+       PULS  X,U
+       STX   IWAIT,Y
+       STU   GOTRACK,Y
+
+       CLR   INSQDI,Y
+       LDB   #%00000001
+       STB   STATUS,Y
+ NXTFRM NOPRN
+A@     INC   ALLBUGSINSQUAD
+       LDD   IWAIT,Y
+       SUBD  #1
+       STD   IWAIT,Y
+       BNE   Q@
+       LDD   #B@
+       STD   TRKDRV,Y
+       LDA   #%10011001
+       STA   STATUS,Y
+Q@     PULS  Y,D,PC
+B@     INC   ALLBUGSINSQUAD
+       LDX   GOTRACK,Y
+       LDD   ,X++
+       STX   GOTRACK,Y
+       STD   NEWPOS,Y
+ DOTRACK J,BLINETOSQUAD
+       INC   ALLBUGSINSQUAD
+       JMP   STDSQD
+
+*B LINE TO SQUAD POSITION!
+BLINETOSQUAD
+E@     LDD   [SQDPOS,Y]
+       LSRA
+       RORB
+       ROR   OFFSET,Y
+       ADDA  #20
+       JSR   ILINE
+ NXTFRM NOPRN
+F@     JSR   DLINE
+       BNE   N@
+G@     LDD   #INSQD
+       STD   TRKDRV,Y
+N@     JMP   STDSQD
+
+INSQD  LDD   #$08*256+%10011101
+       STB   STATUS,Y
+       STA   ANGLE,Y
+       CMPA  CANGLE,Y
+       BEQ   G@
+       JMP   STDSQD
+G@     LDD   #H@
+       STD   TRKDRV,Y
+H@     LDA   SQGO
+       BEQ   A@
+       LDA   SYNCB,Y
+       CMPA  SQSYNC
+       BNE   Z@
+       JMP   STDSQD
+Z@     PULS  Y,D,PC
+A@     LDD   #B@
+       STD   TRKDRV,Y
+       LDD   SQDPOS,Y
+       STD   CPINSQ,Y
+       PULS  Y,D,PC
+B@     LDA   SYNCB,Y
+       CMPA  SQSYNC
+       BEQ   C@
+       PULS  Y,D,PC
+C@     LDX   CPINSQ,Y
+       LDA   INSQDI,Y
+       BPL   D@
+       LDD   ,--X
+       BNE   E@
+       LEAX  +2,X
+       BRA   X@
+D@     LDD   ,X++
+       BNE   E@
+       LEAX  -2,X
+X@     STX   CPINSQ,Y
+       COM   INSQDI,Y
+       BRA   W@
+E@     STX   CPINSQ,Y
+       LSRA
+       RORB
+       ROR   OFFSET,Y
+       ADDA  #20
+       STD   NEWPOS,Y
+W@     JMP   STDSQD
+
+TRKEN2 PSHS  Y,D
+TRKEND
+       LDX   LLINK,Y *GET OBJ
+       STX   +2,S    *& SAVE
+       UNLINK     *UNLINK
+       LDX   #ELSTS *EMPTY LIST
+       LINK
+       PULS  Y,D,PC
+
+CONTR  LDA   #%10000001
+       STA   STATUS,Y
+ NXTFRM NOPRN
+A@     JSR   ARB
+       LDB   #172
+       MUL
+       ADDA  #48-5
+       PSHS  A
+       JSR   ARB
+       LSRA
+       LSRA
+       ADDA  #8
+       PULS  B
+       JSR   ILINE
+ NXTFRM NOPRN
+B@     JSR   DLINE
+       JSR   DLINE
+       JSR   DLINE
+       BEQ   C@
+       INC   ANGLE,Y
+FIRE   LDA   SYNCB,Y
+       CMPA  SQSYNC
+       BNE   E@
+       LDD   NEWPOS,Y
+       JSR   MBLOW
+E@     JMP   STDSQD
+C@     JMP   TBLOW
+
+COUMT  FCB   1,2
+       FCB   3,2
+       FCB   5,1
+       FCB   7,0
+       FCB   8,0
+       FCB   9,0
+       FCB   10,15
+       FCB   10,15
+       FCB   10,15
+       FCB   10,14
+       FCB   9,14
+       FCB   8,13
+       FCB   7,13
+       FCB   5,12
+       FCB   3,12
+       FCB   1,12
+       FCB   -2,12
+       FCB   -4,12
+       FCB   -6,13
+       FCB   -8,13
+       FCB   -8,14
+       FCB   -9,14
+       FCB   -10,15
+       FCB   -10,15
+       FCB   -10,15
+       FCB   -10,15
+       FCB   -9,0
+       FCB   -8,0
+       FCB   -6,0
+       FCB   -4,1
+       FCB   -2,1
+       FCB   0,0
+
+COUM   LDB   #%10000001
+       STB   STATUS,Y
+       LDB   NEWPOS+1,Y
+       STB   CMPOS,Y
+       LDD   #COUMT
+       STD   CMTP,Y
+ NXTFRM NOPRN
+*COUM SHIP MOVES AT YOUR SHIP
+A@     LDB   CMPOS,Y
+       CMPB  SHIPOS+1
+       BHI   D@
+       INCB
+       SKIP1     *SKIP 1 BYTE
+D@     DECB
+       STB   CMPOS,Y
+       INC   NEWPOS,Y
+       JSR   HITSHP
+       LBCS  TRKEND
+       BNE   F@
+       SUBSHL HSCOUM
+B@     JMP   TBLOW
+F@     LDX   CMTP,Y
+       LDD   ,X++
+       BNE   C@
+       LDX   #COUMT
+       LDD   ,X++
+C@     STX   CMTP,Y
+       ADDA  CMPOS,Y
+       STA   NEWPOS+1,Y
+       STB   ANGLE,Y
+       JMP   FIRE
+
+O@     JMP   TRKEND
+EXSHT  JSR   ARB
+       LDB   OBNUM
+       MUL
+       LDX   #WLSTE
+A@     LDX   ,X
+       BEQ   O@
+       DECA
+       BPL   A@
+       LDA   STATUS,X
+       ANDA  #%00010000
+       BEQ   O@
+       LDD   NEWPOS,X
+       ADDA  #20
+       STD   NEWPOS,Y
+       LDD   #TSH
+       STD   TRKDRV,Y
+       PULS  Y,D,PC
+
+TSH    LDD   #$8000
+       STD   IPOS,Y
+       LDU   GRBLK
+       STU   IBLOCK,Y
+*DETERMINE TYPE OF BULLETTE
+       JSR   ARB
+       LDX   BLUEBUL
+       BNE   AB@ *ALWAYS BLUE
+       CMPA  SHTB
+       BHS   A@
+*BLUE - 0 TO SHTB
+AB@    LDX   #BL@
+       LDU   #$0055
+       BRA   CN@
+A@     CMPA  SHTR
+       BHS   B@
+*RED - SHTB TO SHTR
+       LDX   #RD@
+       LDU   #$0088
+       BRA   CN@
+*YEL - SHTB TO 255
+B@     LDX   #YL@
+       LDU   #$00DD
+*** TYPE DETEMINED,
+*** FIND SPEED 0-3
+CN@    STU   CLSHT,Y
+       LDA   #3
+       CMPB  SHT1
+       SBCA  #0
+       CMPB  SHT2
+       SBCA  #0
+       CMPB  SHT3
+       SBCA  #0
+       LSLA
+       LDU   A,X
+       STU   MOTHER,Y
+       LDX   #BGO@
+       STX   TRKDRV,Y
+*MAIN BULLETTE LOOP
+BGO@   LDD   IBLOCK,Y
+       STD   $FFA4
+       LDX   IPOS,Y
+       LDA   CLSHT+1,Y
+       LDB   CLSHT,Y
+       JSR   PRBULX
+       JSR   [MOTHER,Y] *MOVE
+       LDD   NEWPOS,Y
+       CMPA  #226
+       BHI   C@
+       CMPA  #15
+       BLO   C@
+       CMPB  #46
+       BLO   C@
+       CMPB  #-46
+       BHI   C@
+       SPRAT
+       ADDA  #$80
+       STD   IPOS,Y
+       LDX   IPOS,Y
+       STU   IBLOCK,Y
+       STU   $FFA4
+       LDA   NEWPOS,Y
+       SUBA  SHIPOS
+       BCS   E@
+       CMPA  #20
+       BHI   E@
+*BULLET IS ACCROSS FROM SHIP
+       LDB   NEWPOS+1,Y
+       SUBB  SHIPOS+1
+       ADDB  #6
+       CMPB  #13
+       BHI   E@
+*BULLET IS VERY NEAR SHIP
+       LDB   +5*256,X
+       ANDB  #%11001100
+       BEQ   F@
+       LDB   +6*256,X
+       ANDB  #%11001100
+       BEQ   F@
+*DIRECT HIT
+       SUBSHL HSBULL
+C@     JMP   TRKEND
+F@
+E@     LDD   CLSHT,Y
+       JSR   PRBULX
+       PULS  Y,D,PC
+*
+*BULLET MOVEMENT PROCEDURES
+*
+*BLUE BULLETS
+BL@ FDB BL1@,BL2@,BL3@,BL4@
+*
+BL4@   LDA   NEWPOS,Y
+       ADDA  #4
+       STA   NEWPOS,Y
+       RTS
+BL3@   LDA   NEWPOS,Y
+       ADDA  #3
+       STA   NEWPOS,Y
+       RTS
+BL2@   LDA   NEWPOS,Y
+       ADDA  #2
+       STA   NEWPOS,Y
+       RTS
+BL1@   INC   NEWPOS,Y
+       RTS
+*
+*RED BULLETS
+RD@ FDB RD1@,RD2@,RD3@,RD4@
+*
+RD4@   INC   NEWPOS,Y
+RD3@   LDA   OFRAME
+       BMI   RD1@
+       INC   NEWPOS,Y
+RD1@   LDA   OFRAME
+       BPL   RDO@
+*MOVE BULLET TWARDS SHIP
+RD2@   LDA   NEWPOS+1,Y
+       CMPA  SHIPOS+1
+       BHI   RDH@
+       INC   NEWPOS+1,Y
+RDO@   INC   NEWPOS,Y
+       RTS
+RDH@   DEC   NEWPOS+1,Y
+       INC   NEWPOS,Y
+       RTS
+*
+*YELLOW BULLETS
+YL@ FDB YL1@,YL2@,YL3@,YL4@
+*
+ATY@   LDD   SHIPOS
+       ADDA  #6
+       JSR   ILINE
+       LDA   #255
+       STA   LLEN,Y
+       PULS  X
+       STX   MOTHER,Y
+       JMP   ,X
+YL1@   BSR   ATY@
+       JSR   DLINE
+       BEQ   YLC@
+       RTS
+YL2@   BSR   ATY@
+       JSR   DLINE
+       JSR   DLINE
+       BEQ   YLC@
+       RTS
+YL3@   BSR   ATY@
+       JSR   DLINE
+       JSR   DLINE
+       JSR   DLINE
+       BEQ   YLC@
+       RTS
+YL4@   BSR   ATY@
+       JSR   DLINE
+       JSR   DLINE
+       JSR   DLINE
+       JSR   DLINE
+       BNE   ?RTS
+YLC@   DEC   LLEN,Y
+       RTS
+
+
+REMAP  LDB   #1
+       STB   STATUS,Y
+       JSR   ARB
+       LSRA
+       ADDA  #60
+       STA   IWAIT2,Y
+       LDD   #0
+       STD   NEWPOS,Y
+       LDX   #D@
+       STX   TRKDRV,Y
+       JMP   STDSQD
+D@     DEC   IWAIT2,Y
+       BNE   OUT@
+REMAPNW LDB   #%10011001
+       STB   STATUS,Y
+       CLR   NEWPOS,Y
+       JSR   ARB
+       LSRA
+       ADDA  #64
+       STA   NEWPOS+1,Y
+       LDD   [SQDPOS,Y]
+       LSRA
+       RORB
+       ADDA  #20
+       JSR   ILINE
+       LDD   #A@
+       STD   TRKDRV,Y
+OUT@   PULS  Y,D,PC
+A@     JSR   DLINE
+       JSR   DLINE
+       JSR   DLINE
+       BEQ   B@
+       JMP   STDSQD
+B@     LDD   #INSQD
+       STD   TRKDRV,Y
+       JMP   STDSQD
+
+*BCS TO (BELOW SCREEN)
+*BEQ TO HIT
+*BNE TO NOT HIT
+HITSHP LDD   NEWPOS,Y
+       CMPA  #225
+       BLO   A@
+       COMA  *C=1
+       RTS
+A@     SUBA  SHIPOS
+       ADDA  #6
+       CMPA  #17+6
+       BHI   R@
+*COULD BE HIT
+       SUBB  SHIPOS+1
+       ADDB  #6
+       CMPB  #6*2
+       BHI   R@
+*HIT
+       CLRA  *C=0 / Z=0
+       RTS
+R@     ANDCC #$FE *C=0 / Z=1
+       RTS
+
+BULGO  LDD   SHOTS
+       ADDD  #1
+       STD   SHOTS
+       LDD   NEWPOS,Y
+       ADDD  SHIPOS
+       STD   NEWPOS,Y
+       LDD   #$8000
+*STATUS IS ALREADY SET
+       STD   IPOS,Y
+       LDU   GRBLK
+       STU   IBLOCK,Y
+       LDD   #A@
+       STD   TRKDRV,Y
+*ERASE OLD BULLET
+A@     INC   BULLETSINAIR
+       LDD   IBLOCK,Y
+       STD   $FFA4
+       LDX   IPOS,Y
+       LDD   #$DD00
+       TST   BULARMOR,Y
+       BNE   K@
+       LDD   #$8800
+K@     JSR   PRBULX *CLEAR BUL
+       LDD   NEWPOS,Y
+       SUBA  #5
+       CMPA  #10
+       BHI   B@
+       LDD   MISSES
+       ADDD  #1
+       STD   MISSES
+       JMP   TRKEND
+B@     TST   OFRAME
+       BPL   NA@
+       ADDB  ANGLE,Y
+NA@    STD   NEWPOS,Y
+       SPRAT
+       ADDA  #$80
+       STU   IBLOCK,Y
+       STD   IPOS,Y
+       STU   $FFA4
+       TFR   D,U
+       LEAX  ,U
+       JSR   AMIHIT *AM I HIT?
+       BNE   C@
+       LEAU  +3*256,U
+       JSR   AMIHIT
+       BNE   C@
+R@     LDD   #$00DD
+       TST   BULARMOR,Y
+       BNE   L@
+       LDD   #$0088
+L@     JSR   PRBULX
+       PULS  Y,D,PC
+*BULLET MAY HAVE HIT SOMETHING
+C@     PSHS  X,D
+       LDU   #HIT@
+       PSHS  U
+       LDX   #NOHIT@
+       LDU   #WLSTS
+*COMES HERE VIA ,X IF NOT HIT
+NOHIT@ LDU   ,U
+       BEQ   OUT@
+       LDA   STATUS,U
+       BPL   NOHIT@
+*Y = BULLET, U = YOU, X = RETURN
+       JMP   [SPCDRV,U]
+*COMES HERE VIA RTS IF HIT
+HIT@   PULS  X,D
+       ADDSCR #1
+       LDD   NEWPOS,Y
+       JSR   MBLOW
+       LDA   BULARMOR,Y
+       BEQ   END@
+       JMP   TRKEND
+*RTS NOT USED, BULLET CONTINUES
+OUT@   LEAS  +2,S
+       PULS  X,D
+END@   PULS  Y,D,PC
+
+
+
+
+STDREM ADDSCR HBINSQ
+*TEST FOR SPECIAL CASE
+       LDA   BUGSINSQUAD
+       BEQ   A@
+*SQUAD STILL COMEING OUT.
+*REMAP IF ALLOWED
+       LDA   ONBONUS
+       BNE   A@
+*REMAP!!!
+       LDD   #REMAP
+       STD   TRKDRV,U
+       LDA   #1
+       STA   STATUS,U
+       LDD   NEWPOS,U
+       JSR   MBLOW
+       RTS
+A@     JSR   ARB
+       CMPA  HIT1
+       BHI   G@
+       LDD   #CONTR
+       STD   TRKDRV,U
+       RTS
+G@     CMPA  HIT2
+       BHI   H@
+       LDA   STATUS,U
+       ANDA  #%00001000
+       BEQ   Z@
+       LDD   #COUM
+       STD   TRKDRV,U
+       RTS
+H@     CMPA  HIT3
+       BLO   I@
+       LDA   OBNUM
+       CMPA  #4
+       BLS   I@
+       LDA   ONBONUS
+       BNE   I@
+*REMAP!!!
+       LDD   #REMAP
+       STD   TRKDRV,U
+       LDA   #1
+       STA   STATUS,U
+       LDD   NEWPOS,U
+       JSR   MBLOW
+       RTS
+I@
+Z@     LDA   #1
+       STA   STATUS,U
+       LDD   #TBLOW
+       STD   TRKDRV,U
+       RTS
+
+AMIHIT LDB   +1*256,U
+       ANDB  #%11001100
+       BNE   E@
+       RTS
+E@     LDB   ,U
+       ANDB  #%11001100
+       BNE   ?RTS
+       LDB   +1*256-1,U
+       ANDB  #%11001100
+       BNE   ?RTS
+       LDB   +1*256+1,U
+       ANDB  #%11001100
+       BNE   ?RTS
+       LDB   +2*256,U
+       ANDB  #%11001100
+       RTS
+
+PRBULX CMPA  ,X
+       BNE   A@
+       STB   ,X
+A@     CMPA  +1*256,X
+       BNE   B@
+       STB   +1*256,X
+B@     CMPA  +2*256,X
+       BNE   C@
+       STB   +2*256,X
+C@     CMPA  +3*256,X
+       BNE   D@
+       STB   +3*256,X
+D@     CMPA  +4*256,X
+       BNE   E@
+       STB   +4*256,X
+E@     CMPA  +5*256,X
+       BNE   F@
+       STB   +5*256,X
+F@     RTS
+
+
+SQDMV  BSZ   21*2*26
+XM     EQU   18
+
+*COMES HERE WHEN A BUG IS HIT
+STDHIT BULHIT 17,5,10
+*HIT SOMETHING!!!
+       ADDSCR HBSSW
+       LDA   TYPE,U
+       SUBA  #%00010000
+       CMPA  #%10000000
+       BHS   D@
+B@     JMP   STDREM
+D@     LDB   NOGREEN
+       BEQ   C@
+A@     STA   TYPE,U
+       RTS
+C@     CMPA  #%10000000
+       BEQ   B@
+       CMPA  #%10110000
+       BNE   A@
+       SUBA  #%00010000
+       STA   TYPE,U
+       RTS
+
+CLBTB  FCB   %10010000
+       FCB   %10100000
+       FCB   0
+       FDB   CLBTB
+*ATKHIT IN TRACKS
+
+CLBUG  LDD   #0
+       STD   IBLOCK,Y
+       CLR   ANGLE,Y
+       LDA   #%10010000
+       STA   TYPE,Y
+       LDA   #$5
+       STA   NEWPOS,Y
+       JSR   ARB
+       LSRA
+       ADDA  #64
+       STA   NEWPOS+1,Y
+       LDD   #GASHIT
+       STD   SPCDRV,Y
+       LDA   #%10010001
+       STA   STATUS,Y
+       LDX   #CLBTB
+       STX   CLBC,Y
+       JSR   ARB
+       TFR   A,B
+       LSRB
+       ADDB  #64
+       LDA   #224
+       JSR   ILINE
+ NXTFRM NOPRN
+A@     LDX   CLBC,Y
+       LDA   ,X+
+       BNE   B@
+       LDX   ,X
+       LDA   ,X+
+B@     STX   CLBC,Y
+       STA   TYPE,Y
+       JSR   DLINE
+       LBEQ  TRKEND
+       JSR   HITSHP
+       LBCS  TRKEND
+       BNE   P@
+       SUBSHL HSFLG
+       JMP   TBLOW
+P@     JMP   STDSQD
+
+*GAS BUG IS HIT
+GASHIT BULHIT 17,5,10
+       LDD   #A@
+       STD   TRKDRV,U
+       RTS
+A@     LDD   NEWPOS,Y
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       SUBA  #8
+       ADDB  #5
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       SUBA  #8
+       SUBB  #5
+       JSR   MBLOW
+       LDB   #%10000001
+       STB   STATUS,Y
+       JSR   ARB
+       ANDA  #%00001110
+       LDX   #GAS@
+*SET GASBUGHIT AND TYPE
+       JMP   [A,X]
+GAS@   FDB   RB@,GB@,BB@,YB@
+       FDB   GB@,BB@,YB@,WB@
+****************************
+*SET GASBUGHIT
+*
+***FUEL VALS ARE INC'D BECAUSE
+***BECAUSE OF AN INTEGER DEVIDE
+*
+RB@    LDA   #$70
+       JSR   RTN@
+       FCB   5
+       LDD   #6*60
+       ADDD  REDBUL
+       STD   REDBUL
+       ADDSCR #75
+       RTS
+YB@    LDA   #$73
+       JSR   RTN@
+       FCB   5
+       LDD   #6*60
+       ADDD  YELBUL
+       STD   YELBUL
+       ADDSCR #5
+       RTS
+GB@    LDA   NOGREEN
+       BEQ   BB@
+       LDA   #$71
+       JSR   RTN@
+       FCB   9
+       ADDSCR #100
+       RTS
+BB@    LDA   #$72
+       JSR   RTN@
+       FCB   6
+       ADDSCR #50
+       LDA   ONBONUS
+       BNE   ?RTS
+       LDD   #6*60
+       ADDD  BLUEBUL
+       STD   BLUEBUL
+       RTS
+WB@    LDA   #$74
+       JSR   RTN@
+       FCB   13
+       ADDSCR #20
+       RTS
+RTN@   PULS  X *X=GASBUGHIT
+       STX   GASBUGHIT,Y
+       STA   TYPE,Y
+       LDX   #GASBUGDIE
+       STX   SPCDRV,Y
+ NXTFRM NOPRN
+       INC   NEWPOS,Y
+       JSR   HITSHP
+       LBCS  TRKEND
+       BEQ   B@
+       JMP   STDSQD
+*GASS BUG IS HIT WITH SHIP
+B@     LDX   GASBUGHIT,Y
+       LDB   ,X
+       LDA   FUELPERCENT
+       MUL
+       ADDSHLA
+       JSR   +1,X
+       LDD   #48
+       STD   NEWPOS,Y
+       LDD   #TRKEND
+       STD   TRKDRV,Y
+       JMP   STDSQD
+
+*GAS BUG DIES
+GASBUGDIE
+       BULHIT 17,5,10
+       ADDSCR HBGAS
+       LDA   #1
+       STA   STATUS,U
+       LDD   #TBLOW
+       STD   TRKDRV,U
+       RTS
+
+
+SPRAT2 PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ANDA  #%00001110
+       LDU   #GRBLK
+       LDU   A,U
+       PULS  A
+       ANDA  #%00011111
+       RTS
+
+LASER  CLR   WLSTE+STATUS
+       LDD   SHIPOS
+       STD   NEWPOS,Y
+       LDD   #A@
+       STD   TRKDRV,Y
+A@     LDD   NEWPOS,Y
+       SUBA  #3
+       CMPA  #4
+       BHI   Z@
+       LDX   #Q@
+       STX   TRKDRV,Y
+Q@     PULS  Y,D,PC
+Z@     CMPA  #40
+       BHI   B@
+       CMPB  #128-17-10
+       BLO   B@
+       CMPB  #128+17+10
+       BHI   B@
+***BLOW UP!!!!!!!!
+       JSR   EXPLODE
+       LDA   SHIELD
+       LDB   #10
+       MUL
+       ADDD  #2500
+       ADDD  SCRSTK
+       STD   SCRSTK
+       LDX   #C@
+       STX   TRKDRV,Y
+       LDX   #EXPLTB
+       STX   IPOS,Y
+C@     LDX   IPOS,Y
+       LEAX  +2,X
+       STX   IPOS,Y
+       LDD   -2,X
+       BNE   D@
+       LDA   #128
+       STA   IJUMP,Y
+E@     NXTFRM NOPRN
+       DEC   IJUMP,S
+       BNE   E@
+       JMP   TRKEND
+*END OF GAME
+D@     ADDD  NEWPOS,Y
+       JSR   MBLOW
+       LDD   -2,X
+       ADDD  #45*256+128
+       JSR   MBLOW
+       PULS  D,Y,PC
+B@     STA   NEWPOS,Y
+       BSR   SPRAT2
+       ADDA  #$80
+       TFR   D,X
+       STU   $FFA4
+       LDD   #$0055
+       JSR   PRBULX
+       LDD   NEWPOS,Y
+       ADDA  #15
+       JSR   SPRAT2
+       ADDA  #$80
+       TFR   D,X
+       STU   $FFA4
+       LDD   #$5500
+       JSR   PRBULX
+       LDD   NEWPOS,Y
+       JSR   MBLOW
+       PULS  Y,D,PC

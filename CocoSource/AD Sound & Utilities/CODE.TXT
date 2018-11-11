@@ -1,0 +1,45 @@
+PC     SET   5
+BEGTEX SET   PC+2
+ENDTEX SET   PC+4
+PUTCOD SET   PC+6
+CURBEG SET   0
+LONGES SET   2
+WAREAT SET   3
+CODE   LEAY  -PC,S
+       LDY   PUTCOD,S
+       LDX   BEGTEX,S
+       LDD   ,X++
+       STD   ,Y++
+       LDD   ,X++
+       STD   ,Y++
+       STX   CURBEG,S
+       CLR   LONGES,S
+*FIND THE LONGEST MATCH
+A@     LDU   BEGTEX,S
+       LDX   CURBEG,S
+B@     LDA   ,X+
+******MATCH
+C@     CMPA  ,U+
+       BNE   C@
+       CMPU  CURBEG,S
+       BHS   N@ *NO MATCH
+*CALCULATE THE MATCH FOUND
+       PSHS  U,X
+INL    SET   4
+       CLRB
+D@     INCB
+       LDA   ,X+
+       CMPA  ,U+
+       BEQ   D@
+*END OF MATCH HAS BEEN FOUND
+       CMPB  LONGES+INL,S
+       BLO   E@
+*LONG MATCH IS FOUND
+*VALIDATE MATCH
+       CMPX  ENDTEX+4,S
+       BHI   I@ *INVALID MATCH
+       PULS  U,X
+E@     PULS  U,X
+       CMPU  CURBEG,S
+       BLO   C@
+******END OF MATCH

@@ -1,0 +1,1295 @@
+HILEVEL EQU 3
+
+*SET DP IS IN CRYSTAL
+*OBLEN IS DEFINED IN CRYSTAL
+
+
+STARTSCREEN EQU $D406 *6A000+48
+
+*COLOR TABLE
+R0 EQU %000000
+R1 EQU %000100
+R2 EQU %100000
+R3 EQU %100100
+G0 EQU %000000
+G1 EQU %000010
+G2 EQU %010000
+G3 EQU %010010
+B0 EQU %000000
+B1 EQU %000001
+B2 EQU %001000
+B3 EQU %001001
+
+*0-3 ARE LIST CONNECTORS
+STATUS EQU   4
+TRKDRV EQU   5
+DEATH  EQU   7
+NEWPOS EQU   9
+POINTS EQU   11
+RFUEL  EQU   12
+EBLOCK EQU   13
+EPOS   EQU   15
+GROUND EQU   17
+
+*SHIP STUFF
+SHPX   EQU   18
+SHPY   EQU   20
+
+*BLOWUP STUFF
+BLFR   EQU   18
+BLFRL  EQU   20
+
+*MINE STUFF
+MINE.COLOR EQU 18
+MINE.GO  EQU 20
+MINE.AGE EQU 22
+MINE.ELEC EQU 23
+
+*SHOOTER STUFF
+SHOOTER.GO EQU 18
+
+*MISSLE STUFF
+MISSLE.AGE EQU 18
+MISSLE.SPEED EQU 19
+MISSLE.SPAT EQU 20
+MISSLE.WAIT EQU 21
+MISSLE.DRIFT EQU 22
+
+*BOMB STUFF
+BOMB.VEL.X EQU 18
+BOMB.VEL.Y EQU 20
+BOMB.X     EQU 22
+BOMB.Y     EQU 24
+BOMB.SMOKE EQU 26
+BOMB.COLOR EQU 28
+BOMB.ERASE EQU 30
+
+*JET STUFF
+JET.VX EQU   18
+JET.VY EQU   20
+JET.AX EQU   22
+JET.AY EQU   24
+JET.X  EQU   26
+JET.Y  EQU   28
+
+*HELLOCPTER STUFF
+HELL.VX EQU 18
+HELL.VY EQU 20
+HELL.X  EQU 22
+HELL.Y  EQU 24
+HELL.BLADE EQU 26
+HELL.PICT EQU 28
+HELL.MAX EQU 28
+
+*BOSS STUFF - USE HELL
+BOSS.FRAME EQU 26
+*-1=DOWN, 1=UP, 0=NONE
+BOSS.DIRECTION EQU 27
+BOSS.SY EQU 29
+BOSS.HITS EQU 30
+BOSS.HITI EQU 31
+BOSS.HITW EQU 28 *HIT WORTH
+
+
+       LBRA  GAME
+VARB
+SUPRESSLINE FCB 0
+WAVERAT FCB 0
+EXPLOSIAN FCB 0
+BOSSVIB FDB 0
+BOSSPITCH FDB 0
+BOSSINST FCB 0
+DOBOSS FCB   0
+CURSCORE BSZ 3
+LEVELADD FDB 0
+LEVELON FCB 0
+PRINTINGSCREEN FCB 0
+MSC    FDB   0
+BACKCOLOR FDB 0
+SHIPY  FCB   0
+SHIPX  FCB   0
+OFUEL  FCB   0
+FUEL   FCB   0
+DEAD   FCB   0
+SCRO   FCB   0
+SCRY   FDB   0
+SCRPOS FDB   0
+FRGO   FCB   0
+HLINE  FCB   0
+HLINES FCB   0
+SCROLL FCB   0
+TIMER  FDB   0
+REPRINT FDB  0
+REPRINTON FDB 0
+SEED   FDB   0
+**********
+BLACK.BLOCK FCB 0
+OBJECTAT FDB 0
+SCRGRXY FDB  0
+SCRGRBL FDB  0
+SCRGRGOJMP FCB 0
+SCRGRGO FDB  0
+SCRLINE FDB  0
+SCR.GO.GET.NEXT.BLOCK
+       FCB   0
+SCR.GET.NEXT.BLOCK
+       FDB   0
+
+FIRE1  FDB   0
+FIRE2  FDB   0
+FIRE3  FDB   0
+
+BUTPRESS FCB 0
+BUTP     FCB 0
+
+IS.SHOT   FCB 0
+IS.BELL      FCB 0
+IS.HELL    FCB 0
+IS.HELLAT  FCB 0
+IS.BOMB    FCB 0
+BLOW.ATS   FDB 0
+IS.JET     FCB 0
+
+TOGCOLOR FDB 0
+COLORPOINTER FDB 0
+SCRBLOCK FDB 0
+
+WLST   BSZ   5
+WLSE   BSZ   7
+ELST   BSZ   5
+ELSE   BSZ   5
+
+VARE
+
+*DEBUG  FCB   1
+
+*NEXTNODE
+*       LDY   ,Y
+*       JMP   [TRKDRV,Y]
+
+ MSG "NOISE @ ",*
+
+FIRQS  STD   FDREG+1
+SPINT1 LDD   #$3D6
+       STD   $FF94
+       LDD   #$E00+(FIRQ!.$FF)
+       STD   [$FFF6]
+       BRA   A@
+FIRQ   STD   FDREG+1
+A@     INC   HLINE
+       BNE   GO@
+       LDA   SUPRESSLINE
+       BNE   GO@
+*SET BOTTOM OF SCREEN TO SCORE
+       LDA   #$80
+SCRSTOP EQU *-1
+       STA   $FF9F
+GO@
+
+******NOISE*******
+
+V1     LDD   #$500
+P1     ADDD  #$A00
+       STD   V1+1
+       STA   W1+2
+
+V2     LDD   #0
+P2     ADDD  #0
+       STD   V2+1
+       STA   W2+2
+
+V3     LDD   #$400
+P3     ADDD  #$400
+       STD   V3+1
+       STA   W3+2
+
+
+W1     LDA   FLUTE
+W2     ADDA  FLUTE
+W3     ADDA  FLUTE
+
+
+       ORA   #3
+       STA   $FF20
+
+*      LDA   DEBUG
+*      BEQ   DIAG
+
+       LDA   $FF93
+FDREG  LDD   #0
+       RTI
+
+       IFEQ  1
+*DIAGNOSTIC TEST
+DIAG
+       PSHS  X,Y,U,D
+       LDX   $FFA0
+       LDU   $FFA8
+       PSHS  X,U
+
+       LDA   #$38
+       STA   $FFA8
+       STA   $FFA0
+*      INC   $1700+76
+
+       LDD   $1700+76
+       TSTA
+       BNE   B@
+PC@    PULS  X,U
+       PULS  X,Y,U,D
+       LDD   +1,S
+       CLR   $FFA0
+       CLR   $FFA8
+       STD   0
+Q@     BRA   Q@
+B@     TSTB
+       BEQ   PC@
+
+       PULS  X,U
+       STX   $FFA0
+       STU   $FFA8
+
+       PULS  X,Y,U,D
+
+*END OF DIAGNOSTIC TEST
+       LDD   #34
+       STD   $FF94
+       LDA   $FF93
+       LDD   FDREG+1
+       RTI
+       ENDC
+
+
+ MSG "FREE DP   ",$FF-*+VARB
+
+RNDBLOCK BSZ 16
+COLTAB BSZ   224
+*SECTOR READ INTO RNDBLOCK
+*OVERLAPS INTO REPRINTAT
+*DURING LEVEL LOADS
+NEWPALETTES
+
+REPRINTAT FDB 0
+       BSZ   200
+MAXRASTER
+       BSZ   100
+GSTACK FDB   0
+
+SCR.MEM BSZ   40*24
+SCR.LINE.COLOR BSZ 24*2
+
+
+SCORES BSZ   256
+*NEW SCORES GO HERE
+
+SCREENBLOCKS
+       BSZ   16
+
+INITSCREENBLOCKS
+       JSR   COPY
+       FDB   SCREENBLOCKS
+       FCB   16
+ FDB $3536,$3637,$3738,$3839
+ FDB $393A,$3A3B,$3B3C,$3C35
+       RTS
+
+FR1 FCB 54,36,38,32,55,62,37,0
+    FDB FR1
+FR2 FCB 55,32,33,36,40,41,9,8,1
+    FCB 4,54,0
+    FDB FR2
+FR3 FCB 8,51,36,1,2,4,36,32,38
+    FCB 39,11,13,15,36,38,39,54
+    FCB 55,44,45,40,47,37,36,63
+    FCB 62,0
+    FDB FR3
+
+       FCB   0
+BANG   FCB   54,36,52,32
+       FCB   44,52,45,40
+       FCB   12,32,4,32
+       FCB   32,32,5,5
+       FCB   4,4,4,4,4
+       FCB   0
+***FUNCTIONS
+
+TRKEND LDD   +2,Y *D ^ LAST NODE
+       UNLINK
+       LDX   #ELST
+       LINK
+       TFR   D,Y
+       RETURN
+
+ADDFUEL
+       PSHS  X,D
+       LDX   +4,S
+       LDA   ,X+
+       ADDA  FUEL
+       BPL   A@
+       LDA   #127
+A@     STA   FUEL
+       STX   +4,S
+       PULS  X,D,PC
+
+SUBFUEL
+       PSHS  X,D
+       LDX   +4,S
+       LDA   FUEL
+       SUBA  ,X+
+       BPL   A@
+       CLRA
+A@     STA   FUEL
+       STX   +4,S
+       PULS  X,D,PC
+
+*D ^ OBJECT (NEWPOS)
+POINTDEAD
+       TST   STATUS,Y
+       BMI   REPOINTDEAD
+       LDX   #F@
+       LDU   #NF@
+       PSHS  X,D
+       LDX   WLST
+A@     LDA   STATUS,X
+       BPL   NF@
+       JMP   [DEATH,X]
+NF@    LDX   ,X
+       BNE   A@
+       PULS  D,X,PC
+*FOUND! USE RTS TO COME HERE
+F@     LDA   #1
+       RTS
+
+REPOINTDEAD
+       LSL   STATUS,Y
+       LSR   STATUS,Y
+       LDX   #F@
+       LDU   #NF@
+       PSHS  X,D
+       LDX   WLST
+A@     LDA   STATUS,X
+       BPL   NF@
+       JMP   [DEATH,X]
+NF@    LDX   ,X
+       BNE   A@
+       LDA   STATUS,Y
+       ORA   #$80
+       STA   STATUS,Y
+       CLRA
+       PULS  D,X,PC
+*FOUND! USE RTS TO COME HERE
+F@     LDA   STATUS,Y
+       ORA   #$80
+       STA   STATUS,Y
+       RTS
+
+NEWLINK NEWLINK
+       RTS
+
+CLEARBLOCK
+*A = BLOCK TO CLEAR
+       LDX   #0
+       STA   $FFA0
+       LDU   #$2000
+FILLBLOCK
+*U ^ END OF BLOCK ($2000)
+*X = FILL CHAR
+*B IS PRESERVED
+       PSHS  D
+       LDD   #$800
+A@     STX   ,--U
+       STX   ,--U
+       SUBD  #1
+       BNE   A@
+       PULS  D,PC
+
+*ALTERNATE BLOCK CLEAR
+       IFEQ  1
+       LDA   #170
+       PSHS  D
+       TFR   X,D
+       LEAY  ,X
+A@     PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       DEC   ,S
+       BNE   A@
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X,Y,D
+       PSHU  X
+       PULS  D,PC
+       ENDC
+
+*YOU SHOULD WAIT FOR HORIZONTAL
+*INTERRUPT BEFORE CALLING THIS
+BLACKPALETTE
+       PSHS  X,B
+       LDX   #$FFB0
+       LDB   #16
+A@     CLR   ,X+
+       DECB
+       BNE   A@
+       PULS  X,B,PC
+
+PARCLEAR
+       LDD   SCRPOS
+       ADDD  #192*256
+       JSR   SPRITE
+       STX   $FFA0
+       TFR   D,X
+       LDD   #1152
+       LDU   #0
+AB@    STU   ,X++
+       SUBD  #1
+       BNE   AB@
+       RTS
+
+SETPALETTE
+       JSR   COPY
+       FDB   PALETTE
+       FCB   16
+ FDB $003F,$3F3F,$0420,$2436
+ FDB $0210,$1209,$2607,$383F
+       RTS
+
+CLEARSCREEN
+       PSHS  X,Y,U,D,CC
+*DON'T USE DISABLE HERE,
+*WE ALREADY HAVE CC PUSHED
+       JSR   VSYNC
+       ORCC  #$50
+       BSR   BLACKPALETTE
+       JSR   INITSCREENBLOCKS
+       LDB   SCREENBLOCKS
+       LDA   #6
+       PSHS  A
+A@     TFR   B,A
+       BSR   CLEARBLOCK
+       INCB
+       DEC   ,S
+       BNE   A@
+       LEAS  +1,S
+*SET INTERNAL COLORS
+       JSR   SETPALETTE
+****INITIALIZE VDG
+       JSR   VSYNC
+       LDD   #STARTSCREEN
+       STD   $FF9D
+       STD   SCRY
+       LDD   #0
+       STD   TIMER
+       STD   SCRPOS
+       LDB   #%10000000
+       STB   $FF9F
+       STB   SCRSTOP
+       JSR   PARCLEAR
+*SO WE CAN SEE CHAR'S
+*IF INTERRUPTS ARE DISABLED
+       LDA   #$3F
+       STA   $FFBF
+*POSSIBLY ENABLE INTERRUPTS
+       LDD   #$FFB0
+       STD   COPYPORTION
+       LDD   #$FF
+       JSR   SETCOLOR
+       LDD   #SCRGR
+       STD   SCRGRGO
+       JSR   VSYNC
+       PULS  CC
+*INITIALIZE CHARACTERS
+       PULS  X,Y,U,D,PC
+
+ARB    LEAS  -2,S
+       LDA   SEED+1
+       LDB   #$55
+       MUL
+       STD   ,S
+       LDA   SEED+1
+       LDB   #$62
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   SEED
+       LDB   #$55
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   #13849
+       ADDD  ,S++
+       STD   SEED
+       RTS
+
+*MUST BE CALLED BEFORE
+*CLEARSCREEN
+INITVARS
+       JSR   VSYNC
+       PSHS  CC
+       ORCC  #$50
+*CLEAR VAR'S
+       LDX   #VARB
+C@     CLR   ,X+
+       CMPX  #VARE
+       BLO   C@
+*INIT VAR'S
+       LDA   #1 *NO SCROLL
+       STA   SCROLL
+       LDX   #COLTAB
+       STX   COLORPOINTER
+       LDD   #$FFFF
+       STD   ,X
+       LDD   #$4000
+       STD   SCRBLOCK
+*************
+       LDX   #OBJECTS
+       STX   OBJECTAT
+       LDD   #$FFFF
+       STD   ,X
+       LDA   #$7E
+       STA SCR.GO.GET.NEXT.BLOCK
+       STA   SCRGRGOJMP
+*SCRGRGO INIT'D BY CLEARSCREEN
+       LDD   #SCRBLACK
+       STD   SCRLINE
+       LDD   #FR1
+       STD   FIRE1
+       LDD   #FR2
+       STD   FIRE2
+       LDD   #FR3
+       STD   FIRE3
+       LDD   #BANG-1
+       STD   BACKCOLOR
+       LDA   #GUITAR!>8
+       STA   BOSSINST
+
+       LDX   #REPRINTAT
+       STX   REPRINT
+       LDD   #0
+       STD   ,X
+       STD   +2,X
+
+       JSR   KILLQUEUE
+       JSR   VSYNC
+       PULS  CC,PC
+
+GAME   ORCC  #$50
+       LDA   #$3E
+       STA   $FFA6
+       JMP   A@
+A@     LDS   #GSTACK
+       LDA   #DPG
+       TFR   A,DP
+*SET UP BLOCKS
+       JSR   COPY
+       FDB   $FFA0
+       FCB   16
+ FDB $3636,$3132,$3334,$3E3F
+ FDB $3636,$3C3D,$3630,$3E3F
+*SET UP PALETTE CONVERSION
+       CLRA
+       LDX   #PALETTECONV
+AA@    STA   ,X+
+       INCA
+       CMPA  #64
+       BLO   AA@
+*CLEAR SCREEN PALETTES
+       JSR   VSYNC
+       LDX   #$FFB0
+       LDU   #PALETTE
+       LDD   #16
+B@     STA   ,X+
+       STA   ,U+
+       DECB
+       BNE   B@
+       JSR   INITVARS
+       JSR   VSYNC
+*SET COCO 3 PIA'S
+       LDB   #%01111100
+       STB   $FF90
+       LDB   #%00001000 *IRQ
+       STB   $FF92
+       LDX   $FFF8
+       LDB   #$7E
+       STB   ,X
+       LDD   #FSYNC
+       STD   +1,X
+       LDB   #%00100000 *FIRQ
+       STB   $FF93
+       LDD   #$E00+(FIRQ!.$FF)
+       STD   [$FFF6]
+       LDD   #$3D6
+SPINT2 STD   $FF94
+*SET UP VDG
+       LDB   #%10000000
+       STB   $FF98
+       LDB   #%00111110
+       STB   $FF99
+       CLR   $FF9A
+       CLR   $FF9C
+*OTHER STUFF DONE IN CLEARSCREEN
+*INITIALIZE COCO 2 PIA'S
+       LDA   $FF01
+       ANDA  #$F7
+       STA   $FF01
+       LDA   $FF03
+       ANDA  #$F7
+       STA   $FF03
+       LDA   $FF23
+       ORA   #8
+       STA   $FF23
+       LDA   #3
+       STA   $FF20
+
+       JSR   CLEARSCREEN
+*CLEAR SCREEN & SET PALETTES
+       JSR   COPYPROTECT
+       BCS   A@
+* THIS KILLS THE COPY PROTECTION
+       BRA   A@
+       JSR   PUTSPCAT
+       FDB   10*256*9+128-32*2
+ FCC "ERROR #9: CONTACT "
+ FCC "GOSUB SOFTWARE",0
+       CLR   $FF40
+Q@     BRA   Q@
+A@     CLR   $FF40
+       JMP   DOTITLE
+*END OF INIT
+
+SPRITE SCREEN X
+DORTS  RTS
+
+CLS    LDX   #SCR.MEM
+       LDU   #$2020
+       LDD   #20*24
+A@     STU   ,X++
+       SUBD  #1
+       BNE   A@
+       LDX   #SCR.LINE.COLOR
+       LDD   #24*2
+B@     STA   ,X+
+       DECB
+       BNE   B@
+RTS    RTS
+
+PRINTSCREEN
+       INC   PRINTINGSCREEN
+       JSR   VSYNC
+       LDX   #SCR.MEM
+       LDY   #40
+       LDD   #256-8
+       ADDD  SCRPOS
+*WAIT FOR RISING EDGE OF SCRO
+A@     TST   SCRO
+       BEQ   A@
+B@     TST   SCRO
+       BNE   B@
+       BSR   L@
+       JSR   ,U
+       ADDD  #4
+       LEAX  +1,X
+       LEAY  -1,Y
+       BNE   A@
+       LDA   #20
+       JSR   VHOLDA
+       CLR   PRINTINGSCREEN
+       RTS
+*
+L@     PSHS  X,Y,U,D
+       LDY   #24
+       LDU   #SCR.LINE.COLOR
+C@     BSR   P@
+       ADDA  #9
+       LEAU  +2,U
+       LEAX  +40,X
+       LEAY  -1,Y
+       BNE   C@
+       PULS  X,Y,U,D,PC
+*
+P@     PSHS  X,Y,U,D
+       JSR   LOCATE
+       LDD   ,U
+       JSR   SETCOLOR
+       LDA   ,X
+       JSR   PCHRAP
+       PULS  X,Y,U,D,PC
+
+*A = # OF BYTES TO DO
+BCDXU  PSHS  A
+       CLRB  *0=SPACE
+A@     LDA   ,X+
+       BSR   BCDUA
+       DEC   ,S
+       BNE   A@
+       PULS  A,PC
+
+BCDUA  PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   PD@
+       PULS  A
+       ANDA  #$0F
+*PRINT DIGIT
+PD@    BEQ   C@
+*DIGIT <> 0
+       INCB
+A@     ADDA  #48
+B@     STA   ,U+
+       RTS
+*DIGIT = 0
+C@     TSTB
+       BNE   A@ *PRINT ZERO
+*B=0 - PRINT SPACE
+       LDA   #32
+       BRA   B@
+
+
+
+FRAME  LDA   #1
+A@     LDB   FRGO
+       BNE   A@
+       STA   FRGO
+       RTS
+
+FRINI  BSR   FRAME
+       RTS
+
+*INITIALIZE THE LIST TO EMPTY
+KILLQUEUE
+       LDD   #WLST
+       STD   WLSE+2
+       LDD   #WLSE
+       STD   WLST
+       LDD   #DORTS
+       STD   WLSE+5
+       LDD   #ELST
+       STD   ELSE+2
+       LDD   #ELSE
+       STD   ELST
+       LDD   #0
+       STD   WLST+2
+       STD   WLSE
+       STD   ELST+2
+       STD   ELSE
+       STA   WLST+4
+       STA   WLSE+4
+
+*BUILD EMPTY LIST BACKWARDS
+       LDY   #SPRITES
+       LDX   #ELST
+A@     LINK
+       LEAY  OBLEN,Y
+       CMPY  #SPRITEND
+       BLO   A@
+       RTS
+
+*LOAD SCORES
+READSCORES
+       DISABLE
+A@     JSR   ISCRYSTAL
+       JSR   LOADSCORES
+       BEQ   OK@
+       JSR   IOPROMPT
+       BRA   A@
+OK@    JSR   DISKDEINIT
+       ENABLE
+       RTS
+
+WRITESCORES
+       DISABLE
+A@     JSR   ISCRYSTAL
+       JSR   SAVESCORES
+       BEQ   OK@
+       JSR   IOPROMPT
+       BRA   A@
+OK@    JSR   DISKDEINIT
+       ENABLE
+       RTS
+
+DOTITLE
+       LDA   #$3C
+       STA   $FFA0
+       JSR   VSYNC
+       ANDCC #$AF
+       LDX   #SCRGAME
+       STX   SCRLINE
+       JSR   VSYNC *COPY COLORS
+*COLORS HAVE BEEN COPIED AS RGB
+*NOW, COPY ONLY LAST 6 COLORS
+       LDD   #$FFBA
+       STD   COPYPORTION
+
+       JSR   VSYNC
+
+*COPY TITLE COLORS TO PALETTES
+       JSR   COPY
+       FDB   $FFB4
+       FCB   5
+ FCB 63,10,25,40,47
+
+       CLR   SCROLL *DO SCROLL
+
+       LDD   #0
+       STD   TIMER
+A@     LDD   TIMER
+       SUBD  #98
+       BLO   A@
+*TITLE IS DONE
+       INC   SCROLL *STOP SCROLL
+
+       LDD   #$0044   *WHITE
+       JSR   SETCOLOR
+
+       JSR   PUTSPCAT
+       FCB   192-27,128-2*20
+ FCC 'INSERT "LEVELS" DISK',0
+       JSR   PUTSPCAT
+       FCB   192-18,128-2*12
+ FCC "INTO DRIVE 0",0
+       JSR   PUTSPCAT
+       FCB   192-9,128-2*15
+ FCC "AND HIT <ENTER>",0
+
+       JSR   INKEY *INITIALIZE
+B@     JSR   INKEY
+       CMPA  #13
+       BNE   B@
+
+       JSR   READSCORES
+
+DOGAME
+       JSR   KILLQUEUE
+       JSR   VSYNC
+       JSR   SETPALETTE
+       LDS   #GSTACK
+       CLR   SCROLL *DO SCROLL
+
+       LDD   #SCRBLACK
+       STD   SCRLINE
+
+       JSR   CLS
+
+       JSR   COPYS
+       FDB   SCR.MEM+40*2+20-8
+ FCC "THE CRYSTAL CITY",0
+       JSR   COPYS
+       FDB   SCR.MEM+40*4+20-18
+ FCC "COPYRIGHT ",128,129
+ FCC " 1990 BY JEREMY SPILLER",0
+
+       LDX   #SCORES
+       LDU   #SCR.MEM+12*40+2
+       LDB   #27
+       LDA   #8
+A@     PSHS  X,Y,U,D
+       JSR   MOVE
+       LEAX  28,X
+       LEAU  B,U
+       LDA   #4 *BYTES WORTH
+      LBSR   BCDXU
+       PULS  X,Y,U,D
+       LEAU  +40,U
+       LEAX  +32,X
+       DECA
+       BNE   A@
+
+*COLOR SCREEN B & W
+       LDU  #SCR.LINE.COLOR
+       LDX   #$00FF
+       LDD   #$0C04
+A@     STX   ,U++
+       DECA
+       BNE   A@
+
+*COLOR SCORES IN
+A@     LDX   #$DD00
+       STX   ,U++
+       LDX   #$EE00
+       STX   ,U++
+       DECB
+       BNE   A@
+
+       LDU   #RTS
+       JSR   PRINTSCREEN
+
+*MENU IS ON SCREEN
+       INC   SCROLL *STOP SCROLL
+
+       LDD   #$FFB0
+       STD   COPYPORTION
+
+       JSR   NEWLINK
+
+       LDD   #SHIP
+       STD   TRKDRV,Y
+
+       LDD   #0
+       STD   TIMER
+
+*SPACE SHIP TAKES ON ALL
+*RESPONSIBILITIES FOR MENU STUFF
+*      CLR   DEBUG
+
+A@     BSR   ANIM
+       BRA   A@
+
+*MAIN LOOP - DO ONE FRAME
+*AND ALL STUFF THAT GOES
+*WITH IT
+ANIM
+****TEST FOR PAUSE
+       LDA   #%01111111
+       STA   $FF02
+       LDA   $FF00
+       ANDA  #%00001000
+       BNE   H@ *NO PAUSE
+***PAUSE MODE
+       DISABLE
+       LDA   SCROLL
+       PSHS  A
+       CLR   SCROLL
+       INC   SCROLL
+       JSR   VSYNC
+       JSR   BLACKPALETTE
+       LDA   #60
+       JSR   VHOLDA
+PA@    JSR   INKEY
+       BEQ   PB@
+**************************
+*WHEN QUIT IS ENABLED
+       IFEQ  1
+       CMPA  #'Q *QUIT?
+       BNE   PC@
+       ORCC  #$50
+QA@    LDD   #$3031
+       STD   $FFA2
+       LDD   #$3233
+       STD   $FFA4
+       LDU   #$4000
+       LDD   SCRPOS
+       ADDD  #48
+       PSHS  D
+QB@    JSR   SPRITE
+       STX   $FFA0
+       TFR   D,X
+       LDA   #160 *COPY 160
+QC@    LDB   ,X+
+       STB   ,U+
+       DECA
+       BNE   QC@
+       CMPU  #$C000
+       LBHS  RESET
+       LDD   ,S
+       ADDD  #256
+       STD   ,S
+       BRA   QB@
+       ENDC
+******************************
+PC@
+*TEST FOR BUTTON
+PB@    LDA   #$FF
+       STA   $FF02
+       LDA   $FF00
+       ANDA  #1
+       BNE   PA@
+       LDA   #60
+       JSR   VHOLDA
+       PULS  A
+       STA   SCROLL
+       ENABLE
+H@     LDA   FRGO
+       BNE   H@
+       INC   FRGO
+**************
+*NEW OBJECTS ON SCREEN?
+       LDD   TIMER
+       LDU   OBJECTAT
+       SUBD  ,U
+       BLO   NN@
+       NEWLINK
+       LDU   OBJECTAT
+       LDA   +2,U
+       LEAU  +3,U
+       LDX   #OBTAB
+       JSR   [A,X]
+       STU   OBJECTAT
+NN@
+********************
+NF@    LDX   #REPRINTAT
+       STX   REPRINT
+       LDY   WLST
+****EXECUTE MAIN LOOP
+GO@    JSR   [TRKDRV,Y]
+       LDY   ,Y
+       BNE   GO@
+*COMES OUT VIA END MODULE
+*DO REPRINT STUFF
+B@     LDX   REPRINT
+       CMPX  #REPRINTAT
+       BEQ   ?RTS
+C@     LDU   #0
+       STU   ,X
+       LDX   #REPRINTAT
+       STX   REPRINT
+       STX   REPRINTON
+D@     LDY   ,X
+F@     JSR   [+2,X]
+       LDX   REPRINTON
+       LEAX  +4,X
+       STX   REPRINTON
+       LDY   ,X
+       BNE   F@
+E@     LDX   REPRINT
+       CMPX  #REPRINTAT
+       BNE   C@
+       RTS
+
+*DONE WITH GAME
+*STILL EXECUTING - USE Y
+GAMEOVERS
+       JSR   KILLQUEUE
+       DISABLE
+       LDX   #COLTAB
+       STX   COLORPOINTER
+       LDD   #0
+       STD   ,X++
+       STA   ,X+
+       COMA
+       COMB
+       STD   ,X
+       ENABLE
+       LDD   #0
+       STD   BOSSPITCH
+       STA   EXPLOSIAN
+       INC   PRINTINGSCREEN
+       CLR   SCROLL *DO SCROLL
+
+       JSR   PARCLEAR
+       LDD   #SCRBLACK
+       STD   SCRLINE
+
+       LDA   #30
+       JSR   VSYNCA
+       JMP   ENSCORE
+
+*DONE WITH GAME
+*STILL EXECUTING - USE Y
+GAMEOVER
+       DISABLE
+       LDX   #COLTAB
+       STX   COLORPOINTER
+       LDD   #0
+       STD   ,X++
+       STA   ,X+
+       COMA
+       COMB
+       STD   ,X
+       ENABLE
+       LDD   #0
+       STD   BOSSPITCH
+       LDA   #1
+       STA   EXPLOSIAN
+       INC   PRINTINGSCREEN
+       CLR   SCROLL *DO SCROLL
+
+***BLOWUP SHIP
+       JSR   HITSHIP
+       LDD   NEWPOS,Y
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #9+10*256
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #18+14*256
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #14+6*256
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #3+14*256
+       JSR   MBLOW
+
+       LDA   #30
+       STA   HELL.X,Y
+       LDD   #A@
+       STD   TRKDRV,Y
+A@     DEC   HELL.X,Y
+       BNE   ?RTS
+***COMPLETELY DONE WITH GAME
+       LDD   #0
+       STD   BOSSPITCH
+
+       JSR   PARCLEAR
+       LDD   #SCRBLACK
+       STD   SCRLINE
+
+       LDA   #5
+       JSR   VSYNCA
+
+       JSR   KILLQUEUE
+
+       JSR   CLS
+
+ENSCORE
+*SET LINE COLORS
+       LDU   #SCR.LINE.COLOR
+       LDX   #$00FF
+       LDA   #24
+A@     STX   ,U++
+       DECA
+       BNE   A@
+       LDX   #$DDFF
+       STX   SCR.LINE.COLOR+4*2
+
+       LDX   CURSCORE
+       CMPX  SCORES+256-3
+      LBLO   GAMELOST
+       BHI   DO@ *DO SCORE
+       LDA   CURSCORE+2
+       CMPA  SCORES+256-1
+      LBLS   GAMELOST
+*DO SCORE
+DO@    JSR   PRINTESCORE
+       JSR   COPYS
+       FDB   SCR.MEM+40*10+20-8
+ FCC "CONGRATULATIONS!",0
+       JSR   COPYS
+       FDB   SCR.MEM+40*11+20-11
+ FCC "YOU HAVE BEEN ACCEPTED",0
+       JSR   COPYS
+       FDB   SCR.MEM+40*12+20-10
+ FCC "TO THE HALL OF FAME",0
+       JSR   COPYS
+       FDB   SCR.MEM+40*13+20-8
+ FCC "ENTER YOUR NAME:",0
+       LDU   #RTS
+       JSR   PRINTSCREEN
+       LDA   #1
+       STA   SCROLL *NO SCROLL
+
+       LDU   #SCORES+256-32
+ENQ@   LDX   CURSCORE
+       CMPX  -3,U
+       BLO   EN@
+       BHI   GOUP@
+       LDA   CURSCORE+2
+       CMPA  -1,U
+       BLS   EN@
+GOUP@  LDA   #32
+GOA@   LDB   ,-U
+       STB   +32,U
+       DECA
+       BNE   GOA@
+       CMPU  #SCORES
+       BNE   ENQ@
+*ENTER SCORE
+EN@    LDX   CURSCORE
+       STX   +29,U
+       LDA   CURSCORE+2
+       STA   +31,U
+       PSHS  U
+
+       JSR   PUTSPCAT
+       FDB   160*256+128-68
+       FCC   ">=->",0
+       JSR   PUTSPCAT
+       FDB   160*256+128+56
+       FCC   "<-=<",0
+
+       LDD   #160*256+128-52
+       JSR   GOTOXY
+
+       PULS  X *PUT NAME AT
+       CLRB
+B@     LDA   #127
+       JSR   PCHRAP
+A@     JSR   INKEY
+       BEQ   A@
+       PSHS  A
+       LDA   #8
+       JSR   PCHRAP
+       PULS  A
+       CMPA  #32
+       BLO   C@
+       CMPB  #26 *TOO HIGH
+       BHS   B@
+       STA   B,X
+       INCB
+P@     JSR   PCHRAP
+       BRA   B@
+C@     CMPA  #8
+       BNE   D@
+       DECB
+       BPL   P@
+       INCB
+       BRA   B@
+D@     CMPA  #21
+       BNE   E@
+       TSTB
+       BEQ   B@
+       LDA   #8
+Q@     JSR   PCHRAP
+       DECB
+       BNE   Q@
+       BRA   B@
+E@     CMPA  #13
+       BNE   B@
+
+*ENTER HAS BEEN HIT!
+       LDA   #32
+A@     CMPB  #32-4
+       BHS   B@
+       STA   B,X
+       INCB
+       BRA   A@
+B@     CLR   B,X
+
+       JSR   WRITESCORES
+
+       JMP   DOGAME
+
+
+GAMELOST
+       JSR   COPYS
+       FDB   SCR.MEM+40*10+20-5
+ FCC "GAME OVER",0
+       BSR   PRINTESCORE
+
+       LDU   #RTS
+       JSR   PRINTSCREEN
+
+       LDA   #60
+       STA   SCROLL
+       JSR   VSYNCA
+
+
+       JMP   DOGAME
+
+PRINTESCORE
+       JSR   COPYS
+       FDB   SCR.MEM+40*4+20-9
+ FCC "FINAL SCORE",0
+       LDD   CURSCORE
+       BNE   A@
+       LDA   CURSCORE+2
+       BNE   A@
+       LDA   #'0
+    STA SCR.MEM+40*4+20-9+15
+       RTS
+A@     LDA   #3
+    LDU #SCR.MEM+40*4+20-9+12
+       LDX   #CURSCORE
+       JSR   BCDXU
+       RTS
+
+
+

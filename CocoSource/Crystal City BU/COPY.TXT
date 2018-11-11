@@ -1,0 +1,182 @@
+       ORG   $E00
+SEED   FDB   $FFFF
+BUFFER BSZ   256*9+10
+
+TRACK  FCB 0
+SECTOR FCB 0
+
+EXEC   LDA   #1
+       STA   $6F
+
+       LDA   #1 *TRACK
+       LDB   #1 *SECTOR
+       STA   TRACK
+       STB   SECTOR
+       STD   $EC
+
+
+       LDA   #14*2 *GRANS TO DO
+       PSHS  A
+A@     BSR   DOTRACK
+       DEC   ,S
+       BNE   A@
+       PULS  A
+       RTS
+
+DOTRACK
+A@     INC   TRACK
+       LDA   TRACK
+       CMPA  #17
+       BEQ   A@ *SKIP DIR
+
+       LDA   #1
+       STA   SECTOR
+       BSR   DOGRAN
+       RTS
+
+DOGRAN BSR   GETGRAN
+       BSR   CRCGRAN
+       JSR   ENCODEGRAN
+       BSR   WRITEGRAN
+       RTS
+
+GRANTAB
+ FCB 1,3,5,7,9
+ FCB 2,4,6,8,0
+
+WRITEGRAN
+       LDY   #GRANTAB
+       LDU   #BUFFER
+       LDA   #3
+       STA   $EA
+       LDA   #2
+       STA   $EB
+       LDA   TRACK
+       LSLA
+       STA   $EC
+       CLRB
+       LDA   ,Y+
+A@     STA   $ED
+       DECA
+       LEAX  D,U
+       STX   $EE
+       JSR   [$C004]
+       LDA   ,Y+
+       BNE   A@
+       RTS
+
+
+
+GETGRAN
+       LDY   #256*9-3
+       LDX   #BUFFER+3
+A@     JSR   $C5C4
+       STA   ,X+
+       LEAY  -1,Y
+       BNE   A@
+       RTS
+
+CRCGRAN LDU  #BUFFER
+       LDY   #256*9-3
+       LDX   #BUFFER+3
+       LDD   #$FFFF
+       STD   ,U
+       STA   +2,U
+
+*ENTRY:
+* U ^ CRC
+* X ^ BYTES TO CRC
+* Y = # OF BYTES TO CRC
+*ALL REGISTERS PRESERVED
+* THE CRC AT U IS MODIFIED
+CRC    PSHS  D,X,Y
+A@     LDA   ,X+
+CRCA   EORA  ,U
+       PSHS  A
+       LDD   1,U
+       STD   ,U
+       CLRA
+       LDB   ,S
+       LSLB
+       ROLA
+       EORA  1,U
+       STD   1,U
+       CLRB
+       LDA   ,S
+       LSRA
+       RORB
+       LSRA
+       RORB
+       EORA  1,U
+       EORB  2,U
+       STD   1,U
+       LDA   ,S
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       EORA  ,S+
+       BPL   E@
+       LDD   #$8021
+       EORA  ,U
+       STA   ,U
+       EORB  2,U
+       STB   2,U
+E@
+*CRC END
+       LEAY  -1,Y
+       BNE   A@
+R@     PULS  D,Y,X,PC
+
+ARB    LEAS  -2,S
+       LDA   SEED+1
+       LDB   #$55
+       MUL
+       STD   ,S
+       LDA   SEED+1
+       LDB   #$62
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   SEED
+       LDB   #$55
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   #13849
+       ADDD  ,S++
+       STD   SEED
+       RTS
+
+ENCODEGRAN
+       LDX   #BUFFER
+       LDA   #9
+       PSHS  A
+A@     BSR   ARB
+       BSR   ENCODESECT
+       DEC   ,S
+       BNE   A@
+       PULS  A,PC
+
+ENCODESECT
+       LDY   #128
+B@     EORA  ,X
+       LDB   ,X
+       STA   ,X+
+       EORB  ,X
+       LDA   ,X
+       STB   ,X+
+       LEAY  -1,Y
+       BNE   B@
+       RTS
+
+       MSG   *
+
+       END   EXEC

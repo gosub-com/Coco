@@ -1,0 +1,568 @@
+BOSSPICT BSZ   1032
+OBOSSPICT BSZ  1032+1
+*BOSS USES HELL'S VAR'S
+
+ERASEBOSS BSZ 4*44
+
+BOSSHITVAL
+ FCB 12 *LEVEL 1 = 21
+ FCB 8  *LEVEL 2 = 31
+ FCB 6  *LEVEL 3 = 42
+ FCB 5  *LEVEL 4 = 51
+ FCB 4  *LEVEL 5 = 63
+ FCB 3  *LEVEL 6 = 85
+
+DBOSS  CLRB
+       LDA   BOSS.FRAME,X
+       ASRA
+       BMI   A@
+       NEGA
+A@     ADDA  #21
+       ADDD  NEWPOS,X
+       DECB
+ ISDEAD #-44,#-26
+       LDA   BOSS.HITS,X
+       SUBA  BOSS.HITW,X
+       BCS   D@
+       STA   BOSS.HITS,X
+       PULS  D,PC
+*WE IS DEAD
+D@     INC   EXPLOSIAN
+       CLR   STATUS,X
+       LDD   #BOSSDIE
+       STD   TRKDRV,X
+       PULS  D,PC
+
+BOSSDIE
+*ADD LEVELON*100 TO SCORE
+       LDA   LEVELON
+       ADDA  #1
+       ADDA  CURSCORE+1
+       DAA
+       STA   CURSCORE+1
+       LDA   CURSCORE
+       ADCA  #0
+       DAA
+       STA   CURSCORE
+*STOP SOUND
+       LDD   #0
+       STD   BOSSPITCH
+
+       LDD   NEWPOS,Y
+       ADDD  #22
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #22+42*256
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #22*256
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #22*256+42
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #22*256+22
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #10+10*256
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #30+10*256
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #10+30*256
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #30+30*256
+       STD   NEWPOS,Y
+       JSR   MBLOW
+       LDX   #A@
+       STX   TRKDRV,Y
+       LDA   #80
+       STA   BOSS.HITS,Y
+       RTS
+A@     DEC   BOSS.HITS,Y
+       BNE   ?RTS
+       LDA   #128
+       STA   DOBOSS
+       JMP   TRKEND
+
+*CALCULATE A RANDOM CELOCITY
+BOSSVEL
+       JSR   ARB
+       ANDA  #1
+       NEGD
+       SUBD  #$60
+       STD   HELL.VX,Y
+       JSR   ARB
+       TSTA
+       PSHS  CC
+       ANDA  #%00111111
+       LDB   LEVELON
+       MUL
+       PULS  CC
+       BPL   O@
+       NEGD
+O@     STD   HELL.VY,Y
+       RTS
+
+SAWVEL
+       JSR   ARB
+       ANDA  #1
+       NEGD
+       SUBD  #$60
+       STD   HELL.VX,Y
+       JSR   ARB
+       SEX
+       STD   HELL.VY,Y
+       RTS
+
+BOSSPROG
+*COPY BOSSPICT TO OBOSSPICT
+       LDU   #PALETTE
+       LDX   #BOSSPICT+1024-16
+       LDA   #16
+A@     LDB   ,X
+       CLR   ,X+
+       ANDB  #$3F
+       STB   ,U+
+       DECA
+       BNE   A@
+B@     CLR   ,X+
+       CMPX  #OBOSSPICT
+       BLO   B@
+
+
+       LDX   #BOSSPICT
+       LDU   #OBOSSPICT+1
+A@     LDA   ,X+ *GET FROM BOSS
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       STA   ,U
+       LDA   ,X
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ORA   ,U
+       STA   ,U+
+       CMPX  #OBOSSPICT
+       BLO   A@
+
+       LDD   #BOSS
+       STD   TRKDRV,Y
+       LDD   #DBOSS
+       STD   DEATH,Y
+       LDA   #$80
+       STA   STATUS,Y
+       LDD   #10*256+240
+       STA   HELL.Y,Y
+       CLR   HELL.Y+1,Y
+       STB   HELL.X,Y
+       CLR   HELL.X+1,Y
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+
+
+       JSR   BOSSVEL
+       LDA   #10
+       STA   GROUND,Y
+       LDD   #9*256+1
+       STD   POINTS,Y
+       LDA   #42
+       STA   BOSS.FRAME,Y
+       CLR   BOSS.DIRECTION,Y
+       LDA   #255
+       STA   ERASEBOSS
+       LDA   #127
+       STA   RFUEL,Y
+
+       LDX   #BOSSHITVAL
+       LDB   LEVELON
+       DECB
+       LDB   B,X
+       STB   BOSS.HITW,Y
+
+       LDB   #255
+       STB   BOSS.HITS,Y
+
+       LDA   #96
+       STA   BOSS.HITI,Y
+
+BOSS   LDA   BOSS.DIRECTION,Y
+       BNE  NF@
+       JSR   ARB
+       CMPA  LEVELON
+       BHI   CHVEL@
+*FLIP OUR SHIP
+       JSR   ARB
+       SEX
+       ORA   #1 *WE HAVE -1 OR 1
+       STA   BOSS.DIRECTION,Y
+       BRA   NF@
+CHVEL@ LDB   LEVELON
+       INCB
+       LSLB
+       PSHS  B
+       CMPA  ,S+
+       BHI   NF@
+       JSR   BOSSVEL
+NF@
+
+*DO HITS
+       DEC   BOSS.HITI,Y
+       BNE   A@
+       LDB   #60
+       STB   BOSS.HITI,Y
+       LDB   BOSS.HITS,Y
+       ADDB  BOSS.HITW,Y
+       BCS   A@
+       STB   BOSS.HITS,Y
+A@     LDB   BOSS.HITS,Y
+*B=1 DO FAST SOUNDS
+*B=255 DO SLOW SOUNDS
+       NEGB
+       CLRA
+       LSLD
+       LSLD
+       ADDD  #10
+       STD   BOSSPITCH
+
+
+
+*IS OUR SHIP FLIPPING?
+       LDB   BOSS.DIRECTION,Y
+       BEQ   NF@
+       ADDB  BOSS.FRAME,Y
+       CMPB  #42
+       BLE   A@
+       LDB   #42
+       CLR   BOSS.DIRECTION,Y
+A@     CMPB  #-42
+       BGE   B@
+       LDB   #-42
+       CLR   BOSS.DIRECTION,Y
+B@     STB   BOSS.FRAME,Y
+NF@
+
+*ERASE THE BOSS (IF OK)
+Q@     LDA   NEWPOS,Y
+       ADDA  #44
+       LDB   #58
+       MUL
+       SUBA  HLINE
+       ADDA  #2-42
+       CMPA  #10
+       BLS   OK@
+       LDX   REPRINT
+       STY   ,X++
+       LDU   #Q@
+       STU   ,X++
+       STX   REPRINT
+       RTS
+OK@    LDD   EBLOCK,Y
+       STD   $FFA0
+       INCB
+       STB   $FFA2
+       LDU   #ERASEBOSS
+       LDX   ,U++
+       BMI   O@
+P@     JSR   ERLINE
+       LDX   ,U++
+       BPL   P@
+O@
+
+
+       LDD   HELL.VX,Y
+       ADDD  HELL.X,Y
+       STD   HELL.X,Y
+
+       LDD   HELL.VY,Y
+       ADDD  HELL.Y,Y
+       STD   HELL.Y,Y
+
+       LDB   HELL.X,Y
+       STD   NEWPOS,Y
+*TEST FOR OUT HERE
+       CMPA  #192-48
+       BLO   A@
+       LDD   HELL.VY,Y
+       NEGD
+       STD   HELL.VY,Y
+       LDD   NEWPOS,Y
+A@     CMPA  #4
+       BHI   B@
+       LDD   HELL.VY,Y
+       NEGD
+       STD   HELL.VY,Y
+       LDD   NEWPOS,Y
+B@     CMPB  #50
+       BHI   C@
+       LDD   HELL.VX,Y
+       NEGD
+       STD   HELL.VX,Y
+       INC   HELL.X,Y
+       LDD   NEWPOS,Y
+C@     CMPB  #256-50-28
+       BLO   D@
+       LDD   HELL.VX,Y
+       NEGD
+       STD   HELL.VX,Y
+       DEC   HELL.X,Y
+D@
+
+       PSHS  Y
+       JSR   DRAWBOSS
+       PULS  Y
+*MUST GET Y BACK
+       LDA   #$31
+       STA   $FFA2
+       RTS
+
+DRAWBOSS
+
+*NO NEED TO ERASE NOW
+
+       LDA   HELL.Y,Y
+       CMPA  #192-48
+       BHI   ?RTS
+       LDB   HELL.X,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+
+       STX   EBLOCK,Y
+       STD   EPOS,Y
+       EXG   D,X
+       STD   $FFA0
+       INCB
+       STB   $FFA2
+       LDU   #BOSSPICT
+       LDA   HELL.X+1,Y
+       BPL   NO@
+       LDU   #OBOSSPICT
+NO@    LDA   BOSS.FRAME,Y
+*DRAW IT
+       LDY   #BOSSLINE
+       LSLA
+       LDY   A,Y
+*Y = HOW MUCH TO INCERMENT
+       PSHS  A
+       ASRA  *BACK TO NORM
+       ASRA  *DIV 2
+*A IS IN RANGE OF -21..21
+       BMI   PL@
+       NEGA
+PL@    ADDA  #21
+       CLRB
+       LEAX  D,X
+*LOOP FOR DRAWING
+       LDD   #0 *WARE WE ARE
+       TST   ,S+
+       BPL   PL2@
+       LDD   #42*256
+PL2@   PSHS  U,Y,D
+       LDU   #ERASEBOSS
+A@     LDB   #24
+       MUL
+       LDY   +4,S *BOSSPICT
+       LEAY  D,Y *Y ^ LINE
+       BSR   DRLINE
+       LEAX  +256,X
+       LDD   ,S
+       ADDD  +2,S
+       STD   ,S
+       BMI   D@
+       CMPA  #42
+       BLS   A@
+D@     LDA   #255
+       STA   ,U
+       PULS  D,Y,U,PC
+
+*A COPY MACRO (FROM X TO Y)
+CPB    MACR
+ LDU \0,Y
+ BEQ A@
+ STU \0,X
+ OR\1 #1!<((\0!>2)!.$7)
+A@
+ ENDM
+
+*COPY FROM Y TO X
+DRLINE
+ STX ,U++
+ PSHS U
+ LDD #0
+ CPB 0,A
+ CPB 2,A
+ CPB 4,A
+ CPB 6,A
+ CPB 8,A
+ CPB 10,A
+ CPB 12,A
+ CPB 14,A
+ CPB 16,B
+ CPB 18,B
+ CPB 20,B
+ CPB 22,B
+ PULS  U
+ STD ,U++
+ RTS
+
+
+*AN ERASE MACRO AT X
+CEB    MACR
+ BIT\1 #1!<((\0!>2)!.$7)
+ BEQ A@
+ STU \0,X
+A@
+ ENDM
+
+*COPY FROM Y TO X
+ERLINE
+ LDD ,U++
+ PSHS U
+ LDU #0
+ CEB 0,A
+ CEB 2,A
+ CEB 4,A
+ CEB 6,A
+ CEB 8,A
+ CEB 10,A
+ CEB 12,A
+ CEB 14,A
+ CEB 16,B
+ CEB 18,B
+ CEB 20,B
+ CEB 22,B
+ PULS  U,PC
+
+*SAW
+DSAW   LDD   NEWPOS,X
+       ISDEAD #-11,#-14
+       LDA   STATUS,Y *THEM
+       ANDA  #4
+       BEQ   A@
+*WE HIT ONE OF US
+       LDA   #5
+       STA   GROUND,X
+       STA   GROUND,Y
+       JMP   ,U
+A@     CLR   STATUS,X
+       LDD   #SAWDIE
+       STD   TRKDRV,X
+
+       PULS  D,PC
+
+SAWDIE
+       LDX   EPOS,Y
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDD   NEWPOS,Y
+       ADDD  #7*256+4
+       JSR   MBLOW
+       LDD   NEWPOS,Y
+       ADDD  #4*256+17
+       JMP   TBLOW
+
+
+*ERASE THE SAW
+SAW    LDD   #R@
+       STD   TRKDRV,Y
+       JSR   SAWVEL
+R@     RASTER
+       LDD   EBLOCK,Y
+       STD   $FFA0
+       LDU   #CSAW1
+       LDX   EPOS,Y
+       LDA   HELL.BLADE,Y
+       ANDA  #%00001100
+       LDB   #64*3
+       MUL
+       JSR   A,U
+*SAW IS ERASED
+
+       LDD   HELL.VX,Y
+       ADDD  HELL.X,Y
+       STD   HELL.X,Y
+
+       LDD   HELL.VY,Y
+       ADDD  HELL.Y,Y
+       STD   HELL.Y,Y
+
+       LDB   HELL.X,Y
+       STD   NEWPOS,Y
+*TEST FOR OUT HERE
+       CMPA  HELL.MAX,Y
+       BLO   A@
+       LDD   HELL.VY,Y
+       NEGD
+       STD   HELL.VY,Y
+       LDD   NEWPOS,Y
+A@     CMPA  #4 *TOP OF Y
+       BHI   B@
+       LDD   HELL.VY,Y
+       NEGD
+       STD   HELL.VY,Y
+       LDD   NEWPOS,Y
+B@     CMPB  #50
+       BHI   C@
+       LDD   HELL.VX,Y
+       NEGD
+       STD   HELL.VX,Y
+       INC   HELL.X,Y
+       INC   HELL.X,Y
+       INC   HELL.X,Y
+       INC   HELL.X,Y
+       LDD   NEWPOS,Y
+C@     CMPB  #256-50-28
+       BLO   D@
+       LDD   HELL.VX,Y
+       NEGD
+       STD   HELL.VX,Y
+       DEC   HELL.X,Y
+       DEC   HELL.X,Y
+       DEC   HELL.X,Y
+       DEC   HELL.X,Y
+D@
+
+       LDA   HELL.Y,Y
+       LDB   HELL.X,Y
+       STD   NEWPOS,Y
+       ADDD  SCRPOS
+       JSR   SPRITE
+       STX   EBLOCK,Y
+       STX   $FFA0
+       STD   EPOS,Y
+       LDX   EPOS,Y
+***TEST FOR GROUND
+       LDU   #SAWTEST
+       JSR   GROUNDED
+       BPL   B@
+       JMP   SAWDIE
+       FDB   0
+       FDB   4+0*256
+       FDB   0+7*256
+       FDB   8+7*256
+       FDB   4+14*256
+SAWTEST
+B@     LDD   ,U
+       BEQ   DR@
+       ADDD  NEWPOS,Y
+       JSR   POINTDEAD
+       LBNE  SAWDIE
+DR@    LDX   EPOS,Y
+
+       LDU   #SAW1
+       LDA   HELL.BLADE,Y
+       ADDA  HELL.BLADE+1,Y
+       STA   HELL.BLADE,Y
+       ANDA  #%00001100
+       LDB   #64*3
+       MUL
+       JSR   A,U *DRAW SAW
+       RTS

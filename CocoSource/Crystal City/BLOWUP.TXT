@@ -1,0 +1,354 @@
+*SMOKE
+MBLOWNS
+       PSHS  Y,X,U,D
+       CMPB  #32
+       BLO   NB@
+       LDX   ELST
+       CMPX  #ELSE
+       BEQ   NB@
+       NEWLINK
+       STD   NEWPOS,Y
+       LDX   #TBNS@
+       STX   TRKDRV,Y
+       PULS  X,Y,U,D,PC
+MBLOW  PSHS  Y,X,U,D
+       CMPB  #32
+       BLO   NB@
+       NEWLINK
+       STD   NEWPOS,Y
+       LDX   #TBLOW
+       STX   TRKDRV,Y
+NB@    PULS  X,Y,U,D,PC
+TBLOWNS BRA  TBNS@
+TBLOW  LDD   #$0308
+       STD   BLOW.ATS
+TBNS@  CLR   STATUS,Y
+       LDD   NEWPOS,Y
+       CMPA  #192-16
+       BLO   LO@
+       LDA   #192-16
+LO@    ADDD  SCRPOS
+       SUBA  #12
+       BHI   GO@
+       CLRA
+GO@    SCREEN X
+       ADDA  #13
+       STD   EPOS,Y
+       STX   EBLOCK,Y
+       LDX   #A@
+       STX   TRKDRV,Y
+       LDX   #SBLOWTAB
+       STX   BLFR,Y
+       LDA   SCROLL
+       BNE   NS@
+       LDA   NEWPOS+1,Y
+       LSRA
+       SUBA  #14
+       STA   BLFRL,Y
+       RETURN
+*NO SCROLL
+NS@    LDA   #100
+       STA   BLFRL,Y
+       RETURN
+A@     DEC   BLFRL,Y
+       BNE   C@
+       JMP   TRKEND
+C@     LDD   EBLOCK,Y
+       STD   $FFA0
+       LDU   BLFR,Y
+       LDX   ,U++
+       LDD   ,U++
+       STU   BLFR,Y
+       LDU   EPOS,Y
+       JMP   ,X
+
+
+SBLOWTAB
+ FDB   BL1F1,$1212
+ FDB   BL1F2,$2321
+ FDB   BL1F3,$1232
+ FDB   BL1F4,$1213
+ FDB   BL1F5,$3121
+ FDB   BL1F6,$1321
+ FDB   BL1F7,$2123
+ FDB   BL1F8,$1232
+ FDB   BL1F9,$3121
+ FDB   BL1F10,$2312
+ FDB   BL1F11,$3123
+ FDB   BL1F12,$1322
+ FDB   BL1F13,$3213
+ FDB   BL1F14,$1323
+ FDB   BL1F15,$3212
+ FDB   BL1F16,$2313
+ FDB   BL1F17,$3212
+ FDB   BL1F18,$3132
+ FDB   BL1F19,$2312
+ FDB   BL1F20,$2131
+ FDB   BL1F21,$1323
+ FDB   BL1F22,$3221
+ FDB   BL1F23,$1223
+ FDB   BL1F24,$2312
+ FDB   BL1F25,$1332
+ FDB   BL1F26,$3113
+ FDB   BL1F27,$3221
+ FDB   BLOWCLS
+
+
+ FDB   BL1F1,$DFED
+ FDB   BL1F2,$FDDE
+ FDB   BL1F3,$EFDE
+ FDB   BL1F4,$FDFE
+ FDB   BL1F5,$EFDF
+ FDB   BL1F6,$DFFE
+ FDB   BL1F7,$FDEF
+ FDB   BL1F8,$FEDE
+ FDB   BL1F9,$EDFE
+ FDB   BL1F10,$DFFE
+ FDB   BL1F11,$EFDE
+ FDB   BL1F12,$FEDD
+ FDB   BL1F13,$FDFE
+ FDB   BL1F14,$EFDF
+ FDB   BL1F15,$FDED
+ FDB   BL1F16,$DFED
+ FDB   BL1F17,$FDED
+ FDB   BL1F18,$DEFF
+ FDB   BL1F19,$DEDE
+ FDB   BL1F20,$FEFE
+ FDB   BL1F21,$FEDF
+ FDB   BL1F22,$DEFD
+ FDB   BL1F23,$FEDF
+ FDB   BL1F24,$EDFE
+ FDB   BL1F25,$DFDE
+ FDB   BL1F26,$EDFD
+ FDB   BL1F27,$DFED
+ FDB   BLOWCLS
+
+
+*CLEAR BLOW
+ FDB   BL1F1,0 *NOT USED
+BLOWC
+ FDB   BL1F2,0
+ FDB   BL1F3,0
+ FDB   BL1F4,0
+ FDB   BL1F5,0
+ FDB   BL1F6,0
+ FDB   BL1F7,0
+ FDB   BL1F8,0
+ FDB   BL1F9,0
+ FDB   BL1F10,0
+ FDB   BL1F11,0
+ FDB   BL1F12,0
+ FDB   BL1F13,0
+ FDB   BL1F14,0
+ FDB   BL1F15,0
+ FDB   BL1F16,0
+ FDB   BL1F17,0
+ FDB   BL1F18,0
+ FDB   BL1F19,0
+ FDB   BL1F20,0
+ FDB   BL1F21,0
+ FDB   BL1F22,0
+ FDB   BL1F23,0
+ FDB   BL1F24,0
+ FDB   BL1F25,0
+ FDB   BL1F26,0
+ FDB   BL1F27,0
+ FDB   TRKEND
+
+BLOWCLS
+       LDD   #BLOWC
+       STD   BLFR,Y
+       LDD   #0
+
+BL1F1  STD   -1*256-2,U
+       STD   +1*256+0,U
+       STD   -3*256-1,U
+       STD   +3*256-1,U
+       STD   +0*256-2,U
+       STD   -1*256+2,U
+ RETURN
+BL1F2  STD   +0*256+0,U
+       STD   -2*256+1,U
+       STD   +2*256-1,U
+       STD   -2*256-3,U
+       STD   +2*256-3,U
+       STD   -3*256+3,U
+ RETURN
+BL1F3  STD   -1*256+0,U
+       STD   -4*256-2,U
+       STD   +3*256+1,U
+       STD   +1*256-4,U
+       STD   +5*256-2,U
+       STD   +1*256-2,U
+ RETURN
+BL1F4  STD   -2*256-1,U
+       STD   +3*256-3,U
+       STD   -1*256-4,U
+       STD   -1*256-6,U
+       STD   +2*256-5,U
+       STD   +5*256+0,U
+ RETURN
+BL1F5  STD   +1*256+2,U
+       STD   -5*256+2,U
+       STD   -5*256-2,U
+       STD   +4*256+2,U
+       STD   +0*256+4,U
+       STD   +0*256-6,U
+ RETURN
+BL1F6  STD   -3*256+1,U
+       STD   +3*256+5,U
+       STD   +0*256-4,U
+       STD   -3*256-5,U
+       STD   -6*256-1,U
+       STD   +6*256-1,U
+ RETURN
+BL1F7  STD   +3*256+3,U
+       STD   -6*256+1,U
+       STD   -4*256-4,U
+       STD   +5*256-4,U
+       STD   +4*256-2,U
+       STD   -8*256+0,U
+ RETURN
+BL1F8  STD   +8*256+0,U
+       STD   +4*256+0,U
+       STD   -4*256+0,U
+       STD   -3*256-3,U
+       STD   +2*256+1,U
+       STD   +2*256+3,U
+ RETURN
+BL1F9  STD   +0*256+2,U
+       STD   +7*256-3,U
+       STD   -7*256-3,U
+       STD   -5*256+4,U
+       STD   -5*256-6,U
+       STD   +1*256-8,U
+ RETURN
+BL1F10 STD   -2*256+5,U
+       STD   +4*256-6,U
+       STD   -6*256-5,U
+       STD   -7*256+3,U
+       STD   -9*256-1,U
+       STD   +9*256-1,U
+ RETURN
+BL1F11 STD   +8*256-4,U
+       STD   -8*256-4,U
+       STD   -1*256-8,U
+       STD   +3*256-7,U
+       STD   +6*256+3,U
+       STD   +5*256+4,U
+ RETURN
+BL1F12 STD   +1*256+6,U
+       STD   -1*256+6,U
+       STD   -3*256-7,U
+       STD   -2*256+3,U
+       STD   -5*256-4,U
+       STD   -5*256+0,U
+ RETURN
+BL1F13 STD   +7*256+1,U
+       STD   +0*256-8,U
+       STD   +0*256+6,U
+       STD   -7*256-1,U
+       STD   +1*256-6,U
+       STD   +5*256+2,U
+ RETURN
+BL1F14 STD   +2*256+5,U
+       STD   -8*256+2,U
+       STD   -2*256-7,U
+       STD   +4*256-4,U
+       STD   +2*256-7,U
+       STD   +7*256-5,U
+ RETURN
+BL1F15 STD   -1*256+4,U
+       STD   +6*256+1,U
+       STD   -4*256+2,U
+       STD   -2*256-5,U
+       STD   +5*256-6,U
+       STD   +6*256-3,U
+ RETURN
+BL1F16 STD   -6*256+3,U
+       STD   +8*256-2,U
+       STD   +6*256-5,U
+       STD   +3*256-5,U
+       STD   -4*256+4,U
+       STD   -7*256+1,U
+ RETURN
+BL1F17 STD   -8*256-2,U
+       STD   +4*256+4,U
+       STD   +7*256-1,U
+       STD   -4*256-6,U
+       STD   +1*256+4,U
+       STD   -7*256-5,U
+ RETURN
+BL1F18 STD   -3*256+5,U
+       STD   -6*256-3,U
+       STD   -7*256-7,U
+       STD   +1*256-10,U
+       STD   +5*256+6,U
+       STD   -6*256+5,U
+       STD   +7*256+1,U
+ RETURN
+BL1F19 STD   +10*256-4,U
+       STD   -10*256-2,U
+       STD   +4*256-8,U
+       STD   +8*256+2,U
+       STD   -9*256+1,U
+       STD   +9*256+1,U
+ RETURN
+BL1F20 STD   -9*256-3,U
+       STD   +7*256+3,U
+       STD   +11*256-1,U
+       STD   -11*256-1,U
+       STD   -3*256-9,U
+       STD   +5*256-8,U
+ RETURN
+BL1F21 STD   +9*256+3,U
+       STD   -8*256+4,U
+       STD   +0*256+8,U
+       STD   +12*256-1,U
+       STD   +10*256+0,U
+       STD   -3*256+7,U
+ RETURN
+BL1F22 STD   +7*256-7,U
+       STD   -9*256-5,U
+       STD   +3*256+7,U
+       STD   +7*256+5,U
+       STD   -12*256-1,U
+       STD   -1*256-10,U
+ RETURN
+BL1F23 STD   -5*256+6,U
+       STD   +1*256+8,U
+       STD   +8*256+4,U
+       STD   +8*256-6,U
+       STD   +9*256-3,U
+       STD   +0*256-10,U
+ RETURN
+BL1F24 STD   -6*256-7,U
+       STD   -10*256+2,U
+       STD   -1*256+8,U
+       STD   -7*256+5,U
+       STD   +6*256-7,U
+       STD   +3*256-9,U
+ RETURN
+BL1F25 STD   +11*256+1,U
+       STD   +11*256-3,U
+       STD   -10*256-4,U
+       STD   -5*256-8,U
+       STD   -4*256-8,U
+       STD   +6*256+5,U
+ RETURN
+BL1F26 STD   -4*256+6,U
+       STD   -10*256+0,U
+       STD   +10*256-2,U
+       STD   +2*256-9,U
+       STD   +4*256+6,U
+       STD   -8*256-6,U
+ RETURN
+BL1F27 STD   -9*256+3,U
+       STD   -11*256-3,U
+       STD   +2*256+7,U
+       STD   +10*256+2,U
+       STD   -2*256-9,U
+       STD   +9*256-5,U
+       STD   -2*256+7,U
+       STD   -11*256+1,U
+ RETURN

@@ -1,0 +1,1127 @@
+EVALT  JSR   EVALU
+       TSTB
+       BPL   A@
+       JSR   EXPERR
+A@     BITB  #2
+       BEQ   B@
+       JSR   UNDERR
+B@     RTS
+
+MRTS   LDD   STARVL
+       STD   LRTS
+MABX
+MASLA
+MASLB
+MASRA
+MASRB
+MCLRA
+MCLRB
+MCOMA
+MCOMB
+MDAA
+MDECA
+MDECB
+MINCA
+MINCB
+MLSLA
+MLSLB
+MLSRA
+MLSRB
+MMUL
+MNEGA
+MNEGB
+MNOP
+MROLA
+MROLB
+MRORA
+MRORB
+MRTI
+MSEX
+MSWI
+MSYNC
+MTSTA
+MTSTB
+       LDB   +6,X
+       LBRA  BOUT
+
+
+MTFR
+MEXG
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LDA   -1,Y
+       BSR   GETR2
+       LSLB
+       LSLB
+       LSLB
+       LSLB
+       PSHS  B
+       LDA   ,Y+
+       CMPA  #',
+       BEQ   B@
+       PULS  B
+       LBRA  SNERR
+B@     BSR   GETR
+       ORB   ,S+
+       LDA   +6,X
+       LBRA  DOUT
+
+GETR   LDA   ,Y+
+GETR2  CMPA  #'A
+       BNE   B@
+       LDB   #%1000
+       RTS
+B@     CMPA  #'B
+       BNE   C@
+       LDB   #%1001
+       RTS
+C@     CMPA  #'X
+       BNE   D@
+       LDB   #%0001
+       RTS
+D@     CMPA  #'Y
+       BNE   E@
+       LDB   #%0010
+       RTS
+E@     CMPA  #'U
+       BNE   F@
+       LDB   #%0011
+       RTS
+F@     CMPA  #'S
+       BNE   G@
+       LDB   #%0100
+       RTS
+G@     CMPA  #'D
+       BNE   H@
+       LDA   ,Y
+       CMPA  #'P
+       BEQ   I@
+       LDB   #%0000
+       RTS
+I@     LDB   #%1011
+       LEAY  +1,Y
+       LDA   ,Y
+       CMPA  #'R
+       BNE   R@
+       LEAY  +1,Y
+R@     RTS
+H@     CMPA  #'C
+       BNE   J@
+       LDB   #%1010
+       LDA   ,Y+
+       CMPA  #'C
+       LBNE  SNERR
+       LDA   ,Y
+       CMPA  #'R
+       BNE   R@
+       LEAY  +1,Y
+       RTS
+J@     CMPA  #'P
+       LBNE  SNERR
+       LDB   #%0101
+       LDA   ,Y+
+       CMPA  #'C
+       LBNE  SNERR
+       LDA   ,Y
+       CMPA  #'R
+       BNE   R@
+       LEAY  +1,Y
+       RTS
+
+
+
+MCWAI
+MORCC
+MANDCC
+       LDB   +6,X
+       JSR   BOUT
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LDA   -1,Y
+       CMPA  #'#
+       BEQ   C@
+       LBSR  MBIMER
+       LEAY  -1,Y
+C@     JSR   EVALT
+B@     TFR   X,D
+       TSTA
+       BEQ   D@
+       JSR   OVERR
+D@     LBRA  BOUT
+
+REGS   FCB   %00000110 *D
+       FCB   %00010000 *X
+       FCB   %00100000 *Y
+       FCB   %01000000 *U
+       FCB   %01000000 *S
+       FCB   %10000000 *PC
+       FCB   0
+       FCB   0
+       FCB   %00000010 *A
+       FCB   %00000100 *B
+       FCB   %00000001 *CCR
+       FCB   %00001000 *DPR
+MPSHS
+MPULS
+MPULU
+MPSHU
+       LDB   +6,X
+       JSR   BOUT
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LEAY  -1,Y
+       CLR   ,-S
+       LEAX  REGS,PCR
+B@     JSR   GETR
+       LDA   ,S
+       ORA   B,X
+       STA   ,S
+       LDA   ,Y+
+       CMPA  #',
+       BEQ   B@
+       PULS  B
+       LEAY  -1,Y
+       JMP   BOUT
+
+MSWI2
+MSWI3
+       LDD   +6,X
+       JMP   DOUT
+
+
+MBCC
+MBCS
+MBEQ
+MBGE
+MBGT
+MBHI
+MBHS
+MBLE
+MBLO
+MBLS
+MBLT
+MBMI
+MBNE
+MBPL
+MBRA
+MBRN
+MBSR
+MBVC
+MBVS
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LDA   ,-Y
+       CMPA  #'?
+       BNE   E@
+       LDD   LRTS
+       SUBD  STARVL
+       SUBD  #2
+       CMPD  #-128
+       BLS   G@
+       LDA   +6,X
+       JMP   DOUT
+G@     LDA   +6,X *SEND OUT
+       EORA  #1   *OPOSITE
+       LDB   #1
+       JSR   DOUT *BRANCH!
+       LDD   STARVL
+       ADDD  #2
+       STD   LRTS
+       LDA   #$39
+       JMP   AOUT
+E@     LDA   +6,X
+       JSR   AOUT
+       JSR   EVALT
+B@     TFR   X,D
+       SUBD  STARVL
+       SUBD  #2 *CLEN=1
+       CMPD  #128
+       BLO   C@
+       CMPD  #-128
+       BHS   C@
+       JSR   OVERR
+C@     JMP   BOUT
+
+MLEAX
+MLEAY
+MLEAU
+MLEAS
+       LDD   #0
+       BRA   OPANDM
+
+
+MLBRA
+MLBSR
+       LDB   +6,X
+       JSR   BOUT
+       BRA   BRANCH
+
+MLBCC
+MLBCS
+MLBEQ
+MLBGE
+MLBGT
+MLBHI
+MLBHS
+MLBLE
+MLBLO
+MLBLS
+MLBLT
+MLBMI
+MLBNE
+MLBPL
+MLBRN
+MLBVC
+MLBVS
+       LDD   +6,X
+       JSR   DOUT
+BRANCH LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LEAY  -1,Y
+       JSR   EVALT
+B@     TFR   X,D
+       SUBD  STARVL
+       SUBD  CLEN
+       SUBD  #2
+       CMPD  #-128
+       BLT   C@
+       CMPD  #128
+       BGE   C@
+       JSR   WARN
+C@     JMP   DOUT
+
+MADCA
+MADCB
+MADDA
+MADDB
+MANDA
+MANDB
+MBITA
+MBITB
+MCMPA
+MCMPB
+MEORA
+MEORB
+MORA
+MORB
+MLDA
+MLDB
+MSBCA
+MSBCB
+MSUBA
+MSUBB
+       LDD   #$0001
+       BRA   OPANDM
+
+MADDD
+MCMPX
+MLDD
+MLDU
+MLDX
+MSUBD
+*TEST FOR ALL MODE
+*IMMEDIATE = 3
+       LDD   #$0002
+       BRA   OPANDM
+
+MCMPD
+MCMPS
+MCMPU
+MCMPY
+MLDS
+MLDY
+*TEST FOR ALL MODES
+*IMMEDIATE = 4
+       LDD   #$0102
+       BRA   OPANDM
+
+MJMP
+MJSR
+       LDD   #$0000
+       JSR   OPANDM
+       CMPY  #0
+       BNE   R@
+       TFR   X,D
+       SUBD  STARVL
+       SUBD  #3
+       CMPD  #-128
+       BLT   R@
+       SUBD  #128
+       BGE   R@
+       JMP   WARN
+R@     RTS
+
+MASL
+MASR
+MCLR
+MCOM
+MDEC
+MINC
+MLSL
+MLSR
+MNEG
+MROL
+MROR
+MSTA
+MSTB
+MSTD
+MSTU
+MSTX
+MTST
+*NO IMMEDIATE
+*IMMEDIATE = 0 BYTES
+       LDD   #$0000
+       BRA   OPANDM
+
+MSTS
+MSTY
+*NO IMMEDIATE
+*DIREXT = 3 BYTES
+       LDD   #$0100
+       BRA   OPANDM
+
+*EXTENDED ONLY
+
+EXT    SET   2
+INDX   SET   1
+DIR    SET   0
+IMM    SET   3
+*A=MODE
+* 0-OP IS 1
+* 1-OP IS 2
+*B=IS IM?  0=NO  1=1  2=2
+*X ^ COMMAND TABLE
+OPANDM PSHS  A
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+*INHERRENT - ERROR
+       LDD   #$1212
+       DEC   ,S+
+       BMI   C@
+       JSR   BOUT
+C@     JSR   BOUT
+       JSR   DOUT
+       JSR   MOERR
+       LEAY  -1,Y
+       RTS
+B@     LDA   ,-Y
+       CMPA  #'#
+       BNE   D@
+       DECB
+       BPL   E@ *OK
+*NO IMMEDIATE ALLOWED
+       JSR   MNBIER
+       LEAY  +1,Y
+       LDA   ,Y
+*CONTINU PROCESSING AS IF
+*IT WERE ANOTHER MODE
+       BRA   D@ *IMM = EXTENDED
+E@     LDA   ,S+
+       BEQ   F@ *ONE BYTE?
+*OP IS 2 BYTES
+       LDX   +6+IMM*2,X
+       JSR   XOUT
+       BRA   G@
+*OP IS 1 BYTE
+F@     LDA   +6+IMM,X
+       JSR   AOUT
+*OP IS SENT.  NOW DO OPER
+G@     PSHS  B
+       LEAY  +1,Y
+       JSR   EVAL
+       TSTB
+       BPL   I@
+U@     JSR   EXPERR
+       LDX   #0
+I@     ANDB  #2
+       BEQ   J@
+       JSR   UNDERR
+       LDX   #0
+J@     LDB   ,S+
+       BEQ   K@
+*OPER IS 2 BYTES
+       JSR   XOUT
+       BRA   M@
+K@     TFR   X,D
+       TSTA
+       BEQ   L@
+       CMPX  #-128
+       BHS   L@
+       JSR   OVERR
+L@     JSR   BOUT
+M@     LDB   ,Y
+       CMPB  #32
+       BLS   X@
+       JMP   TRMERR
+X@     RTS
+*END OF IMMEDIATE
+D@
+
+*DIRECT, EXTENDED, OR INDEXED
+       PSHS  Y
+A@     CMPA  #',
+       BEQ   Z@ *GOTO INDEXED
+       LDA   ,Y+
+       CMPA  #32
+       BHI   A@
+*EXTENDED, DIRECT, OR []
+       PULS  Y
+       LDA   ,Y
+       CMPA  #'[
+       BNE   B@
+*EXTENDED INDIRECT
+       LEAY  +1,Y
+       LDA   ,S+
+       BEQ   C@
+*OP IS 2 BYTES
+       LDD   +6+INDX*2,X
+       JSR   DOUT
+       BRA   D@
+Z@     LBRA  I@
+C@     LDB   +6+INDX,X
+       JSR   BOUT
+*OP IS OUT, SEND OPER
+D@     LDA   #%10011111
+       JSR   AOUT
+       JSR   EVAL
+       TSTB
+       BPL   E@
+       JSR   EXPERR
+       LDX   #0
+E@     ANDB  #2
+       BEQ   W@
+       JSR   UNDERR
+       LDX   #0
+W@     JSR   XOUT
+       LDB   ,Y
+       CMPB  #']
+       BNE   U@
+       RTS
+U@     JMP   TRMERR
+*DIRECT?, EXTENDED
+B@     CMPA  #'<
+       BNE   F@
+*DIRECT
+       LEAY  +1,Y
+       LEAU  ,X *Y ^ OPCODES
+       JSR   EVAL
+*DIRECT COMES HERE
+J@     TSTB
+       BPL   G@
+       JSR   EXPERR
+       LDX   #0
+G@     ANDB  #2
+       BEQ   H@
+       JSR   UNDERR
+       LDX   #0
+H@     LDB   ,Y
+       CMPB  #32
+       BLS   V@
+       JSR   TRMERR
+V@     LDA   ,S+
+       BEQ   K@
+*OP IS 2 BYTES
+       LDD   +6+DIR*2,U
+       JSR   DOUT
+       BRA   L@
+K@     LDB   +6+DIR,U
+       JSR   BOUT
+*OP IS OUT
+L@     TFR   X,D
+       JMP   BOUT
+*EXTENDED?
+F@     CMPA  #'>
+       BNE   M@
+       LEAY  +1,Y
+       LEAU  ,X
+       JSR   EVAL
+*EXTENDED COMES HERE
+T@     TSTB
+       BPL   N@
+       JSR   EXPERR
+       LDX   #0
+N@     ANDB  #2
+       BEQ   O@
+       JSR   UNDERR
+       LDX   #0
+O@     LDB   ,Y
+       CMPB  #32
+       BLS   R@
+       JSR   TRMERR
+R@     LDA   ,S+
+       BEQ   P@
+*OP IS 2 BYTES
+       LDD   +6+EXT*2,U
+       JSR   DOUT
+       BRA   Q@
+P@     LDB   +6+EXT,U
+       JSR   BOUT
+*OP IS OUT
+Q@     LDY   #0
+       JMP   XOUT
+*EXTENDED OR DIRECT???
+M@     LEAU  ,X
+       JSR   EVAL
+*WAS IT DEFINED ON PASS 1?
+*IS IT DEFINED NOW?
+       BITB  #3
+       BNE   T@ *FORCED EXT
+*IT WAS, AND IT IS
+       PSHS  B
+       TFR   X,D
+       PULS  B
+       CMPA  DP
+      LBEQ   J@ *GOTO DIRECT
+       BRA   T@ *GOTO EXTENDED
+I@
+
+       PULS  Y
+       LDA   ,S+
+       BEQ   A@
+       LDD   +6+INDX*2,X
+       JSR   DOUT
+       BRA   B@
+A@     LDB   +6+INDX,X
+       JSR   BOUT
+*OP IS OUT
+B@     CLR   ,-S *FORCED LEN
+*FORCED LENGTH:
+* 0=NOT FORCED
+* 1=FORCED TO 1 BYTE
+* 2=FORCED TO 2 BYTES
+       CLR   ,-S *IND MODE
+       LEAX  ,S *X ^ IND MODE
+*,X = LENGTH OF OPER
+       LDD   ,Y
+       CMPA  #'>
+       BNE   Y@
+*FORCED 2 BYTES
+       LDA   #2
+       STA   +1,X
+       LEAY  +1,Y
+       LDD   ,Y
+       BRA   Z@
+Y@     CMPA  #'<
+       BNE   Z@
+*FORCED TO 1 BYTE
+       LDA   #1
+       STA   +1,X
+       LEAY  +1,Y
+       LDD   ,Y
+Z@     CMPA  #'[
+       BNE   C@
+       LDA   #%00010000
+       STA   ,S *INDIRECT IND
+       LEAY  +1,Y
+       LDD   ,Y
+*FIND SIMPLE OPERATIONS
+C@     CMPD  #'A*256+', *ACCA
+       BNE   D@
+       LEAY  +2,Y *Y ^ INDEX
+       LDA   #%10000110 *ACCA
+       ORA   ,X
+       STA   ,X
+       LDA   ,Y+ *GET INDEX
+       JSR   INDEX *OR INDEX IN
+       BNE   E@
+       JSR   INDECH *CHECK END
+E@     JMP   SIMOUT
+D@     CMPD  #'B*256+', *ACCB
+       BNE   F@
+       LEAY  +2,Y *Y ^ INDEX
+       LDA   #%10000101 *ACCB
+       ORA   ,X
+       STA   ,X
+       LDA   ,Y+ *GET INDEX
+       JSR   INDEX *OR INDEX IN
+       BNE   G@ *BAD NO CHECK
+       JSR   INDECH *CHECK END
+G@     JMP   SIMOUT
+F@     CMPD  #'D*256+', *ACCD
+       BNE   H@
+       LEAY  +2,Y *Y ^ INDEX
+       LDA   #%10001011 *ACCD
+       ORA   ,X
+       STA   ,X
+       LDA   ,Y+ *GET INDEX
+       JSR   INDEX *OR INDEX IN
+       BNE   I@ *BAD NO CHECK
+       JSR   INDECH *CHECK END
+I@     JMP   SIMOUT
+H@     CMPA  #',
+       LBNE  J@
+*,R+ ,R++ ,-R ,--R ,R
+       CMPB  #'-
+       BNE   K@
+* ,-R ,--R
+       LDA   +2,Y
+       CMPA  #'-
+       BNE   L@
+*,--R
+       LEAY  +4,Y
+       LDA   -1,Y *A = INDEX
+       LDB   ,X
+V@     ORB   #%10000011
+       STB   ,X
+       JSR   INDEX
+       BNE   M@
+       JSR   INDECH
+M@     JMP   SIMOUT
+*,-R
+L@     LEAY  +3,Y *A=INDEX
+       LDB   ,X
+       BITB  #%00010000
+       BEQ   U@
+       JSR   PMERR
+       BRA   V@
+U@     ORB   #%10000010
+       STB   ,X
+       JSR   INDEX
+       BNE   N@
+       JSR   INDECH
+N@     JMP   SIMOUT
+*,R+ ,R++ ,R
+K@     CMPB  #32
+       BHI   O@
+       JSR   INDERR
+       LDB   #%10000100
+       ORB   ,S
+       STB   ,S
+       JMP   SIMOUT
+O@     LDD   +2,Y
+       CMPA  #'+
+       BNE   P@ *,R
+*,R+ ,R++
+       CMPB  #'+
+       BNE   Q@
+*,R++
+       LEAY  +4,Y
+       LDA   -3,Y *A=INDEX
+       LDB   ,X
+X@     ORB   #%10000001
+       STB   ,X
+       JSR   INDEX
+       BNE   R@
+       JSR   INDECH
+R@     JMP   SIMOUT
+*,R+
+Q@     LEAY  +3,Y
+       LDA   -2,Y *A=INDEX
+       LDB   ,X
+       BITB  #%00010000
+       BEQ   W@
+       JSR   PMERR
+       BRA   X@
+W@     ORB   #%10000000
+       STB   ,X
+       JSR   INDEX
+       BNE   S@
+       JSR   INDECH
+S@     JMP   SIMOUT
+*,R OR N,R
+P@
+J@
+
+*OFFSETS & PCR
+*CALCULATE OFFSET
+       JSR   EVAL
+       LEAU  ,X *U = VALUE
+       LEAX  ,S
+       LDA   ,Y+
+       CMPA  #',
+       BEQ   A@
+B@     JSR   EXPERR
+E@     LDU   #$0000
+       LDA   +1,S
+       BNE   D@
+       LDA   #2
+       STA   +1,S
+D@     JMP   WRVAL
+A@     BITB  #$80+2
+       BMI   B@ *EXPRESSION ERR
+       BEQ   C@
+       JSR   UNDERR
+       BRA   E@
+C@     BITB  #1
+       BEQ   F@
+*NOT DEFINED ON PASS 1
+       LDA   +1,S
+       BNE   G@
+       LDA   #2
+       STA   +1,S
+G@     JMP   WRVAL
+*DEFINED ON PASS 1
+F@
+
+*WRITES A POST BYTE
+*AND A VALUE
+WRVAL  LDA   ,Y+
+       CMPA  #'P
+       LBEQ  P@ *PC OR PCR
+       JSR   INDEX
+       BEQ   A@
+       JSR   INDECH
+*FINISH OP OFF
+*CHECK FOR LENGTH SPEC
+A@     LDA   +1,S
+       BEQ   B@ *NO LENGTH
+       DECA
+       BEQ   C@ *LENGHTH = 1
+*LENGTH = 2
+       LDA   ,S++
+       ORA   #%10001001 *2 BYTE
+       JSR   AOUT
+       JMP   UOUT
+*LENGTH = 1
+C@     LDA   ,S++
+       ORA   #%10001000 *1 BYTE
+       JSR   AOUT
+       TFR   U,D
+       CMPU  #128
+       BLO   E@
+       CMPU  #-128
+       BHS   E@
+       JSR   OVERR
+E@     JMP   BOUT
+*NO LENGTH SPECIFIED
+B@     CMPU  #0
+       BNE   D@
+*NO OFFSET AT ALL
+       LDA   ,S++
+       ORA   #%10000100 *NONE
+       JMP   AOUT
+D@     CMPU  #16
+       BGE   F@
+       CMPU  #-16
+       BLT   F@
+*5 BIT OFFSET!
+       LDA   ,S++
+       BITA  #%00010000
+       BEQ   G@
+*[]  NO 5 BIT OFFSET!
+*USE 8 BIT INSTEAD
+I@     ORA   #%10001000
+       JSR   AOUT
+       TFR   U,D
+       JMP   BOUT
+*5 BIT OFFSET
+G@     ANDA  #%01100000
+       PSHS  A
+       TFR   U,D
+       ANDB  #%00011111
+       ORB   ,S+
+       JMP   BOUT
+F@     CMPU  #128
+       BGE   H@
+       CMPU  #-128
+       BLT   H@
+*8 BITS
+       LDA   ,S++
+       BRA   I@ *8 BITS
+*16 BITS
+H@     LDA   ,S++
+       ORA   #%10001001
+       JSR   AOUT
+       JMP   UOUT
+*PC OR PCR
+P@
+
+       TFR   U,D
+       SUBD  STARVL
+       SUBD  CLEN
+       TFR   D,U
+       LDA   +1,S *LENGTH?
+       BEQ   A@ *NO
+       DECA
+       BEQ   B@
+*LENGTH OF 2
+S@     LDA   ,S++
+       ORA   #%10001101
+       JSR   AOUT
+       LEAU  -3,U *+AOUT
+       JMP   UOUT
+*LENGTH OF 1
+B@     LDA   ,S++
+       ORA   #%10001100
+       JSR   AOUT
+       LEAU  -2,U
+       TFR   U,D
+       JMP   BOUT
+A@     CMPU  #124
+       BGE   S@
+       CMPU  #-124
+       BLT   S@
+       BRA   B@
+
+
+
+SIMOUT LDA   ,S+
+       JSR   AOUT
+       LDA   ,S+
+       BEQ   B@
+A@     JSR   LSERR
+       LDB   #$12
+       JSR   BOUT
+       DECA
+       BEQ   B@
+       JSR   BOUT
+B@     RTS
+
+INDECH LDA   ,X
+       LDB   ,Y
+       ANDA  #%00010000 *IS ]?
+       BEQ   A@ *BRIF NOT
+       CMPB  #']
+       LBNE  BRKERR *MISSING ]
+       LDB   +1,Y
+A@     CMPB  #32
+       LBHI  TRMERR
+       RTS
+
+
+*OR INDEX IN.  CHECK FOR [.
+*DO ERRORS
+INDEX  CMPA  #'S
+       BNE   A@
+       LDA   #%01100000 *S
+       BRA   S@
+A@     CMPA  #'Y
+       BNE   B@
+       LDA   #%00100000 *Y
+       BRA   S@
+B@     CMPA  #'X
+       BNE   C@
+       LDA   #%00000000 *X
+       BRA   S@
+C@     CMPA  #'U
+       BNE   D@
+       LDA   #%01000000 *U
+       BRA   S@
+D@     JSR   INDERR *INDEX ERR
+       LDA   #1 *ERROR
+       RTS
+*INDEX IS KNOWN
+S@     ORA   ,X
+       STA   ,X
+       CLRA  *ALL IS OK
+       RTS   *ALL IS OK!
+
+MFCS
+MFCC
+       STY   ,S
+       LDY   LINEIN
+       JSR   CHKLAB
+       PULS  Y
+       LDD   #$2000
+       PSHS  B
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       PULS  B
+       LBRA  LINE2
+B@     LDA   -1,Y
+       PSHS  A
+C@     LDA   ,Y+
+       CMPA  #32
+       BHS   D@
+       JSR   MSEND
+       LEAS  +2,S
+       LBRA  LINE2
+D@     CMPA  ,S
+       BEQ   E@
+       JSR   ASOUT
+       BRA   C@
+E@     LDA   ,Y+
+       CMPA  #',
+       BEQ   F@
+       LEAS  +2,S
+       LBRA  LINE2
+F@     LEAS  +1,S
+       BRA   MKFC
+
+MFCB   STY   ,S
+       LDY   LINEIN
+       JSR   CHKLAB
+       PULS  Y
+       CLRA
+       PSHS  A
+       BRA   MKFB
+
+MFDB   STY   ,S
+       LDY   LINEIN
+       JSR   CHKLAB
+       PULS  Y
+       LDA   #1
+       PSHS  A
+       BRA   MKFB
+
+MKFB   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BLO   B@
+       LEAS  +1,S
+       LBRA  LINE2
+B@     LEAY  -1,Y
+       BRA   MKFC
+*SEARCH FOR ,
+S@     LDA   ,Y+
+       CMPA  #32
+       BHI   T@
+       LEAS  +1,S
+       LBRA  LINE2
+T@     CMPA  #',
+       BNE   S@
+MKFC   LDA   ,Y
+C@     CMPA  #'<
+       BNE   D@
+       LEAY  +1,Y
+       JSR   EVALT
+       TFR   X,D
+       JSR   BSOUT
+O@     LDA   ,Y+
+       CMPA  #',
+       BEQ   MKFC
+       CMPA  #32
+       BHI   E@
+       LEAS  +1,S
+       LBRA  LINE2
+E@     JSR   EXPERR
+       BRA   S@
+D@     CMPA  #'>
+       BNE   F@
+       LEAY  +1,Y
+       JSR   EVALT
+       JSR   XSOUT
+       BRA   O@
+F@     JSR   EVALT
+       LDA   ,S
+       BNE   G@
+       TFR   X,D
+       JSR   BSOUT
+       BRA   O@
+G@     JSR   XSOUT
+       BRA   O@
+
+MEND   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   B@
+       LEAY  -1,Y
+       JSR   EVALT
+       STX   TRANS
+MENDM
+B@     LEAS  PC+2,S
+       RTS
+
+MORG   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   B@
+       LEAY  -1,Y
+       JSR   EVALT
+       LDD   STARVL
+       STD   RORG
+       STX   STARVL
+       JSR   FLUSH
+B@     RTS
+
+LORG   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   B@
+       LEAY  -1,Y
+       JSR   EVAL
+       BITB  #2
+       BEQ   C@
+       JSR   FRERR
+       LEAS  PC,S
+       LDB   #1
+       RTS
+C@     LDD   STARVL
+       STD   RORG
+       STX   STARVL
+B@     LBRA  LBLE1
+
+MREORG LDD   RORG
+       LDX   STARVL
+       STX   RORG
+       STD   STARVL
+       JSR   FLUSH
+       RTS
+
+LREORG LDD   RORG
+       LDX   STARVL
+       STX   RORG
+       STD   STARVL
+       LBRA  LBLE1
+
+MRMB   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   R@
+       LEAY  -1,Y
+       JSR   EVALT
+       PSHS  X
+       LDY   LINEIN
+       JSR   CHKLAB
+       PULS  D
+       ADDD  STARVL
+       STD   STARVL
+       JSR   FLUSH
+       LEAS  +2,S
+       LBRA  LINE2
+R@     RTS
+
+LRMB   LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   B@
+       LEAY  -1,Y
+       JSR   EVAL
+       BITB  #2
+       BEQ   C@
+       JSR   FRERR
+       LEAS  PC,S
+       LDB   #1
+       RTS
+C@     PSHS  X
+       LDY   LINEIN
+       JSR   ENLAB
+       PULS  D
+       ADDD  STARVL
+       STD   STARVL
+       LBRA  DONLN1
+B@     LBRA  LBLE1
+
+MEQU
+MSET
+       LEAS  +2,S
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       LBHI  NOTH2
+       LEAY  -1,Y
+       JSR   EVALT
+       LDY   LINEIN
+       LDA   ,Y
+       CMPA  #'A
+       LBLO  NOTH2
+       CMPA  #'Z
+       LBHI  NOTH2
+       PSHS  X
+       JSR   LABVAL
+       PULS  U
+       BEQ   B@
+       JSR   PHERR
+B@     STU   -2,X
+       LDA   -3,X
+       ANDA  #$FE
+       STA   -3,X
+       LBRA  NOTH2

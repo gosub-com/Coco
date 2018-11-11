@@ -1,0 +1,551 @@
+TIME   MACR
+       PSHS  X,Y,D
+       PULS  X,Y,D
+       ENDM
+
+
+*AUTOEXEC
+
+       ORG   $E00
+
+XSTART
+
+XSTK    EQU $F800-4
+XSCREEN EQU $1800
+
+EXEC
+XSETUP  ORCC  #$50
+       CLR   65497
+       LDS   #XSTK
+       LDA   #$38
+       STA   $FFA0
+       LDA   #$3B
+       STA   [$FFFA]
+       STA   [$FFF8]
+       STA   [$FFF6]
+       STA   [$FFF4]
+       STA   [$FFF2]
+       LDX   #XSCREEN
+       LDB   #$20
+K@     STB   ,X+
+       CMPX  #XSCREEN+$280
+       BLO   K@
+       LDB   #32
+       LEAU  XMESSAGE,PCR
+       LDX   #XSCREEN+32*6
+S@     LDA   ,U+
+       STA   ,X+
+       DECB
+       BNE   S@
+       LDD   #%0011010000111100
+       STA   $FF01
+       STA   $FF03
+       STA   $FF21
+       STB   $FF23
+*SET UP SCREEN - VSYNC
+       LDA   $FF02
+A@     LDA   $FF03
+       BPL   A@
+       LDD   #$003F
+       STD   $FFB0
+       LDD   #%0100110000100000
+       STD   $FF90
+       LDX   #0
+       STX   $FF92
+       LDB   #%00000110
+       STB   $FF98
+       STX   $FF99
+       CLR   $FF9C
+       LDD   #$E300 *71800
+       STD   $FF9D
+       CLR   $FF9F
+       STX   113
+       CLR   $FEED
+
+
+       LDX   #QSTART
+       LDY   #0
+A@     LDA   ,X+
+       STA   ,Y+
+       CMPX  #QEND
+       BLS   A@
+
+       JMP   >0
+
+
+XMESSAGE
+ FCC "   GOSUB SOFTWAR"
+ FCC "E PRESENTS...   "
+
+XIOMESS
+ FCC "ERROR #1: CONTAC"
+ FCC "T GOSUB SOFTWARE"
+
+*START OF PROGRAM
+ MSG *-XSTART," MUST < $382"
+
+       BSZ   $382-(*-XSTART)
+
+       FCB   $FF
+       FDB   $985
+*THIS MUST BE RELOCATABLE!
+       ORCC  #$50
+       CLR   65497
+       CLR   $FEED
+       CLR   113
+       LDD   #$3B3C
+       STB   $FFA7
+       STA   [$FFFC]
+       LDY   #$E000 *TO
+       LDX   #$600  *FROM
+       LDU   #0 *CLEAR VALUE
+A@     LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       CMPX  #$954
+       BLS   A@
+       JMP   $E000
+
+ MSG *-XSTART," MUST BE < $400"
+
+
+*ALL OF AUTO MUST BE RELOCATABLE
+       ORG   $1400
+       SETDP $14
+QSTART
+
+*** A $38 IS IN $FFA0
+*** WE ARE AT $0000
+*** SCREEN IS AT $1800
+*** STACK IS AT $4F0
+*** GRANULE DATA IS AT $500
+
+QSCREEN  EQU  $1800
+QGRANULE EQU  $500
+QSTK    EQU   $4F0
+
+
+       LBRA  QBLOAD
+
+QNMIFLG FCB   0
+QNMIRTS FDB   0
+
+QNMI    LDA  QNMIFLG
+       BEQ   A@
+       LDX   QNMIRTS
+       STX   10,S
+       CLR   QNMIFLG
+A@     RTI
+
+QSEXINGRAN FCB 9
+QTGRAN  FCB   40
+QDSKBUF FDB   0
+QOLDADD FDB   0
+QRTRACK FCB   0
+QDRIVE  FCB   0
+QTRACK  FCB   2
+QSECTOR FCB   0
+QDSKERR FCB   0
+QDSKREG FCB   0
+QTRKPOS FCB   0
+QLFFA1  FCB   0
+QID     FDB   $FFFF
+QCRC    BSZ   3
+
+
+QGETBLOCK
+       ANDA  #1
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LDX   #$2000
+       LEAX  D,X
+       RTS
+
+QGTWORD BSR   QGTBYTE
+       TFR   B,A
+QGTBYTE LDB   QGRANULE
+QBUFFP  EQU   *-2
+       INC   QBUFFP+1
+       BNE   ?RTS
+       INC   QBUFFP
+       DEC   QSEXINGRAN
+       BNE   ?RTS
+*GET NEXT GRANULE!
+       PSHS  X,Y,U,D
+       BSR   QGETGRAN *A=GRAN
+       BSR   QGETTRACK
+       BSR   QLOADGRAN
+       LBSR  QCRCGRAN
+       LDX   QCRC
+       CMPX  QGRANULE
+       LBNE  QPCRCERR
+       LDA   QCRC+2
+       CMPA  QGRANULE+2
+       LBNE  QPCRCERR
+       PULS  X,Y,U,D,PC
+
+*GET NEXT GRAN TO GET IN A
+QGETGRAN
+       LDX   #QGRANULE+3
+       STX   QBUFFP
+       LDB   #9
+       STB   QSEXINGRAN
+       INC   QTGRAN
+       LDA   QTGRAN
+       RTS
+
+*A = GRANULE/TRACK
+*POINT Y TO SECTOR TABLE
+QGETTRACK
+       LEAY  QSECTORTABLE,PCR
+*CALCULATE TRACK NUMBER
+C@     CMPA  #17
+       BLO   B@
+       INCA
+B@     STA   QTRACK
+       RTS
+
+QLOADGRAN
+       LDX   #QGRANULE
+       CLRB
+       LDA   ,Y+
+D@     STA   QSECTOR
+       DECA
+       LEAU  D,X *X ^ GRANULE
+       STU   QDSKBUF *U ^ BUFFER
+       BSR   QDSKON
+       LDA   ,Y+
+       BNE   D@
+       RTS
+
+*1ST #=SECTOR TO LOAD
+*2ND #=WARE TO LOAD IT
+QSECTORTABLE
+ FCB 1,2,3,4,5,6,7,8,9,0
+
+QDSKON  PSHS  D
+       LDD   $1800+1
+       INCB
+       CMPB  #'9+1
+       BNE   B@
+       LDB   #'0
+       INCA
+       CMPA  #'9+1
+       BNE   B@
+       LDA   #'0
+       INC   $1800
+B@     STD   $1800+1
+*** GET RANDOM NUMBER IN ID
+       LEAS  -2,S
+       LDA   QID+1
+       LDB   #$55
+       MUL
+       STD   ,S
+       LDA   QID+1
+       LDB   #$62
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   QID
+       LDB   #$55
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   #13849
+       ADDD  ,S++
+       STD   QID
+*** END OF RANDOM NUMBER
+       CLR   65496
+       BSR   QDSKGO
+       CLR   65497
+       PULS  D,PC
+
+QDSKGO  PSHS  X,Y,U,D
+       LDA   #4
+       PSHS  A
+QREDO   LDA   #8+$20+1 *DRIVE 0
+       LDB   QTRACK
+Q@     STB   QRTRACK
+       CMPB  #22
+       BLO   A@
+       ORA   #$10
+A@     STA   QDSKREG
+       STA   $FF40
+       BSR   QUNBUSY
+       BNE   B@
+       CLR   QDSKERR
+      LBSR   QREAD
+B@     PULS  A
+       LDB   QDSKERR
+       BNE   C@
+       PULS  X,Y,U,D,PC
+C@     DECA
+       BEQ   QIOERR
+       PSHS  A
+       BSR   QRHEAD
+       BRA   QREDO
+
+*** LOADER IS IN WRONG PLACE
+QPLACEERR LDA #'2
+         BRA QDOERROR
+
+*** LOADER CRC IS WRONG
+QLCRCERR LDA #'3
+        BRA QDOERROR
+
+*** DISK IO ERROR ON PROGRAM
+QIOERR  LDA   #'4
+       BRA   QDOERROR
+
+*** PROGRAM PREAMBLE IS NOT $FF
+QPREAMBLEERR LDA #'5
+            BRA QDOERROR
+
+*** PROGRAM CRC IS WRONG
+QPCRCERR LDA #'6
+        BRA QDOERROR
+
+QDOERROR
+       LDB   #$3B
+       STB   [$FFFC]
+       CLR   $FF40
+       LDB   #32
+       PSHS  B
+       LEAU  QIOMESS,PCR
+       LDX   #QSCREEN+32*6
+S@     LDB   ,U+
+       CMPB  #'0
+       BNE   T@
+       TFR   A,B
+T@     STB   ,X+
+       DEC   ,S
+       BNE   S@
+A@     BRA   A@
+
+QRHEAD  CLR   QTRKPOS
+       LDA   #3
+       STA   $FF48
+       BSR   QUNBUSY
+       BSR   QWAIT
+       RTS
+
+QUNBUSY TIME
+       LDX   #0
+A@     LEAX  -1,X
+       BEQ   QFRCINT
+       LDA   $FF48
+       BITA  #1
+       BNE   A@
+       RTS
+QFRCINT LDA   #$D0
+       STA   $FF48
+       TIME
+       LDA   $FF48
+       LDA   #$80
+       STA   QDSKERR
+       RTS
+
+QWAIT   LDX   #8750
+A@     LEAX  -1,X
+       BNE   A@
+       RTS
+
+QREAD   LDB  QTRKPOS
+       STB   $FF49
+       CMPB  QRTRACK
+       BEQ   QONTRK
+       LDA   QRTRACK
+       STA   $FF4B
+       LDA   #$17
+       STA   $FF48
+       BSR   QUNBUSY
+       BNE   ?RTS
+       BSR   QWAIT
+       ANDA  #$18
+       STA   QDSKERR
+       BNE   ?RTS
+       LDB   QRTRACK
+       STB   QTRKPOS
+QONTRK  LDA   QSECTOR
+       STA   $FF4A
+       LEAX  QOUTNMI,PCR
+       STX   QNMIRTS
+       LDX   QDSKBUF
+       LDA   $FF48
+       LDA   QDSKREG
+       ORA   #$80
+       LDY   #0
+       LDU   #$FF48
+       LDB   #$FF
+       STB   QNMIFLG
+       LDB   #$80
+       STB   $FF48
+       TIME
+       LDB   #2
+A@     BITB  ,U
+       BEQ   A@
+       LDB   QID
+B@     EORB  $FF4B
+       STB   ,X+
+       STA   $FF40
+       BRA   B@
+QOUTNMI TIME
+       LDA   $FF48
+       ANDA  #$7C
+       STA   QDSKERR
+       RTS
+
+QCRCGRAN
+       LDX   #QGRANULE+3
+       LDY   #9*256-3
+       LEAU  QCRC,PCR
+       LDD   #$FFFF
+       STD   ,U
+       STA   +2,U
+       BSR   QCRCBUF
+       RTS
+
+*ENTRY:
+* U ^ CRC
+* X ^ BYTES TO CRC
+* Y = # OF BYTES TO CRC
+*ALL REGISTERS PRESERVED
+* THE CRC AT U IS MODIFIED
+QCRCBUF PSHS  D,X,Y
+A@     LDA   ,X+
+       EORA  ,U
+       PSHS  A
+       LDD   1,U
+       STD   ,U
+       CLRA
+       LDB   ,S
+       LSLB
+       ROLA
+       EORA  1,U
+       STD   1,U
+       CLRB
+       LDA   ,S
+       LSRA
+       RORB
+       LSRA
+       RORB
+       EORA  1,U
+       EORB  2,U
+       STD   1,U
+       LDA   ,S
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       EORA  ,S+
+       BPL   E@
+       LDD   #$8021
+       EORA  ,U
+       STA   ,U
+       EORB  2,U
+       STB   2,U
+E@
+*CRC END
+       LEAY  -1,Y
+       BNE   A@
+R@     PULS  D,Y,X,PC
+
+QBLOAD  ORCC  #$50
+       LDS   #QSTK
+       CLRA
+       TFR   A,DP
+       LDD   #0
+
+*DONE WITH CRC STUFF
+       CLR   QNMIFLG
+       LDD   #$E00+(QNMI!.$FF)
+       STD   [$FFFC]
+      LBSR   QRHEAD
+       LDA   #$FF
+       STA   QBUFFP+1
+       LDA   #1
+       STA   QSEXINGRAN
+       LDA   #1
+       STA   QTGRAN *1ST GRAN=2
+       LDD   #'00
+       STD   $1800+1
+       STA   $1800
+       JSR   QGTBYTE
+
+*LOAD IN PROGRAM
+A@     JSR   QGTBYTE *PRE AMBLE
+       TSTB
+      LBNE   QPREAMBLEERR
+       JSR   QGTWORD
+       PSHS  D      *LENGTH
+       TFR   D,U
+       JSR   QGTWORD *ADDRESS
+       LEAU  D,U
+       SUBD  QOLDADD
+       TFR   CC,B
+       STU   QOLDADD
+       LDY   ,S++
+       TFR   B,CC
+       BEQ   B@
+*NEW ADDRESS!
+       JSR   QGTWORD *REAL ADDR
+       SUBD  #0
+       BEQ   O@ *LOAD AT 0?
+       PSHS  A      *PLACE
+       LSRA
+       STA   $FFA1
+       STA   QLFFA1
+       PULS  A      *PLACE
+      LBSR   QGETBLOCK
+       LEAY  -2,Y
+       BEQ   A@
+B@     JSR   QGTBYTE
+       STB   ,X+
+       LEAY  -1,Y
+       BEQ   A@
+       CMPX  #$4000
+       BLO   B@
+       LDB   QLFFA1
+       INCB
+       STB   QLFFA1
+       STB   $FFA1
+       LDX   #$2000
+       BRA   B@
+O@     JSR   QGTWORD *GET EXEC
+       PSHS  A
+       LSRA
+       STA   $FFA1
+       PULS  A
+      LBSR   QGETBLOCK
+       JMP   ,X
+QIOMESS
+ FCC "ERROR #0: CONTAC"
+ FCC "T GOSUB SOFTWARE"
+QEND
+       FDB   0
+
+ MSG *-QSTART," MUST BE < $400"
+
+       END   EXEC

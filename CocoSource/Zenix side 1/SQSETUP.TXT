@@ -1,0 +1,794 @@
+SQSETUP
+*0-3
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+
+ FDB BO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,BOEND
+*4-7
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+
+ FDB BO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,BOEND
+*8-11
+ FDB BPSQ,NEXTBPSQ
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+ FDB BPSQ,NEXTBPSQ
+
+ FDB BO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,BOEND
+*12-15
+ FDB DRSQ,NEXTDRSQ
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+ FDB DRSQ,NEXTDRSQ
+
+ FDB BO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,BOEND
+*16-19
+ FDB SQ,NEXTSQ
+ FDB SQ,NEXTSQ
+ FDB BPSQ,NEXTBPSQ
+ FDB DRSQ,NEXTDRSQ
+
+ FDB BO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,BOEND
+*20-23
+ FDB DRSQ,NEXTDRSQ
+ FDB BPSQ,NEXTBPSQ
+ FDB SQ,NEXTSQ
+ FDB BLSQ,NEXTBLSQ
+
+ FDB BO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,BOEND
+*24-27
+ FDB DRSQ,NEXTDRSQ
+ FDB BPSQ,NEXTBPSQ
+ FDB SQ,NEXTSQ
+ FDB BLSQ,NEXTBLSQ
+
+ FDB BO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,IBOE
+ FDB IBO,BOEND
+*28-31
+ FDB BPSQ,NEXTBPSQ
+ FDB SQ,NEXTSQ
+ FDB DRSQ,NEXTDRSQ
+ FDB BLSQ,NEXTBLSQ
+
+ FDB YOUWIN,YOUWON
+
+
+BLSQ   LDD   #BLOB
+       BRA   A@
+BPSQ   LDD   #BUGPLANE
+       BRA   A@
+DRSQ   LDD   #DRAGON
+       CLR   NOGREEN
+A@     NEWLINKA SQ
+       STD   TRKDRV,Y
+       LDA   #1
+       STA   STATUS,Y
+       LDA   SQDON
+       STA   DRAGHITS,Y
+       LDA   #40
+       STA   DRAGHITINC,Y
+       STA   OBNUM
+
+*ALL SQUADS (EXECPT BONUSES)
+*COME THROUGH HERE
+SQ     CLR   ONBONUS
+       LDA   #255
+       STA   FUELPERCENT
+       LDA   #25
+       PSHS  A
+       LDX   #TRKTAB
+       PSHS  X
+       LDU   #STDHIT
+       LDX   #GOSQD
+       PSHS  X,U
+       PSHS  X,U
+       JSR   SETUPSQUAD
+       LEAS  +11,S
+       RTS
+
+BO     LDX   SONGP
+       LDU   ,X++
+       BNE   B@
+       LDX   ,X
+       LDU   ,X++
+B@     STX   SONGP
+       STU   SONGS
+       JSR   MENUCOLORS
+       CLR   BUGSALIVE
+       CLR   BUGSKILLED
+       CLR   BUGSTOTAL
+       CLR   BUGWAVES
+       INC   ONBONUS
+*CALCULATE PERCENT
+       LDA   SQDON
+       SUBA  #4
+       LSRA
+       LSRA
+       LSRA
+       LDB   #28
+       MUL
+       ADDB  #85
+       STB   FUELPERCENT
+*
+A@     DO    WRITCS
+       FCB   CHCOL
+       FDB   $00AA *YELLOW
+       FCB   0
+*DRAW "READY FOR BONUS"
+       BSR   P@
+       BSR   DING@
+       BSR   DING@
+       BSR   DING@
+       BSR   DING@
+       BSR   DING@
+       BSR   DING@
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $0000
+       FCB   0
+*ERASE "READY FOR BONUS"
+       BSR   P@
+       JSR   SETCOL
+       BRA   IBO
+*PRINT "READY FOR BONUS"
+P@     JSR   FREX
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   256*90+128-50
+ FCC "GET READY FOR",0
+       JSR   FREX
+       DO    WRITCS
+ FCC " BONUS ROUND",0
+       RTS
+DING@  JSR   BELL
+       LDB   #20
+       JMP   FREXT
+
+IBO    JSR   FREXS
+       JSR   ARB
+       LSRA
+       STA   BONUSTRACK
+       LDA   #25
+       PSHS  A
+       LDX   #TRKTAB
+       PSHS  X
+       LDX   #BONUS
+       LDU   #GASHIT
+       PSHS  X,U
+       LDU   #STDHIT
+       PSHS  X,U
+       JSR   SETUPSQUAD
+       LEAS  +11,S
+       RTS
+
+IBOE   LDB   BUGSALIVE
+       BNE   A@
+       INC   BUGWAVES
+A@     NEGB
+       ADDB  BUGSTOTAL
+       ADDB  BUGSKILLED
+       STB   BUGSKILLED
+       CLR   BUGSALIVE
+       CLR   BUGSTOTAL
+       RTS
+
+BOEND  BSR   IBOE
+       JSR   MENUCOLORS
+       LDA   #1
+       STA   ONMENU
+       LDB   #60
+       JSR   FREXT
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00BB *RED
+       FCB   GOTOXY
+       FDB   40*256+128-21*2
+ FCC "BONUS ROUND ",0
+       JSR   FREX
+       DO    WRITCS
+ FCC "COMPLETED",0
+       JSR   FREXS
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00FF *WHITE
+       FCB   GOTOXY
+       FDB   60*256+128-16*4
+ FCC "ENEMY DESTROYED: ",0
+       JSR   FREX
+       LDB   BUGSKILLED
+       CLRA
+       DO    WRINT
+       JSR   FREXS
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   70*256+128-6*4
+ FCC "BONUS: ",0
+       DO    WRINT
+       JSR   FREX
+       DO    WRITCS
+ FCC " X 5 = "
+       FCB   CHCOL
+       FDB   $00AA *YELLOW
+       FCB   0
+       LDA   #5
+       MUL
+       PSHS  D
+       JSR   FREX
+       DO    WRINT
+       JSR   FREXS
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00FF *WHITE
+       FCB   GOTOXY
+       FDB   90*256+128-16*4
+ FCC "WAVES DESTROYED: ",0
+       JSR   FREX
+       LDB   BUGWAVES
+       CLRA
+       DO    WRINT
+       JSR   FREXS
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   100*256+128-6*4
+ FCC "BONUS: ",0
+       JSR   FREX
+       DO    WRINT
+       JSR   FREX
+       DO    WRITCS
+ FCC " X 2500 = "
+       FCB   CHCOL
+       FDB   $00AA *YELLOW
+       FCB   0
+       JSR   FREX
+       LDX   #0
+****************
+A@     LEAX  +2500,X
+       DECB
+       BPL   A@
+       LEAX  -2500,X
+       TFR   X,D
+       DO    WRINT
+       JSR   FREXS
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00FF *WHITE
+       FCB   GOTOXY
+       FDB   120*256+128-12*4
+ FCC "TOTAL BONUS: "
+       FCB   CHCOL
+       FDB   $00BB *RED
+       FCB   0
+       JSR   FREX
+       ADDD  ,S++
+       DO    WRINT
+       JSR   FREX
+       ADDD  SCRSTK
+       STD   SCRSTK
+       CLRB
+       JSR   FREXT
+       JSR   ERASETEXT
+       JSR   SETCOL
+       RTS
+
+
+SETUPSQUAD
+PC     SET   3
+VA     SET   PC+2
+TIME   SET   VA+10
+UTRACK  SET  VA+8
+SPCDRV2 SET  VA+6
+TRKDRV2 SET  VA+4
+SPCDRV1 SET  VA+2
+TRKDRV1 SET  VA+0
+BUGNUM SET   2
+SYNC   SET   1
+BUGON  SET   0
+       LEAS  -PC,S
+       CLR   SYNC,S
+       CLR   BUGNUM,S
+       LDD   #$3334
+       STD   $FFA0
+       LDX   #SQUADNUMS
+       LDA   USQUAD
+       LDA   A,X
+       STA   BUGON,S
+A@     LDY   ELSTS
+       LDU   ,Y
+       LDU   [,U]
+       LBEQ  OOPS@
+       UNLINK
+       LDX   #WLSTE
+       LINK
+       LDA   BUGNUM,S
+       INCA
+       STA   BUGNUM,S
+       ANDA  #3
+       BEQ   C@
+       LDX   TRKDRV1,S
+       LDU   SPCDRV1,S
+       LDD   #0
+       BRA   D@
+C@     LDX   TRKDRV2,S
+       LDU   SPCDRV2,S
+       LDD   #CLBTB
+D@     STX   TRKDRV,Y
+       STU   SPCDRV,Y
+       STD   BOFLASH,Y
+       LDB   SYNC,S
+       DECB
+       BPL   B@
+       LDB   #5
+B@     STB   SYNC,S
+       STB   SYNCB,Y
+       LDA   BUGON,S
+       INCA
+       STA   IWAIT2,Y
+       NEGA
+       ADDA  #40
+       STA   IWAIT3,Y
+       LDA   BUGNUM,S
+       INCA
+       LDB   TIME,S
+       MUL
+       STD   IWAIT,Y
+       LDA   BUGON,S
+       ANDA  #3
+       LDX   UTRACK,S
+       LEAX  A,X
+       LDX   A,X
+       STX   GOTRACK,Y
+       LDA   USQUAD
+       LDB   BUGON,S
+       LDX   #SQUADPOINT
+       LSLA
+       LDX   A,X
+       LDA   #3
+       MUL
+       LEAX  D,X
+       LDA   +2,X
+       LDB   NOGREEN
+       BNE   GR@
+       CMPA  #%10000000
+       BEQ   NG@
+       CMPA  #%10110000
+       BNE   GR@
+NG@    ADDA  #%00010000
+GR@    STA   TYPE,Y
+       LDD   ,X
+       LSRA
+       RORB
+       STD   NEWPOS,Y
+       LDB   #%00000001
+       STB   STATUS,Y
+       DEC   BUGON,S
+       LBPL  A@
+OOPS@  LEAS  +PC,S
+       RTS
+
+
+
+
+
+
+OF@    EQU   -25*256
+NEXTBLSQ
+NEXTBPSQ
+NEXTDRSQ INC NOGREEN
+NEXTSQ LDA   #1
+       STA   ONMENU
+       JSR   MENUCOLORS
+       LDB   #60
+       JSR   FREXT
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00BB *RED
+       FCB   GOTOXY
+       FDB   64*256+92+OF@
+  FCC "LEVEL ",0
+       JSR   FREX
+       LDB   SQDON
+*CALCULATE LEVEL
+       CALCLEV
+       INCB
+       CLRA
+       DO    WRINT
+       JSR   FREX
+       DO    WRITCS
+ FCC " COMPLETED",0
+       JSR   FREXS
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00FF *WHITE
+       FCB   GOTOXY
+       FDB   128-12*4+256*84+OF@
+ FCC "AVERAGE TIME: ",0
+       JSR   FREX
+       LDB   SQAVT
+       CLRA
+       DO    WRINT
+       JSR   FREXS
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   128-9*4+256*94+OF@
+ FCC "YOUR TIME: ",0
+       JSR   FREX
+       LDD   SEXS
+       DO    WRINT
+       JSR   FREXS
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   128-5*4+256*104+OF@
+ FCC "BONUS: ",0
+       JSR   FREX
+       CLRA
+       LDB   SQAVT
+       SUBD  SEXS
+       BCC   H@
+       LDD   #0
+H@     PSHS  D
+       DO    WRINT
+       JSR   FREX
+       DO    WRITCS
+ FCC " X ",0
+       JSR   FREX
+       CLRA
+       LDB   SQAVTM
+       DO    WRINT
+       JSR   FREX
+       DO    WRITCS
+ FCC " = ",0
+       JSR   FREX
+       LDB   +1,S
+       LDA   SQAVTM
+       MUL
+       STD   ,S
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00AA *YELLOW
+       FCB   0
+       DO    WRINT
+       JSR   FREXS
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00FF *WHITE
+       FCB   GOTOXY
+       FDB  128-14*4+256*124+OF@
+ FCC "HIT/MISS RATIO: ",0
+       JSR   FREX
+       LDD   SHOTS
+       SUBD  MISSES
+       STD   BHITS
+E@     LDA   SHOTS
+       BEQ   F@
+       LSR   SHOTS
+       ROR   SHOTS+1
+       LSR   BHITS
+       ROR   BHITS+1
+       BRA   E@
+F@     LDB   BHITS+1
+       LDA   #100
+       MUL
+       TFR   D,X
+       LDA   SHOTS+1
+       JSR   DIV168
+       TFR   X,D
+       PSHS  D
+       JSR   FREX
+       DO    WRINT
+       JSR   FREX
+       DO    WRITCS
+ FCC "%",0
+       JSR   FREXS
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   128-5*4+256*134+OF@
+ FCC "BONUS: ",0
+       JSR   FREX
+       LDD   ,S
+       DO    WRINT
+       JSR   FREX
+       DO    WRITCS
+ FCC " X ",0
+       JSR   FREX
+       CLRA
+       LDB   SQHMR
+       DO    WRINT
+       JSR   FREX
+       DO    WRITCS
+ FCC " = ",0
+       JSR   FREX
+       LDB   +1,S
+       LDA   SQHMR
+       MUL
+       STD   ,S
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00AA *YELLOW
+       FCB   0
+       DO    WRINT
+       JSR   FREXS
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00FF *WHITE
+       FCB   GOTOXY
+       FDB  128-11*4+256*154+OF@
+ FCC "TOTAL BONUS: ",0
+       JSR   FREX
+       LDD   ,S++
+       ADDD  ,S++
+       PSHS  D
+       ADDD  SCRSTK
+       STD   SCRSTK
+       PULS  D
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00BB *RED
+       FCB   0
+       DO    WRINT
+       CLRB
+       JSR   FREXT
+       BSR   ERASETEXT
+       JSR   SETCOL
+       RTS
+
+
+ERASETEXT
+       LDX   #0
+A@     CLRB
+       CLRA
+B@     STA   ,X+
+       DECB
+       BNE   B@
+       BSR   FREX
+D@     CMPX  #$7000
+       BLO   A@
+       CLR   ONMENU
+       JSR   FREXS
+       RTS
+*END OF SQUAD DE-SET UP
+
+FREXS  PSHS  B
+       LDB   #35 *30
+       BSR   FREXT
+       PULS  B,PC
+
+FREXT  BSR   FREX
+       DECB
+       BNE   FREXT
+       RTS
+
+FREX   PSHS  X,Y,U,D
+       JSR   FRPAL
+       JSR   ANIM
+       LDD   #$3637
+       STD   $FFA0
+       LDD   #$3839
+       STD   $FFA2
+       PULS  X,Y,U,D,PC
+
+
+DIV168 PSHS  X,A
+       CLRA
+       LDB   +1,S
+       BSR   DIVIDE
+       STB   +1,S
+       LDB   +2,S
+       BSR   DIVIDE
+       STB   +2,S
+       PULS  B,X,PC
+DIVIDE LDX   #8
+A@     LSLB
+       ROLA
+       ORB   #1
+       BCC   B@
+       SUBA  +2,S
+       BRA   C@
+B@     SUBA  +2,S
+       BHS   C@
+       ANDB  #$FE
+       ADDA  +2,S
+C@     LEAX  -1,X
+       BNE   A@
+       RTS
+
+WINMESS
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   90*256+128-32*2
+ FCC "YOU ARE NOW IN ZENIAN "
+ FCC "AIR SPACE."
+       FCB   GOTOXY
+       FDB   100*256+128-27*2
+ FCC "YOUR PLUTONIUM PLASMA "
+ FCC "LASER"
+       FCB   GOTOXY
+       FDB   110*256+128-19*2
+ FCC "HAS BEEN ACTIVATED."
+       FCB   GOTOXY
+       FDB   120*256+128-22*2
+ FCC "YOU HAVE ONLY ONE SHOT"
+       FCB   GOTOXY
+       FDB   130*256+128-17*2
+ FCC "TO DESTROY ZENIX."
+       FCB   GOTOXY
+       FDB   140*256+128-10*2
+ FCC "GOOD LUCK!",0
+       RTS
+
+MKFRM2 JSR   MKFRM
+       DECB
+       BNE   MKFRM2
+       RTS
+
+YOUWIN CLR   MAYISHOOT
+       LDA   #1
+       STA   ONMENU
+       LDD   #$1F31
+       STD   PALIT+$A
+       LDA   #$0B
+       STA   PALIT+$C
+       LDD   #$8000
+       STD   STARSTOP+1
+       CLRB
+       BSR   MKFRM2
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00FF
+       FCB   0
+       JSR   WINMESS
+       CLRB
+       BSR   MKFRM2
+       BSR   MKFRM2
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $0000
+       FCB   0
+       JSR   WINMESS
+       JSR   MKFRM
+B@     LDA   #$3E
+       STA   $FFA1
+       LDD   #$3536
+       STD   $FFA2
+       LDA   #$37
+       STA   $FFA4
+       LDU   #$4000
+       LDY   #$4000+20*256+112
+       LDD   $FE03
+       PSHS  CC
+       ORCC  #$50
+       JSR   LOADPLANET
+       ORCC  #$50
+       LDB   $FF02
+       LDB   $FF92
+       LDB   $FF93
+       PULS  CC
+       TSTA
+       BNE   BAD@
+*EVERYTHING IS READY TO GO
+       LDA   #1
+       STA   WLSTE+STATUS
+       COM   MAYISHOOT
+       CLR   ONMENU
+       RTS
+BAD@   DO    WRITCS
+       FCB   CHCOL
+       FDB   $FF
+       FCB   0
+       BSR   PR@
+A@     JSR   MKFRM
+       DO    INKEY
+       CMPA  #3
+       LBEQ  SBLOW
+       CMPA  #13
+       BNE   A@
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   0
+       FCB   0
+       BSR   PR@
+       JMP   B@
+PR@    DO    WRITCS
+       FCB   GOTOXY
+       FDB   70*256+128-17*2
+ FCC "INSERT ZENIX DISK"
+       FCB   GOTOXY
+       FDB   80*256+128-27*2
+ FCC "AND HIT (ENTER) TO "
+ FCC "CONTINUE"
+       FCB   GOTOXY
+       FDB   90*256+128-2*18
+ FCC "OR (BREAK) TO QUIT",0
+       RTS
+
+
+YOUWON
+       LDA   #1
+       STA   DEAD
+B@     JSR   MKFRM
+       LDD   SCRSTK
+       BNE   B@
+*NO SCORE LEFT
+*ADD SCR/4
+       LDA   SCR
+       CMPA  #$25
+       BLO   C@
+       LDD   #65535
+       STD   SCRSTK
+       BRA   Z@
+C@     LDX   #0
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+D@     LEAX  +25000,X
+       DECA
+       BPL   D@
+       LEAX  -25000,X
+       LDA   SCR
+       ANDA  #%00001111
+E@     LEAX  +2500,X
+       DECA
+       BPL   E@
+       LEAX  -2500,X
+       LDA   SCR+1
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LDB   #250
+       MUL
+       LEAX  D,X
+       LDA   SCR+1
+       ANDA  #%00001111
+       LDB   #25
+       MUL
+       LEAX  D,X
+       LDA   SCR+2
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LDB   #5
+       MUL
+       LSRB
+       LEAX  B,X
+       STX   SCRSTK
+Z@     LDA   #96
+       PSHS  A
+A@     JSR   MKFRM
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $0088
+       FCB   GOTOXY
+       FDB   90*256+128-16
+ FCC "YOU WIN!",0
+       DEC   ,S
+       BNE   A@
+       PULS  A
+       JMP   SBLW2
+

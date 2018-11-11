@@ -1,0 +1,173 @@
+DRAGBLOW
+       FDB   -1
+       FDB   +6*256-9
+       FDB   +6*256+9
+       FDB   +15*256
+       FDB   +18*256-9
+       FDB   +18*256+9
+       FDB   +25*256
+       FDB   0
+
+C@     PULS  D,Y,PC
+DRAGON LDA   OBNUM
+       CMPA  #15
+       BHS   C@
+     NEWLINK TRKEND,L
+       LDX   +2,S
+       EXG   X,Y
+       CLR   STATUS,X
+       LDD   #DRAGCOL
+       STD   TRKDRV,X
+       STX   MOTHER,Y
+       LDD   #D@
+       STD   TRKDRV,Y
+       LDD   #$1000
+       STD   NEWPOS,Y
+       LDD   #DRAGHIT
+       STD   SPCDRV,Y
+       LDA   #%10010001
+       STA   STATUS,Y
+A@     JSR   DRAGSPOT
+       JSR   ILINE
+D@     LDA   SHIPOS
+       SUBA  NEWPOS,Y
+       ADDA  #10
+       CMPA  #38
+       BHI   N@  *NOT HIT
+       LDA   SHIPOS+1
+       SUBA  NEWPOS+1,Y
+       ADDA  #16
+       CMPA  #32
+       BHI   N@
+*HIT
+       CLR   SHIELD
+       CLR   SHLD
+       BRA   DRAGDIE
+N@     DEC   DRAGHITINC,Y
+       BNE   U@
+       LDA   #100
+       STA   DRAGHITINC,Y
+       INC   DRAGHITS,Y
+       BNE   U@
+       DEC   DRAGHITS,Y
+U@     JSR   DLINE
+       BNE   DRAW@
+       BRA   A@
+DRAW@  JMP   DRAWDRAGON
+
+DRAGHIT
+       BULHIT 32,16,32
+       DEC   DRAGHITS,U
+       BNE   ?RTS
+       LDD   #A@
+       STD   TRKDRV,U
+       RTS
+DRAGDIE
+A@     JSR   EXPLODE
+       LDA   #128
+       STA   EXPLEN
+       ADDSCR #200
+       ADDSCR #150
+       LDX   #DRAGBLOW
+B@     LDD   ,X++
+       BEQ   C@
+       ADDD  NEWPOS,Y
+       JSR   MBLOW
+       BRA   B@
+C@     LDA   #30
+       STA   IWAIT2,Y
+       NXTFRM NOPRN
+       DEC   IWAIT2,Y
+       BEQ   D@
+       PULS  D,Y,PC
+D@     JSR   SETCOL
+       LDY   MOTHER,Y
+       JSR   TRKEN2
+       LDY   +2,S
+       JMP   TRKEND
+
+X@     PSHS  Y,D
+DRAWDRAGON
+       LDA   NEWPOS,Y
+       LDB   #58
+       MUL
+       SUBA  HLINE
+       ADDA  #6
+       CMPA  #15
+       BHI   A@
+*PUT ON FIFO
+       LDX   FIFOP
+       STY   ,X++
+       LDD   #X@
+       STD   ,X++
+       STX   FIFOP
+       PULS  Y,D,PC
+BIGBLOCK
+       FCB   $35,$36,$37,0
+       FCB   $36,$37,$38,0
+       FCB   $37,$38,$39,0
+       FCB   $38,$39,$3A,0
+       FCB   $39,$3A,$3B,0
+       FCB   $3A,$3B,$35,0
+       FCB   $3B,$35,$35,0
+       FCB   $35,$35,$35,0
+*DRAW DRAGON NOW!
+A@     LDX   #BIGBLOCK
+       LDA   NEWPOS,Y
+       ANDA  #%11100000
+       LSRA
+       LSRA
+       LSRA
+*PLACE GRAPHICS IN MEMORY
+       LDU   A,X    *6
+       STU   $FFA3  *6
+       ADDA  #2     *2
+       LDB   A,X    *5
+       STB   $FFA5  *5
+       LDD   NEWPOS,Y
+       ANDA  #%00011111
+       ADDA  #$60
+       TFR   D,U
+       JSR   DRDRAG
+       PULS  Y,D,PC
+
+DRAGCOL
+       LDD   #$0103
+       STA   DRAGCOLAT,Y
+       STB   DRAGCOLWAIT,Y
+       LDD   #A@
+       STD   TRKDRV,Y
+       LDD   #$0038
+       STD   DRAGCOLS,Y
+       LDA   #34
+       STA   PALIT+10
+A@     DEC   DRAGCOLAT,Y
+       BNE   OUT@
+       LDA   DRAGCOLS+1,Y
+       LDB   DRAGCOLS,Y
+       STD   DRAGCOLS,Y
+       STD   PALIT+11
+       LDA   DRAGCOLWAIT,Y
+       STA   DRAGCOLAT,Y
+OUT@   PULS  D,Y,PC
+
+
+DRAGSPOT
+       LDA   DEAD
+       BEQ   A@
+       JSR   ARB
+       LSRA
+       LSRA
+       LSRA
+       ADDA  #31
+       RTS
+A@     JSR   ARB
+       LDB   #170
+       MUL
+       ADDA  #43
+       PSHS  A
+       JSR   ARB
+       LDB   #180
+       MUL
+       ADDA  #10
+       PULS  B,PC

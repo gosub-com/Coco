@@ -1,0 +1,181 @@
+TIME   MACR
+       PSHS  X,Y,D
+       PULS  X,Y,D
+       ENDM
+
+       ORG   $E00+$382
+       FCB   $FF
+       FDB   $985
+*THIS MUST BE RELOCATABLE!
+       ORCC  #$50
+       CLR   65497
+       CLR   $FEED
+       CLR   113
+       LDD   #$3B3C
+       STB   $FFA7
+       STA   [$FFFC]
+       LDY   #$E000 *TO
+       LDX   #$600  *FROM
+       LDU   #0 *CLEAR VALUE
+A@     LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       LDD   ,X
+       STU   ,X++
+       STD   ,Y++
+       CMPX  #$954
+       BLS   A@
+       JMP   $E000
+
+ MSG *-$800," MUST BE UNDR $A00"
+
+       ORG   $E00
+
+
+STAUTO
+
+STK    EQU $F800-4
+SCREEN EQU $1800
+
+
+
+SETUP  ORCC  #$50
+       LDS   #STK
+       LDA   #$38
+       STA   $FFA0
+       LDA   #$3B
+       STA   [$FFFA]
+       STA   [$FFF8]
+       STA   [$FFF6]
+       STA   [$FFF4]
+       STA   [$FFF2]
+       LDX   #SCREEN
+       LDB   #$20
+K@     STB   ,X+
+       CMPX  #SCREEN+$280
+       BLO   K@
+       LDB   #32
+       LEAU  MESSAGE,PCR
+       LDX   #SCREEN+32*6
+S@     LDA   ,U+
+       STA   ,X+
+       DECB
+       BNE   S@
+       LDD   #%0011010000111100
+       STA   $FF01
+       STA   $FF03
+       STA   $FF21
+       STB   $FF23
+*SET UP SCREEN - VSYNC
+       LDA   $FF02
+A@     LDA   $FF03
+       BPL   A@
+       LDD   #$003F
+       STD   $FFB0
+       LDD   #%0100110000100000
+       STD   $FF90
+       LDX   #0
+       STX   $FF92
+       LDB   #%00000110
+       STB   $FF98
+       STX   $FF99
+       CLR   $FF9C
+       LDD   #$E300 *71800
+       STD   $FF9D
+       CLR   $FF9F
+       STX   113
+       CLR   $FEED
+
+       CLR   65496
+
+       BSR   UNBUSY
+       BNE   IOERR
+       BRA   READ
+
+
+
+UNBUSY TIME
+       LDX   #0
+A@     LEAX  -1,X
+       BEQ   FRCINT
+       LDA   $FF48
+       BITA  #1
+       BNE   A@
+       RTS
+FRCINT LDA   #$D0
+       STA   $FF48
+       TIME
+       LDA   $FF48
+       LDA   #$80
+       RTS
+
+WAIT   LDX   #8750
+A@     LEAX  -1,X
+       BNE   A@
+       RTS
+
+READ   LDA   #1
+       STA   $FF4A
+       LDA   $FF48
+       LDX   $FFFC
+       LDA   #$7E
+       STA   ,X
+       LEAU  NMI,PCR
+       STU   +1,X
+       LDX   #0 *PUT PROGRAM AT
+       LDA   #$80+$20+8+1+$40
+       LDY   #0
+       LDU   #$FF48
+       LDB   #$80
+       STB   $FF48
+       TIME
+       BITA  +1,X
+       LDB   #2
+A@     BITB  ,U
+       BEQ   A@
+B@     LDB   $FF4B
+       STB   ,X+
+       STA   $FF40
+       BRA   B@
+
+IOERR  LDA   #$3B
+       STA   [$FFFC]
+       CLR   $FF40
+       LDB   #32
+       LEAU  IOMESS,PCR
+       LDX   #SCREEN+32*6
+S@     LDA   ,U+
+       STA   ,X+
+       DECB
+       BNE   S@
+A@     BRA   A@
+
+NMI    LDA   #$3B
+       STA   [$FFFC]
+       CMPX  #$400
+       BNE   IOERR
+       TIME
+       LDA   $FF48
+       ANDA  #$7C
+       BNE   IOERR
+       JMP   >0
+
+
+MESSAGE
+ FCC "   GOSUB SOFTWAR"
+ FCC "E PRESENTS...   "
+
+IOMESS
+ FCC "ERROR #1: CONTAC"
+ FCC "T GOSUB SOFTWARE"
+
+*START OF PROGRAM
+ MSG *-STAUTO," MUST BE UNDER 200"
+
+

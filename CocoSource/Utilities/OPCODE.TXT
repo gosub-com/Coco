@@ -1,0 +1,44 @@
+*ENTRY:X=PC
+*      Y=STORE DATA
+*EXIT:A=MODE
+OPCODE
+       LEAU  OPS,PCR
+       LDA   ,X+ *GET OP
+       LDB   #5
+       MUL
+       LEAU  D,U *U ^ OP TABLE
+       LDA   +4,U
+       BMI   A@  *10/11
+       LDD   ,U
+       STD   ,Y++
+       LDD   +2,U
+       STD   ,Y++
+       LDA   +4,U
+       RTS
+A@     CMPA  #11
+       BEQ   B@
+       LEAU  OPS10,PC
+       BRA   C@
+B@     LEAU  OPS11,PC
+****SEARCH
+C@     LDA   ,X+ *GET REAL OP
+       BRA   E@
+D@     LEAU  +6,U
+E@     CMPA  ,U
+       BHI   D@
+       BNE   F@
+       LDD   +1,U
+       STD   ,Y++
+       LDD   +3,U
+       STD   ,Y++
+       LDA   +5,U
+       RTS
+*NOT FOUND
+F@     LDD   #'?*256+'?
+       STD   ,Y++
+       LDD   #$2020
+       STD   ,Y++
+       LDA   #8
+       RTS
+
+

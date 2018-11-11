@@ -1,0 +1,916 @@
+LSRD   MACR
+       LSRA
+       RORB
+       ENDM
+
+LSLD   MACR
+       LSLB
+       ROLA
+       ENDM
+
+ROLD   MACR
+       ROLB
+       ROLA
+       ENDM
+
+RORD   MACR
+       RORA
+       RORB
+       ENDM
+
+NEGD   MACR
+       COMA
+       COMB
+       SUBD  #-1
+       ENDM
+
+STACK  MACR
+       TFR   S,D
+       SUBD  PLTB
+*D=DIFFRENCE BETWEEN
+*STACK AND LABLE TABLE
+       SUBD  #128
+     \1BHS   \0
+       JSR   MOVTAB
+     \1BRA   \0
+       ENDM
+
+*MAXIMUM LABLE LENGTH
+MAXLL  EQU   32
+
+SKIPEX MACR
+A@     LDA   ,Y+
+       CMPA  #',
+       BHI   A@
+       BLO   B@
+*COMMA ENCOUNTERED
+       LDA   -2,Y
+       CMPA  #''
+       BEQ   A@
+     \1BRA   \0
+B@     CMPA  #32
+       BHI   A@
+       ENDM
+
+       ORG   0
+DPBEG
+*ASSEM PARAMS GO HERE (AT 0)
+MPATH  RMB   1
+STDIN  RMB   1
+STDOUT RMB   1
+BPATH  RMB   1
+TXTNAM RMB   2
+OPENT  RMB   3
+OPENB  RMB   3
+CLOSE  RMB   3
+READL  RMB   3
+READ   RMB   3
+WRITE  RMB   3
+MIDPAS RMB   3
+BBUFLN EQU   255 *BIN BUF LEN
+BYTES  RMB   2
+LINEIN RMB   2
+LOCVAR RMB   2 *LOCAL VARS AT
+ATLOG  RMB   2
+NUMLOG RMB   2
+PERLOG RMB   2
+STRBUF RMB   2
+STARVL RMB   2
+ANSAT  RMB   2 *^ TO BUFFER
+CANSAT RMB   2 *^ IN BUFFER
+CLEN   RMB   2
+ERROR  RMB   1
+PLTB   RMB   2
+PLTE   RMB   2
+DP     RMB   1
+TRANS  RMB   2
+RORG   RMB   2
+LRTS   RMB   2
+NXTLIM RMB   2
+
+ MSG "DP END @",*
+
+       ORG   $E00
+       INCL  IO:3
+
+WRITEB LDD   BYTES
+       LEAU  D,X
+       STU   BYTES
+       LDA   BPATH
+       JMP   WRITE
+
+UOUT   PSHS  X
+       LDX   CANSAT
+       STU   ,X++
+       STX   CANSAT
+       LDX   CLEN
+       LEAX  +2,X
+       STX   CLEN
+       PULS  X,PC
+
+XOUT   PSHS  U
+       LDU   CANSAT
+       STX   ,U++
+       STU   CANSAT
+       LDU   CLEN
+       LEAU  +2,U
+       STU   CLEN
+       PULS  U,PC
+
+DOUT   PSHS  X
+       LDX   CANSAT
+       STD   ,X++
+       STX   CANSAT
+       LDX   CLEN
+       LEAX  +2,X
+       STX   CLEN
+       PULS  X,PC
+
+BOUT   PSHS  X
+       LDX   CANSAT
+       STB   ,X+
+       BRA   B@
+AOUT   PSHS  X
+       LDX   CANSAT
+       STA   ,X+
+B@     STX   CANSAT
+       INC   CLEN+1
+       BNE   A@
+       INC   CLEN
+A@     PULS  X,PC
+
+XSOUT  PSHS  D
+       TFR   X,D
+       BSR   DSOUT
+       PULS  D,PC
+DSOUT  BSR   ASOUT
+BSOUT  PSHS  B
+       TFR   B,A
+       BSR   ASOUT
+       PULS  B,PC
+ASOUT  PSHS  X,D
+       LDX   CANSAT
+       STA   ,X+
+       STX   CANSAT
+       INC   CLEN+1
+       BNE   B@
+       INC   CLEN
+B@     LDD   CANSAT
+       SUBD  ANSAT
+       SUBD  #BBUFLN
+       BLO   A@
+       LDD   CLEN
+       ADDD  STARVL
+       STD   STARVL
+       LDD   #0
+       STD   CLEN
+       PSHS  Y,U
+       BSR   FLUSH
+       PULS  Y,U
+A@     PULS  X,D,PC
+
+FLUSH  LDD   CANSAT
+       SUBD  ANSAT
+       BNE   A@
+       LDX   STARVL
+       STX   STRBUF
+       RTS
+A@     LDX   STRBUF
+       PSHS  D,X
+       CLR   ,-S
+       LEAY  ,S
+       LDX   #5
+       JSR   WRITEB
+       LDX   +1,S *#OF BYTES
+       LDY   ANSAT *PLACE
+       STY   CANSAT
+       JSR   WRITEB
+       LDX   STARVL
+       STX   STRBUF
+       LEAS  +5,S
+       RTS
+
+BCLOSE BSR   FLUSH
+       LDX   TRANS
+       LDD   #0
+       PSHS  X,D
+       DECA
+       PSHS  A
+       LEAY  ,S
+       LDX   #5
+       JSR   WRITEB
+       LEAS  +5,S
+       RTS
+
+MOVTAB LDX   PLTE
+       LEAU  -256,X
+       STU   PLTE
+A@     LDD   ,X
+       STD   ,U
+       LDD   2,X
+       STD   2,U
+       LDD   4,X
+       STD   4,U
+       LDD   6,X
+       STD   6,U
+       LEAX  8,X
+       LEAU  8,U
+       CMPX  PLTB
+       BLS   A@
+       LDD   ,X
+       STD   ,U
+       LDD   PLTB
+       SUBD  #256
+       STD   PLTB
+       RTS
+
+PRHEXD PSHS  X,Y,U,D
+       BSR   PRHEXA
+       TFR   B,A
+       BSR   PRHEXA
+       LDA   #32
+       JSR   PCHR
+       PULS  X,Y,U,D,PC
+PRHEXA PSHS  D
+       PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   PRHEX
+       PULS  A
+       ANDA  #%00001111
+       BSR   PRHEX
+       PULS  D,PC
+PRHEX  ADDA  #'0
+       CMPA  #'9
+       BLS   PRASC
+       SUBA  #'0
+       SUBA  #10
+       ADDA  #'A
+PRASC  JSR   PCHR
+       RTS
+
+WARN   RTS
+       JSR   PRINT
+ FCC "WARNING: COULD BE SHORT "
+ FCC "BRANCH",13
+       RTS
+DTERR  JSR   PRINT
+ FCC "LABLE DEFINED TWICE",13
+       RTS
+BLERR  JSR   PRINT
+ FCC "BAD LABLE",13
+       RTS
+SNERR  JSR   PRINT
+ FCC "SYNTAX ERROR",13
+       RTS
+UNDERR JSR   PRINT
+ FCC "UNDEFINED SYMBOL",13
+       RTS
+OVERR  JSR   PRINT
+ FCC "OVERFLOW ERROR",13
+       RTS
+MNBIER JSR   PRINT
+ FCC "MUST NOT BE IMMEDIATE",13
+       RTS
+MBIMER JSR   PRINT
+ FCC "MUST BE IMMEDIATE",13
+       RTS
+EXPERR JSR   PRINT
+ FCC "EXPRESSION ERROR",13
+       RTS
+TRMERR JSR   PRINT
+ FCC "TERMINATOR ERROR",13
+       RTS
+MOERR  JSR   PRINT
+ FCC "MISSING OPERAND",13
+       RTS
+PHERR  JSR   PRINT
+ FCC "PHASING ERROR",13
+       RTS
+INDERR JSR   PRINT
+ FCC "INDEX ERROR",13
+       RTS
+BRKERR JSR   PRINT
+ FCC "MISSING ']'",13
+       RTS
+BCERR  JSR   PRINT
+ FCC "BAD INSTRUCTION "
+ FCC "OR MACRO NAME",13
+       RTS
+LSERR  JSR   PRINT
+ FCC "LENGTH SPECIFIER "
+ FCC "NOT NEEDED",13
+       RTS
+PMERR  JSR   PRINT
+ FCC "SINGLE PLUS OR MINUS "
+ FCC "INDIRECT",13
+       RTS
+MSEND  JSR   PRINT
+ FCC "MISSING END",13
+       RTS
+FRERR  JSR   PRINT
+ FCC "FORWARD REFERENCE",13
+       RTS
+
+PCHR   PSHS  X,Y,U,D
+       PSHS  X,Y,U,D
+       JSR   [$A000]
+       BEQ   B@
+A@     JSR   [$A000]
+       BEQ   A@
+B@     PULS  X,Y,U,D
+       STA   ,-S
+       LDA   STDOUT
+       LEAY  ,S
+       LDX   #1
+       JSR   WRITE
+       LEAS  +1,S
+       PULS  X,Y,U,D,PC
+
+PRINT  PSHS  X,Y,U,D
+       INC   ERROR
+       LDX   +8,S
+A@     LDA   ,X+
+       BEQ   B@
+       JSR   PCHR
+       CMPA  #13
+       BNE   A@
+B@     STX   +8,S
+       PULS  X,Y,U,D,PC
+
+
+
+*X ^ BOTTOM OF USEABLE MEMORY
+*S ^ TOP OF USEABLE MEMORY
+*PASS IN
+*(BPATH, STDOUT, TXTNAM^, UPATH)
+ASSEM  TFR   S,D *TOP OF MEM
+       SUBD  +2,S *BOTTOM OF MEM
+       BCC   I@
+M@     LDB   #128 *MEMORY ERR
+       RTS
+I@     SUBD  #2000 *MIN MEMORY
+       BLO   M@
+       LEAY  +4,S *Y ^ PARAMS
+       LDD   +2,S *BOTTOM OF MEM
+       TSTB
+       BEQ   G@
+*GO TO BEGINING OF PAGE
+       CLRB
+       INCA
+G@     TFR   A,DP
+       TFR   D,X *X ^ DP
+       INCA
+       PSHS  D *AFTER DP
+       LDB   #6
+A@     LDA   ,Y+
+       STA   ,X+
+       DECB
+       BNE   A@
+*MAKE IO JUMP TABLE
+       LDD   #$7E07 *JMP
+B@     STA   ,X+
+       LDU   ,Y++
+       STU   ,X++
+       DECB
+       BNE   B@
+       PULS  X *X ^ AFTER DP
+       LEAU  -256,S
+       STU   PLTB
+       STU   PLTE
+       STX   ANSAT
+       STX   CANSAT
+       LEAX  BBUFLN+32,X
+       STX   LINEIN
+       LEAX  +300,X
+       STX   NXTLIM
+       LDD   #$E00
+       STD   STARVL
+       STD   RORG
+       STD   TRANS
+       LDD   #0
+       STD   ,U
+       STD   ATLOG
+       STD   NUMLOG
+       STA   DP
+       PSHS  D *MACRO PARAMS
+       PSHS  D *MACR
+       LDX   TXTNAM
+       JSR   OPENT
+       PSHS  A *PATH
+       LDD   #0
+       PSHS  D *NUMLOC
+       PSHS  D *ATLOC
+       JSR   PASS1
+       TSTB
+       BEQ   C@
+       LDA   +3,S
+       LEAS  +9,S
+       JSR   CLOSE
+       RTS
+C@     LDA   +4,S *PATH
+       LEAS  +9,S
+       JSR   CLOSE
+*END OF PASS 1
+       JSR   MIDPAS
+       LDD   #$E00
+       STD   STARVL
+       STD   RORG
+       STD   TRANS
+       STD   STRBUF
+       LDD   #0
+       STD   ATLOG
+       STD   NUMLOG
+       STD   CLEN
+       STD   BYTES
+       STA   DP
+       STA   ERROR
+       PSHS  D *MACRO PARAMS
+       PSHS  D *MACR
+       LDX   TXTNAM
+       JSR   OPENT
+       PSHS  A
+       LDD   #0
+       PSHS  D *NUMLOC
+       PSHS  D *ATLOC
+       JSR   PASS2
+       LDA   +4,S *PATH
+       LEAS  +9,S
+       JSR   CLOSE
+       JSR   BCLOSE
+*      BSR   UNUSED
+E@     CLRB
+       RTS
+
+UNUSED
+*SNUFF OUT USED LABLES!!!
+       LDU   PLTB
+       LDD   ,U
+       BEQ   ?RTS *NONE!
+       LEAU  D,U
+       NEGD
+       LSRA
+       RORB
+       TFR   D,Y
+       LDX   #$FFFF
+A@     LDA   [,U++]
+       ANDA  #%00001000
+       BEQ   B@
+       STX   -2,U *USED=$FFFF
+B@     LEAY  -1,Y
+       BNE   A@
+
+       LEAS  -MAXLL,S
+A@     JSR   GNLAB
+       BEQ   R@ *DONE
+       LDA   ,X
+       BITA  #%00001000
+       BNE   A@ *USED
+*UNUSED, COPY LABLE TO STACK
+       LEAU  ,S
+       LEAX  +3,X
+       LDA   ,X+
+       BMI   B@
+C@     STA   ,U+
+       LDA   ,X+
+       BPL   C@
+B@     ANDA  #$7F
+       STA   ,U+
+       CLR   ,U
+       LDA   ,S
+       CMPA  #'A
+       BLO   A@ *NOT A LABLE
+       CMPA  #'Z
+       BHI   A@ *MACRO LABLE
+*LABLE IS COPIED, NOW PRINT!
+       JSR   PRINT
+       FCC   "UNUSED LABLE: ",0
+       LEAU  ,S
+*PRINT LABLE ITSELF
+D@     LDA   ,U+
+       BNE   E@ *DONE W LABLE?
+       LDA   #13
+       JSR   PCHR
+       BRA   A@ *DONE W LABLE!
+E@     CMPA  #$60
+       BLO   F@
+       CMPA  #$70
+       BHS   F@
+*DO %,# LATER
+       LDA   #'@
+       JSR   PCHR
+       LEAU  +3,U
+       BRA   D@
+F@     JSR   PCHR
+       BRA   D@
+R@     LEAS  MAXLL,S
+       RTS
+
+GNLAB  LDU   PLTB
+       LDD   ,U
+*DON'T NEED BECAUSE I SNUFFED
+*      BEQ   R@ DON'T NEED
+       LEAU  D,U
+       NEGD
+       LSRA
+       RORB
+       LDX   #$FFFF
+A@     CMPX  ,U++
+       BLO   B@
+       LDX   -2,U
+       LEAY  -2,U
+B@     SUBD  #1
+       BNE   A@
+       LDD   #$FFFF
+       STD   ,Y
+       CMPX  #$FFFF
+R@     RTS
+
+
+*PARM VAR'S FOR BOTH PASSES
+*ATLOC,NUMLOC,PATH,MACRO
+ATLOC  SET   0
+NUMLOC SET   2
+PERLOC SET   2
+PATH   SET   4
+MPRAM  SET   7
+MACRO  SET   5
+PC     SET   2
+PR     SET   PC+2 *PARAMETERS
+LEN    SET   0
+
+ENLAB  LDA   ,Y
+       CMPA  #'A
+       BLO   R@
+       CMPA  #'Z+1
+       BHI   R@
+*ENTER LABLE
+       LEAS  -MAXLL,S
+       LEAU  ,S
+       JSR   LCOPY
+       LEAY  ,S
+       JSR   INSLAB
+       LEAS  MAXLL,S
+       BNE   A@
+*LABLE HAS ALREADY BEEN ENTERED
+       LDA   -3,X
+       ORA   #%00000100
+       STA   -3,X
+R@     RTS
+A@     LDA   #1
+       STA   -3,X
+       LDD   STARVL
+       STD   -2,X
+       RTS
+
+PASS1  LEAS  -PC,S
+       STACK DONLN1
+       LEAS  +PC,S
+       RTS
+*COME HERE FOR SN ERROR
+SNERR1 LDB   #5
+*COME HERE WITH LENGTH IN B
+DOLBL1 CLRA
+*COME HERE WITH LENGTH IN D
+DOLBD1 STD   LEN,S
+*COME HERE WITH NO LENGTH
+*ENTER LABLE
+LBLE1  LDY   LINEIN
+       BSR   ENLAB
+*ADD LENGTH OF LAST LINE
+       LDD   LEN,S
+*COME HERE WITH LENGTH IN D
+LN1D   ADDD  STARVL
+       STD   STARVL
+*DO THE NEXT LINE
+DONLN1 LDD   #0
+       STD   LEN,S
+       LEAX  PR,S
+       STX   LOCVAR
+       LDA   PATH+PR,S
+       LDY   LINEIN
+       JSR   READLN
+       CMPY  #0
+       BNE   A@ *BRIF NOT EOF
+       LEAS  PC,S
+       RTS
+A@
+*PARSE LINE FOR LABLE & OP
+       LDA   ,Y+
+       CMPA  #'* *REMARK
+       BEQ   DONLN1 *NEXT LINE
+       CMPA  #32
+       BLO   BLNK1 *BLANK LINE
+       BNE   A1 *DO LABLE
+*SPACE - FIND OP
+B1     CMPA  ,Y+
+       BEQ   B1
+       BLO   HSH1 *HASH OP
+*NO LABLE, NO OP = BLANK LINE
+*DO STUFF FOR BLANK LINE
+BLNK1  LDD   ATLOG
+       ADDD  #1
+       STD   ATLOG
+       STD   ATLOC+PR,S
+       BRA   DONLN1 *NEXT LINE
+A1     LDA   #32
+*SKIP THE LABLE
+D1     CMPA  ,Y+
+       BLO   D1
+       LBNE  LBLE1 *NO OP FOUND
+*FIND OP, OR DO LABLE
+C1     CMPA  ,Y+
+       BEQ   C1
+       LBHI  LBLE1 *NO OP FOUND
+*HASH!
+HSH1   LEAY  -1,Y
+M@     JSR   HASH
+       BEQ   Z@ *SNERR OR MACR
+*THIS WILL FINISH THE JOB!
+*IT WILL RETURN TO
+*LBLE1, LINE1, OR DONLN1
+       JMP   ,X
+*EITHER A SN ERROR OR A MACRO
+Z@     BSR   ISMACR
+       LBNE  SNERR1
+
+*DO LABLE STUFF
+       PSHS  Y,X
+       LDY   LINEIN
+       LBSR  ENLAB
+A@     PULS  Y,X
+*PUSH PARAMETERS ON STACK
+       LBSR  MACPR
+       LBSR  PASS1
+       TSTB
+       BNE   KK1KZ
+       LDS   +9,S *RESTOR STACK
+       LBRA  DONLN1
+KK1KZ  LDS   +9,S
+       LEAS  PC,S
+       LDB   #1
+       RTS
+
+ISMACR LEAS  -MAXLL,S
+       LEAU  ,S
+       JSR   LCOPY
+       PSHS  Y
+       LEAY  +2,S
+       LDA   ,Y
+       ADDA  #32
+       STA   ,Y
+       JSR   FNDLAB
+       PULS  Y
+       LEAS  MAXLL,S
+       BNE   A@
+       LDX   -2,X
+       CLRA
+A@     RTS
+
+
+*SEE PASS1 FOR PARAMETERS
+PASS2  LEAS  -PC,S
+       STACK NOTH2,L
+       LEAS  +PC,S
+       RTS
+A@     LDD   CANSAT
+       SUBD  ANSAT
+       SUBD  #BBUFLN
+       BLO   KKK
+       JSR   FLUSH
+       LDY   LINEIN
+KKK
+*GOOP
+       LDA   ,Y+
+       CMPA  #'*
+       LBEQ  NOTH2
+       CMPA  #32
+       BLO   BLNK2
+       BNE   A2 *DO LABLE
+*SPACE - FIND OP
+B2     CMPA  ,Y+
+       BEQ   B2
+       BLO   HSH2
+*NO LABLE, NO OP = BLANK LINE
+*DO STUFF FOR BLANK LINE
+BLNK2  LDD   ATLOG
+       ADDD  #1
+       STD   ATLOG
+       STD   ATLOC+PR,S
+       LBRA  NOTH2
+A2     LDA   #32
+D2     CMPA  ,Y+
+       BLO   D2
+       BNE   LBLE2
+*FIND OP
+C2     CMPA  ,Y+
+       BEQ   C2
+       BHI   LBLE2
+*HASH
+HSH2   LEAY  -1,Y
+       JSR   HASH
+       BNE   F@
+       JSR   ISMACR
+       LBEQ  MACRO2
+       JSR   SNERR
+       LDD   #$1212
+       JSR   DOUT
+       JSR   DOUT
+       JSR   BOUT
+       BRA   LINE2
+F@     JSR   +3,X *MAKE CODE
+LBLE2  LDY   LINEIN
+       BSR   CHKLAB
+LINE2
+C@     LDD   CLEN
+       ADDD  STARVL
+       STD   STARVL
+NOTH2  LDA   ERROR
+       BEQ   Q@
+       LDD   STARVL
+       JSR   PRHEXD
+       LDY   LINEIN
+R@     LDA   ,Y+
+       JSR   PCHR
+       CMPA  #32
+       BHS   R@
+       CLR   ERROR
+Q@     LDD   #0
+       STD   CLEN
+       LEAX  PR,S
+       STX   LOCVAR
+       LDA   PATH+PR,S
+       LDY   LINEIN
+       JSR   READLN
+       CMPY  #0
+       LBNE  A@
+       LEAS  PC,S
+       RTS
+
+CHKLAB LDA   ,Y
+       CMPA  #32
+       BLS   R@
+       CMPA  #'A
+       BLO   B@
+       CMPA  #'Z
+       BHI   C@
+       JSR   LABVAL
+       BNE   P@
+       LDA   -3,X
+       ANDA  #$FE
+       STA   -3,X
+       BITA  #%00000100
+       BEQ   A@
+       JSR   DTERR
+       BRA   R@ *NO PHASEING
+A@     LDD   -2,X
+       SUBD  STARVL
+       BEQ   R@
+P@     JSR   PHERR
+       LDD   -2,X
+       JSR   PRHEXD
+       LDA   #32
+       JSR   PCHR
+       RTS
+B@     CMPA  #'*
+       BEQ   R@
+C@     JSR   BLERR
+R@     RTS
+
+MACRO2 PSHS  Y,X
+*DO LABLE STUFFF
+       LDY   LINEIN
+       BSR   CHKLAB
+A@     PULS  Y,X
+       JSR   MACPR
+       JSR   PASS2
+       LDS   +9,S *RESTOR STACK
+       LBRA  NOTH2
+
+*THIS PARSES A LINE FOR PARAMS
+Z@     CLR   ,-S
+       BRA   Y@
+MACPR  LEAU  +2,S *RESTOR STACK
+       LEAS  -4,S
+       STX   -4,U *SAVE X
+       LEAX  ,S *LAST PARAM
+       LDA   #32
+A@     CMPA  ,Y+
+       BEQ   A@
+       BHI   Z@  *NO PARAMS
+       LEAY  -1,Y
+*1ST PARAM CAN BE A (
+B@     LDA   ,Y+
+       CMPA  #'(
+       BNE   E@
+*ONLY A ), OR ) ENDS IT
+C@     LDA   ,Y+
+D@     STA   ,-S
+       CMPA  #32
+       BLO   L@ *EOLN
+       CMPA  #')
+       BNE   C@
+       LDA   ,Y+
+       CMPA  #',
+       BEQ   I@ *NOT LAST PARAM
+       CMPA  #32
+       BHI   D@ *KEEP GOING
+       BRA   L@ *LAST PARAM
+*ANY , OR SPACE ENDS IT
+G@     LDA   ,Y+
+E@     STA   ,-S
+       CMPA  #',
+       BNE   H@
+*NEXT PARAM, ADD TO LINKED LIST
+I@     CLR   ,S
+       LEAS  -2,S
+       STS   ,X
+       LEAX  ,S
+       BRA   B@
+H@     CMPA  #32
+       BHI   G@
+*LAST PARAM
+L@     CLR   ,S *END PARAM
+Y@     LEAS  -2,S
+       STS   ,X
+       STS   ,S *WRAP AROUND
+       CLR   ,-S *NULL PARAM
+       PSHS  U *RESTORE STACK
+       LEAX  -6,U *^ PARAM LIST
+       PSHS  X *MACRO PARAM
+       LDX   -4,U
+       PSHS  X *MACRO
+       LDA   MPATH
+       PSHS  A *MACRO PATH
+       JSR   STPR
+       JMP   [-2,U] *RETURN
+
+READLN CMPA  MPATH *MACRO?
+       BEQ   CMAC
+       JMP   READL
+CMAC   PSHS  X,Y,U,D
+       LDX   LOCVAR
+       LDX   MACRO,X
+A@     LDA   ,X+
+       CMPA  #$5C *\
+       BNE   B@
+*FIND PARAMETER OF MACRO
+       LDA   ,X+
+       SUBA  #'0
+       BCC   G@
+*BAD PARAMETER
+M@     LDA   -2,X
+       STA   ,Y+
+       LDA   -1,X
+       BRA   B@ *KEEP GOING
+G@     CMPA  #9
+       BLS   P@ *GOOD PARAMETER
+       SUBA  #17
+       BCS   M@ *BAD PARAMETER
+       CMPA  #26
+       BHI   M@ *BAD PARAMETER
+       ADDA  #10
+*A=PARAMETER NUMBER
+P@     LDU   LOCVAR
+       LDU   MPRAM,U
+*U ^ PARAMETER LINKED LIST
+       TSTA
+       BEQ   Q@ *FOUND PARAM
+O@     LDU   ,U
+       DECA
+       BNE   O@
+*U ^ (BACKWARDS) PARAMETER
+*COPY ASCIIZ PARAMETER
+Q@     LDA   ,-U
+       BEQ   A@ *PARAMETER DONE
+S@     STA   ,Y+
+       LDA   ,-U
+       BNE   S@
+       BRA   A@
+B@     STA   ,Y+
+       CMPA  #32
+       BHS   A@
+       LDU   LOCVAR
+       STX   MACRO,U
+       PULS  X,Y,U,D,PC
+
+       INCL  TIS
+
+       INCL  LENGTH
+
+       INCL  CODE
+
+       INCL  LABLE
+
+       INCL  HASTAB
+
+       INCL  EVAL
+
+       INCL  HASH
+
+ MSG "LENGTH = ",*-$E00
+ MSG "END @",*
+
+       END   EXEC

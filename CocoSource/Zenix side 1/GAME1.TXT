@@ -1,0 +1,1238 @@
+*FOR PUBLIC'S GAME, BOTH
+*SHOULD BE     0
+INVINCIBLE EQU 0 *0=NO
+PAUSECLEAR EQU 0 *1=NO
+OBLEN  EQU   39
+NLINK  EQU   0
+LLINK  EQU   2
+TRKDRV EQU   5
+NEWPOS EQU   7
+ANGLE  EQU   9
+TYPE   EQU   10
+STATUS EQU   4
+IBLOCK EQU   11
+DRAGHITS EQU 11
+DRAGHITINC EQU 12
+IJUMP  EQU   13
+SHIPX  EQU   13
+IPOS   EQU   15
+SQDPOS EQU   17
+SYNCB  EQU   19
+SHIPY  EQU   21
+ADDSHIPX EQU 23
+ADDSHIPY EQU 25
+*NOTUSED YET 21
+OFFSET EQU   23
+CANGLE EQU   24
+SPCDRV EQU   25
+****************
+DRAGCOLWAIT EQU 27
+DRAGCOLAT   EQU 28
+DRAGCOLS    EQU 29
+****************
+GOTRACK EQU  27
+IWAIT  EQU   29
+IWAIT2 EQU   31
+IWAIT3 EQU   32
+BOFLASH EQU  34
+*TRACK VAR'S
+DOANGLE EQU  29
+TRACKSPEED EQU 31
+TRACKSP EQU  32
+TRACKLEN EQU 33
+BULARMOR EQU 27
+*BLOWUP VAR'S
+BLFR   EQU   27
+BLBL   EQU   29
+BLPL   EQU   31
+*COUMACAUSY VAR'S
+CMPOS  EQU   27
+CMTP   EQU   29
+GASBUGHIT EQU 27
+CPINSQ EQU   27
+INSQDI EQU   29
+LLEN   EQU   27
+LMD    EQU   29
+LND    EQU   31
+LCD    EQU   33
+LCOM   EQU   35
+MOTHER EQU   37
+ALIVE  EQU   0
+APBUG  EQU   1
+AOFSET EQU   3
+CHILD  EQU   7
+CLBC   EQU   21
+CLSHT  EQU   21
+
+       SETDP $E0
+GAMEDP
+       LBRA  GAME
+
+*ENTRY: B= LEVEL ON
+CALCLEV MACR
+       TFR   B,A
+       ANDB  #%11111100
+       LSRB
+       ANDA  #3
+       PSHS  A
+       ADDB  ,S+
+       ENDM
+
+*Y ^ CURRENT LINKED MODULE
+UNLINK MACR
+       LDX   +2,Y *6
+       LDU   ,Y   *5
+       BEQ   A@   *3
+       STX   +2,U *6
+A@     STU   ,X   *5
+       ENDM
+
+UNLINKX MACR
+       LDU   ,X     *5
+       BEQ   A@     *3
+       LDD   +2,X   *6
+       STD   +2,U   *6
+A@     STU   [+2,X] *9
+       ENDM
+
+*Y ^ USEABLE MEMORY
+*X ^ LINKE SPOT (LINKED AFTER)
+LINK   MACR
+       LDU   ,X
+       BEQ   A@
+       STY   +2,U
+A@     STU   ,Y
+       STX   +2,Y
+       STY   ,X
+       ENDM
+
+NEWLINK MACR
+       LDY  ELSTS
+     \1BEQ   \0
+       UNLINK
+       LDX   #WLSTS
+       LINK
+       CLR   STATUS,Y
+       ENDM
+
+NEWLINKA MACR
+       LDY   ELSTS
+     \1BEQ   \0
+       UNLINK
+       LDX   #WLSTE
+       LINK
+       CLR   STATUS,Y
+       ENDM
+
+SUBSHL MACR
+       LDA   SHIELD
+       SUBA  \0
+       BCC   A@
+       CLRA
+A@     STA   SHIELD
+       ENDM
+
+ADDSHL MACR
+       LDA   SHIELD
+       ADDA  \0
+       BCC   A@
+       LDA   #$FF
+A@     STA   SHIELD
+       ENDM
+
+ADDSHLA MACR
+       ADDA  SHIELD
+       BCC   A@
+       LDA   #$FF
+A@     STA   SHIELD
+       ENDM
+
+ADDSCR MACR
+       LDD   SCRSTK
+       ADDB  \0
+       ADCA  #0
+       STD   SCRSTK
+       ENDM
+
+NXTFRM MACR
+       JSR   \0
+       ENDM
+
+*U = BLOCKS
+*D = PLACE IN BLOCKS
+SPRAT  MACR
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ANDA  #%00001110
+       LDU   #GRBLK
+       LDU   A,U
+       LDA   NEWPOS,Y
+       ANDA  #%00011111
+       ENDM
+
+NOPRN  PULS  X
+       STX   TRKDRV,Y
+       PULS  Y,D,PC
+
+STDPRN PULS  X
+       STX   TRKDRV,Y
+       JMP   STDSQD
+
+SQORDERNUM EQU 17
+*PERCENT VALUES
+SHOOTIT FDB  0
+SHTB   FCB   0
+SHTR   FCB   0
+SHT1   FCB   0
+SHT2   FCB   0
+SHT3   FCB   0
+ATTACKIT FDB 0
+GASBUGIT FDB 0
+HIT1   FCB   0
+HIT2   FCB   0
+HIT3   FCB   0
+CANSHAKE FCB 0 *0=YES 1=NO
+USQUAD FCB   0
+SQAVT  FCB   0
+*SCORE VALUES FOR A HIT
+HBGAS  FCB   9 *A GAS BUG
+HBINSQ FCB   3 *SHIP IN SQUAD
+HBSSW  FCB   6 *SMALL SHIP
+*HIT WITH SHIP:FUEL
+HSSB   FCB 2 *SMALL BUG * C
+HSBB   FCB 4 *BIG BUG
+HSFLG  FCB 6 *FLASHING GAS
+HSBULL FCB 4 *BULLETS
+HSCOUM FCB 5 *COUM HITS SHIP
+*BONUS STUFF
+SQAVTM FCB   4 *SQVAT * BONUS
+SQHMR  FCB   2 *(H/M RT)*BONUS
+LOWSCR BSZ   4
+SQDON  FCB   0
+CLR1
+EXPLEN FCB   0
+PCH1   FDB   0
+PCH2   FDB   0
+SONGP  FDB   0
+SONGS  FDB   0
+MAYISHOOT FCB 0
+FUELPERCENT FCB 0
+BONUSTRACK FCB 0
+STARSTOP BSZ  3
+NOGREEN FCB  0
+ATTACKING FCB 0
+ATTACKER FCB 0
+BUGSINSQUAD FCB 0
+ALLBUGSINSQUAD FCB 0
+BUGSALIVE FCB 0
+BUGWAVES FCB 0
+BUGSKILLED FCB 0
+BUGSTOTAL FCB 0
+ONBONUS FCB 0
+REDBUL FDB   0 *0=NO
+YELBUL FDB   0 *0=NO
+BLUEBUL FDB  0 *0=NO
+FIFOP  FDB   0
+BUTPRESS FCB 0
+NTON   FDB   0
+NTLEN  FCB   0
+TICKS  FCB   0
+OFRAME FCB   0
+SEXS   FDB   0
+ONMENU FCB   0 *1=YES, 0=NO
+DEAD   FCB   0 *0=NO
+SHOTS  FDB   0
+BHITS
+MISSES FDB   0
+FUELL  FCB   0
+SQDMID FDB   0
+SQMVAT FDB   0
+BCKGND FDB   0
+SHAKER FDB   0
+FRGO   FCB   0
+SCRSTK FDB   0
+SHIPOS FDB   0
+HLINE  FCB   0
+SHIELD FCB   0
+SHLD   FCB   0
+RSHLD  FCB   0
+SEED   FDB   0
+RSEED  FCB   0
+BULLETSINAIR FCB 0
+SQSYNC FCB   0
+SQGO   FCB   0
+LSCR   FCB   0
+SCR    FCB   0
+       FCB   0
+       FCB   0
+BSTBAS FCB   0
+SSTBAS1 FCB  0
+SSTBAS2 FCB  0
+SSTP1  FCB   0
+SSTP2  FCB   0
+BUTGO  FCB   0
+OBNUM  FCB   0
+CLR2
+
+
+****** FIRQ ******
+*465.9 CYCLES
+NOISE  STD   DREGN
+
+       LDA   $FF93
+
+NOTE1  LDD   #0
+VIB1   ADDD  #0
+       STD   VIB1+1
+       STA   WAVE1+2
+
+*BRA HERE WHEN ONLY VOICE 1 USED
+*SAVES 39 (2340/ 60/SEC)
+NOTE2  LDD   #0
+VIB2   ADDD  #0
+       STD   VIB2+1
+       STA   WAVE2+2
+
+*BRA HERE WHEN VOICE 3 NOT USED
+*SAVES 18 (1080/ 60/SEC)
+NOTE3  LDD   #0
+VIB3   ADDD  #0
+       STD   VIB3+1
+       STA   WAVE3+2
+
+WAVE3  LDB   $C200
+
+WAVE2  ADDB  $C200
+WAVE1  ADDB  $C200
+
+       LDA   FXA1+2
+FXP1   ADDA  #0
+       STA   FXA1+2
+FXA1   ADDB  $C200
+
+
+*********************
+
+*BRA GOES HERE WHEN NOT USED
+***SAVES 11 CYCLES (660/ 60/SEC)
+*WHEN USED, ADDB $0000 PUT IN
+*THIS IS THE BELL SOUND
+SPBELL ADDB  $C100
+       BGE   C@
+LSBELL LDA   #0
+       STA   SPBELL+2
+MSBELL LDA   #0
+       STA   SPBELL+1
+       SUBB  #128
+       BRA   GOBELL
+C@     INC   SPBELL+2
+GOBELL
+
+       STB   $FF20
+
+       INC   HLINE
+
+       LDD   #0
+DREGN  EQU   *-2
+       RTI
+*****************
+
+
+ MSG "GAME DP  @",*-GAMEDP
+
+
+FSYNC  LDA   #-9
+       STA   HLINE
+       CLR   FRGO
+       LDA   $FF92
+       LDU   #$FFB0
+       LDX   #8
+       LDY   #PALETTES
+PAL@   LDD   PALIT-$FFB0,U
+       LDA   A,Y
+       LDB   B,Y
+       STD   ,U++
+       LEAX  -1,X
+       BNE   PAL@
+       LDD   #0
+SCRAT  EQU   *-2
+BRDR   EQU   *-1
+       STA   $FF9F
+       STB   $FF9A
+       LDD   #0
+RNDTIMER EQU *-2
+       ADDD  #15263
+       STD   RNDTIMER
+       DEC   RSEED
+       DEC   NTLEN
+       RTI
+
+EXPLODE PSHS D,CC
+       ORCC  #$50
+       LDD   #$C780
+       STB   FXP1+1
+       STA   FXA1+1
+       LDA   #$FF
+       STA   EXPLEN
+       LDD   #$0100
+       STD   PCH1
+       LDD   #$3F00
+       STD   PCH2
+       PULS  D,CC,PC
+
+KABOOM PSHS  D,CC
+       LDA   MSBELL+1
+       CMPA  #$C5
+       BEQ   KA@
+       LDA   SPBELL
+       CMPA  #$0E
+       BNE   O@
+KA@    LDD   #$C500
+       BRA   G@
+BELL   PSHS  D,CC
+       LDD   #$C100
+G@     ORCC  #$50
+       STD   SPBELL+1
+       STA   MSBELL+1
+       STB   LSBELL+1
+       LDA   #$FB
+       STA   SPBELL
+O@     PULS  D,CC,PC
+
+
+FIFO
+       BSZ   285
+GSTAK  FDB   0
+       FDB   0
+BSTARS BSZ   56
+       FDB   0
+       FDB   0
+       FDB   0
+       FDB   0
+       BSZ   128
+SSTAR  FCB   0
+       BSZ   128
+       FCB   0
+       BSZ   128
+       FDB   0
+TRNTBL FCB   0
+       BSZ   128
+       FDB   0
+PALIT  BSZ   18
+CLR3
+
+
+GRBLK  FDB   $3536
+       FDB   $3637
+       FDB   $3738
+       FDB   $3839
+       FDB   $393A
+       FDB   $3A3B
+       FDB   $3B35
+       FDB   $3535
+
+STBLK  FDB   $3536
+       FDB   $3637
+       FDB   $3738
+       FDB   $3839
+       FDB   $393A
+       FDB   $3A3B
+       FDB   $3B35
+       FDB   0
+
+
+FR1 FCB 54,36,38,32,55,62,37,0
+FR2 FCB 55,32,33,36,40,41,9,8,1
+    FCB 4,54,0
+FR3 FCB 8,51,36,1,2,4,36,32,38
+    FCB 39,11,13,15,36,38,39,54
+    FCB 55,44,45,40,47,37,36,63
+    FCB 62,0
+
+FLSH   FCB   54,36,52,32
+       FCB   44,52,45,40
+       FCB   12,32,4,32
+       FCB   32,32,5,5
+       FCB   4,4,4,4,4
+FLSHE  FCB   0
+
+SONGTAB1
+ FDB LOAN,BUMBLE,STORM,0
+ FDB SONGTAB2
+SONGTAB2
+ FDB BUMBLE,LOAN,STORM,0
+ FDB SONGTAB1
+
+*SHOOT
+ESHT   LDA   ATTACKER
+       STA   ATTACKING
+       CLR   ATTACKER
+       LDA   ONBONUS
+       BNE   ?RTS
+       LDA   ONMENU
+       BNE   ?RTS
+       JSR   ARB
+       SUBD  SHOOTIT
+       BHS   A@
+       NEWLINK (?RTS)
+       CLR   STATUS,Y
+       LDD   #EXSHT
+       STD   TRKDRV,Y
+*ATTACK
+A@     LDA   ALLBUGSINSQUAD
+       STA   BUGSINSQUAD
+       BNE   NALL@
+       LDA   ATTACKING
+       CMPA  #8
+       BHI   B@
+       LDA   OBNUM
+       CMPA  #5
+       BLO   ATK@
+       BSR   ARB
+       SUBD  ATTACKIT
+       BHS   B@
+ATK@   NEWLINK (?RTS)
+       CLR   STATUS,Y
+       LDD   #ATTACK
+       STD   TRKDRV,Y
+B@     LDA   OBNUM
+       CMPA  #4
+       BLS   ?RTS
+       BSR   ARB
+       SUBD  GASBUGIT
+       BHS   ?RTS
+       LDB   SQAVT
+       CLRA
+       SUBD  SEXS
+       BLO  ?RTS
+       NEWLINKA (?RTS)
+       CLR   STATUS,Y
+       LDD   #CLBUG
+       STD   TRKDRV,Y
+       RTS
+NALL@  CLR   ALLBUGSINSQUAD
+       RTS
+
+ARB    LEAS  -2,S
+       LDA   RSEED
+       ADDA  #107
+       STA   RSEED
+       LDA   SEED+1
+       LDB   #$55
+       MUL
+       STD   ,S
+       LDA   SEED+1
+       LDB   #$62
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   SEED
+       LDB   #$55
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   #13849
+       ADDD  ,S++
+       STD   SEED
+       ADDD  RNDTIMER
+       ADDA  RSEED
+       RTS
+
+DZERO  PSHS  Y,D,X,U
+       LEAY  +256,Y
+       LDD   #$000F
+       STD   ,Y
+       LDU   #$FFF0
+       STU   +2,Y
+       LEAY  +256,Y
+       LDB   #$FF
+       STD   ,Y
+       STD   +2,Y
+       LEAY  +256,Y
+       LDX   #$00FF
+       STX   ,Y
+       LDA   #$0F
+       STD   +2,Y
+       LEAY  +256,Y
+       STX   ,Y
+       LDA   #$FF
+       STD   +2,Y
+       LEAY  +256,Y
+       LDA   #$F0
+       STX   ,Y
+       STD   +2,Y
+       LEAY  +256,Y
+       STX   ,Y
+       STX   +2,Y
+       LEAY  +256,Y
+       STU   +2,Y
+       LDU   #$000F
+       STU   ,Y
+       PULS  X,Y,U,D,PC
+
+SETCOL JSR   COPY
+       FDB   PALIT
+       FCB   16
+       FCB   0,54,52,34
+       FCB   10,25,59 *BLUE
+       FCB   32,36,60 *RED
+       FCB   2,16,18  *GREEN
+       FCB   54,53,63
+       RTS
+
+MENUCOLORS
+*A=YELLOW, B=RED, F=WHITE
+       LDD   #$3624
+       STD   PALIT+$A
+       RTS
+
+GAME   ORCC  #$50
+*Y,U = LOW SCORE
+       LDA   #$3F
+       LEAS  GSTAK,PCR
+       STA   $FFA7
+       LDS   #GSTAK
+       LDA   #$E0
+       TFR   A,DP
+       JMP   A@
+A@     STY   LOWSCR
+       STU   LOWSCR+2
+       STB   SQDON
+       JSR   VSYNC
+       LDX   #$FFB0
+       LDA   #16
+C@     CLR   ,X+
+       DECA
+       BNE   C@
+       LDA   #%01111110
+       STA   $FF99
+       LDB   #$08  *IRQ *$20
+       STB   $FF92
+       LDB   #$20  *FIRQ *$08
+       STB   $FF93
+       CLR   $FF9A
+*      LDD   #$D000 *$68000
+       LDD   #$D620 *D620
+       STD   $FF9D
+       LDA   #24+128
+       STA   $FF9F
+       STA   SCRAT
+***CLEAR $79000-$6A000
+       LDD   #$3C08
+       LDU   #0
+       LDX   #$1200
+       BRA   E@
+D@     LDX   #$2000
+E@     STA   $FFA0
+F@     STU   ,--X
+       CMPX  #0
+       BHI   F@
+       DECA
+       DECB
+       BNE   D@
+***CLEAR VARS
+       LDX   #CLR1
+I@     STB   ,X+
+       CMPX  #CLR2
+       BNE   I@
+       LDX   #FIFO
+J@     STB   ,X+
+       CMPX  #CLR3
+       BNE   J@
+       DO    WRITCS
+       FCB   CHMODE
+       FDB   256
+       FCB   CHCOL
+       FDB   $FF
+       FCB   GOTOXY
+       FDB   224*256+48
+ FCC "SCORE:000000  FUEL:",0
+       JSR   SETCOL
+       LDX   #FR1
+       STX   FIRE1
+       LDX   #FR2
+       STX   FIRE2
+       LDX   #FR3
+       STX   FIRE3
+       LDX   #FLSHE
+       STX   BCKGND
+       LDX   #SHAKEND
+       STX   SHAKER
+       LDA   #-9
+       STA   HLINE
+       LDA   #1
+       STA   MAYISHOOT
+       STA   SHLD
+       STA   NOGREEN
+       STA   STARSTOP
+       LDD   #4
+       STD   SSTBAS1
+       LDD   #2
+       STD   SSTP1
+       LDD   #$C200
+       STD   FXA1+1
+       LDD   #0
+       STA   FXP1+1
+       STA   OBNUM
+       STA   SQGO
+       STA   SQSYNC
+       STD   SCRSTK
+       STD   SCR
+       STA   SCR+2
+       STA   LSCR
+       STA   SQSYNC
+       STA   $FF20
+       STD   SEED
+       STA   RSEED
+       STA   BULLETSINAIR
+       STD   RNDTIMER
+       LDA   #130
+       STA   SHIELD
+       STA   RSHLD
+       LDD   #$E00+(FSYNC!.$FF)
+       STD   [$FFF8] *FIRQ
+       LDD   #$E00+(NOISE!.$FF)
+       STD   [$FFF6] *IRQ
+       LDD   #$3DC $3DC
+       STD   $FF94
+       LDD   #$8000
+       STD   SHIPOS
+       LDA   #$3E
+       STA   $FFA6
+       CLR   NTLEN
+       LDX   #SONGTAB1
+       LDA   PARAMT
+       BPL   SP@
+       LDX   #SONGTAB2
+SP@    LDU   ,X++
+       STX   SONGP
+       STU   SONGS
+       STU   NTON
+       LDU   #TRNTBL
+       CLRB
+K@     PSHS  B
+       TFR   B,A
+       ANDB  #$0F
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LDX   #0
+L@     PSHS  B
+       CMPA  ,S+
+       BEQ   M@
+       LEAX  +1,X
+       INCA
+       ANDA  #$0F
+       BRA   L@
+M@     LDA   ,S
+       CMPX  #0
+       BNE   N@
+       STB   A,U
+       BRA   P@
+N@     CMPX  #8
+       BLO   O@
+       INCB
+       SKIP1
+O@     DECB
+       ANDB  #$0F
+       STB   A,U
+P@     PULS  B
+       INCB
+       BNE   K@
+       JSR   BELL
+       JSR   VSYNC
+       ANDCC #$AF
+       JMP   INITLIST
+*END OF INIT
+
+FRINI  JSR   FRPAL
+       LDA   #%01111111
+       STA   $FF02
+       LDA   $FF00
+       ANDA  #%00001000 *BREAK
+       BEQ   PAUSE
+A@     JSR   FRFUEL
+       RTS
+
+PAUSE  ORCC  #$50
+       LDA   $FF02
+S@     LDA   $FF03
+       BPL   S@
+     IFEQ  PAUSECLEAR
+       LDX   #$FFB0
+       LDD   #$000F
+D@     STA   ,X+
+       DECB
+       BNE   D@
+     ENDC
+       LDD   #$3835
+       STD   $FFA0
+       LDX   #PSGET
+       JSR   PSCOPY
+     IFEQ  PAUSECLEAR
+       DO    WRITCS
+       FCB   CHCOL
+       FDB   $00FF
+       FCB   GOTOXY
+       FDB   96*256+60+48
+ FCC "PAUSE MODE",0
+       JSR   SLOW
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   106*256+22+48
+ FCC 'PRESS FIRE BUTTON '
+ FCC 'TO CONTINUE',0
+       JSR   SLOW
+       DO    WRITCS
+       FCB   GOTOXY
+       FDB   116*256+38+48
+ FCC 'PRESS "BREAK" TO QUIT',0
+     ENDC
+       LDX   #PSOR
+       BSR   PSCOPY
+B@     LDB   #$FF
+       STB   $FF02
+       LDB   $FF00
+       ANDB  #%00000001
+       BEQ   C@ *BUTTON PRESSED
+*BREAK TEST
+       LDB   #%11111011
+       STB   $FF02
+       LDB   $FF00
+       ANDB  #%01000000
+       BNE   B@
+*BREAK HIT
+       LDA   #$3C
+       STA   $FFA5
+       JMP   $B209
+*UNPAUSE
+C@     STB   BUTGO
+       JSR   VSYNC
+       ANDCC #%11101111
+       JSR   VSYNC
+       BSR   SLOW
+       LDY   #70
+       LDX   #PSPUT
+       LDU   #$2000
+       BSR   PSBLCK
+       BSR   SLOW
+       BSR   PSBLCK
+       BSR   SLOW
+       BSR   PSBLCK
+       BSR   SLOW
+       LDA   $FF02
+A@     LDA   $FF03
+       BPL   A@
+       ANDCC #$AF
+       JSR   FRPAL
+       JMP   FRINI
+
+SLOW   LDB   #30
+A@     JSR   VSYNC
+       DECB
+       BNE   A@
+       RTS
+
+PSCOPY LDU   #$2000
+       LDY   #70
+       LDA   #3
+A@     BSR   PSBLCK
+       DECA
+       BNE   A@
+       RTS
+PSBLCK LDB   #10
+C@     BSR   PSLINE
+       LEAY  +136,Y
+       DECB
+       BNE   C@
+       RTS
+PSLINE PSHS  D
+       LDA   #120
+D@     JSR   ,X *EXEC COMMAND
+       DECA
+       BNE   D@
+       PULS  D,PC
+PSGET  LDB   ,Y+
+       STB   ,U+
+       RTS
+PSOR   LDB   ,Y
+       ORB   ,U+
+       STB   ,Y+
+       RTS
+PSPUT  LDB   ,U+
+       STB   ,Y+
+       RTS
+
+*PALETTES ARE SET BY INTERUPT.
+*THIS ONLY SELECTS THE COLORS
+*FOR THE NEXT INTERUPT.
+FRPAL  JSR   ESHT
+       LDB   FRGO
+       BEQ   E@ *NO TIME FOR SCR
+       JSR   FRSCR
+       LDB   SCRSTK
+       BEQ   D@
+       LDB   FRGO
+       BEQ   E@
+       JSR   FRSCR
+       LDB   FRGO
+       BEQ   E@
+       JSR   FRSCR
+       LDB   FRGO
+       BEQ   E@
+       JSR   FRSCR
+*WAIT FOR FRAME SYNC
+D@     LDB   FRGO
+       BNE   D@
+E@     LDA   #1 *RESET FRAME
+       STA   FRGO
+       LDA   OFRAME
+       BMI   NOFIRE@
+       LDX   #0
+FIRE1  EQU   *-2
+       LDA   ,X+
+       BNE   A@
+       LDX   #FR1
+       LDA   ,X+
+A@     STA   PALIT+1
+       STX   FIRE1
+       LDX   #0
+FIRE2  EQU   *-2
+       LDA   ,X+
+       BNE   B@
+       LDX   #FR2
+       LDA   ,X+
+B@     STA   PALIT+2
+       STX   FIRE2
+       LDX   #0
+FIRE3  EQU   *-2
+       LDA   ,X+
+       BNE   C@
+       LDX   #FR3
+       LDA   ,X+
+C@     STA   PALIT+3
+       STX   FIRE3
+*DO SHAKE
+NOFIRE@ LDX   SHAKER
+       LDA   ,X+
+       BEQ   I@
+       STX   SHAKER
+       STA   SCRAT
+*DO BACKGROUND
+I@     LDX   BCKGND
+       LDA   ,X+
+       BEQ   F@
+       STX   BCKGND
+F@     STA   PALIT
+       STA   BRDR
+
+*DO BELL SOUND
+       LDA   LSBELL+1
+       SUBA  #8
+       BNE   A@
+       LDD   #$E00+(GOBELL!.$FF)
+       STD   SPBELL
+       BRA   B@
+A@     STA   LSBELL+1
+B@
+
+
+       LDA   SHIELD
+       CMPA  RSHLD
+       BHI   G@
+       BNE   L@
+       STA   RSHLD
+       BRA   Z@
+L@     STA   RSHLD
+       LDX   #FLSH
+       STX   BCKGND
+       JSR   KABOOM
+*DO SHAKE & CRASH (IF OK)
+       LDA   CANSHAKE
+       BEQ   Z@
+       LDX   #SHAKE
+       STX   SHAKER
+       BRA   Z@
+*FUEL GOES UP - MAKE DING SOUND
+G@     STA   RSHLD
+       JSR   BELL
+Z@
+******************
+*DO FIRE SOUND
+       LDA   FXP1+1
+       BEQ   OUT@
+       BMI   A@
+       SUBA  #4
+       SKIP1
+A@     INCA
+       STA   FXP1+1
+OUT@
+
+*EXPLOSION, PCH (1-2) = PITCHES
+       LDA   EXPLEN
+       BEQ   MU@
+       LDB   #$3D
+       STB   $FFA4
+       CLR   NTLEN
+       CMPA  #$85
+       BNE   WN@
+       STA   FXP1+1
+WN@    DEC   EXPLEN
+       LDU   #PITCH
+       LDX   #NOTES
+*DO NOTE 3
+       CMPA  #224
+       BLS   N1@
+       LDY   $1F*2,U
+       STY   ,X++
+       LDB   #$C6 *RNDISH
+       STB   ,X+
+*DO NOTE 1
+N1@    CMPA  #30
+       BLS   N2@
+       LDD   PCH1
+       ADDD  #$3F
+       STD   PCH1
+       LSLA
+       LDD   A,U
+       STD   ,X++
+       LDA   #$C2 *NORMAL
+       STA   ,X+
+*DO NOTE 2
+N2@    LDD   PCH2
+       ADDD  #$FFC1
+       STD   PCH2
+       LSLA
+       LDD   A,U
+       STD   ,X++
+       LDA   #$C6 *RNDISH
+       STA   ,X+
+       CLR   ,X+
+       CLR   ,X
+       LDX   #NOTES
+       JMP   ENSND
+*MUSIC
+MU@    LDA   NTLEN
+       BPL   ?RTS
+       LDA   #$3D
+       STA   $FFA4
+A@     LDX   NTON
+       LDA   ,X
+       BNE   B@
+       LDX   SONGS
+       LDA   ,X
+B@     LSRA
+       LSRA
+       STA   NTLEN
+       LDA   ,X+
+       LDY   #PITCH
+       LDU   #NOTES
+*Y ^ NOTE PITCHES
+*X ^ SONGS
+*U ^ NOTES
+       ANDA  #3
+       BEQ   P@
+       STA   ,-S
+C@     LDB   ,X+
+       CLRA
+       LSLB
+       ROLA
+       LSLB
+       ROLA
+       LSRB
+       ADDA  #$C2
+       STA   +2,U
+       LDD   B,Y
+       STD   ,U
+       LEAU  +3,U
+       DEC   ,S
+       BNE   C@
+       PULS  A
+P@     STX   NTON
+       LDD   #0
+       STD   ,U
+       LDX   #NOTES
+
+****************************
+
+*X ^ (PITCH, WAVE...)
+ENSND  ORCC  #$50
+       LDD   #$CCFB *LDD/ADDB
+
+*NOTE 1 IS ALWAYS AN LDD
+       STA   NOTE2
+       STA   NOTE3
+
+       STB   WAVE1
+       STB   WAVE2
+*WAVE 3 IS ALWAYS A LDB
+
+*DO NOTE 1
+       LDU   ,X++
+       STU   NOTE1+1
+       BEQ   N1E@
+       LDA   ,X+
+       STA   WAVE1+1
+*DO NOTE 2
+       LDU   ,X++
+       BNE   A@ *CONTINUE
+*NO NOTE IN NOTE 2
+N1E@   LDD   #$E00+(WAVE1!.$FF)
+       STD   NOTE2
+       LDB   #$F6 *LDB
+       STB   WAVE1
+       ANDCC #$AF
+       RTS
+A@     STU   NOTE2+1
+       LDA   ,X+
+       STA   WAVE2+1
+*DO NOTE 3
+       LDU   ,X++
+       BNE   B@ *CONTINUE
+*NO NOTE IN NOTE 3
+       LDD   #$E00+(WAVE2!.$FF)
+       STD   NOTE3
+       LDB   #$F6
+       STB   WAVE2
+       ANDCC #$AF
+       RTS
+B@     STU   NOTE3+1
+       LDA   ,X+
+       STA   WAVE3+1
+       ANDCC #$AF
+       RTS
+
+
+NOTES
+       BSZ   11
+
+
+FRSCR  LDD   #$3F3C *SWI & MENU
+       STD   $FFA4
+       LDD   SCRSTK
+X@     SUBD  #1
+       BCS   ?RTS
+       STD   SCRSTK
+       LDA   #1
+       ADDA  SCR+2
+       DAA
+       STA   SCR+2
+       BCC   Y@
+       LDA   #0
+       ADCA  SCR+1
+       DAA
+       STA   SCR+1
+       BCC   Y@
+       LDA   #0
+       ADCA  SCR
+       DAA
+       STA   SCR
+*FAST TEST
+Y@     LDY   #$A000+48+44
+       LDB   SCR+2
+       ANDB  #$0F
+       BEQ   B@
+       ADDB  #48
+       JSR   PR1CH
+       BRA   G@
+B@     JSR   DZERO
+       LDY   #$A000+48-4+44
+       LDB   SCR+2
+       ANDB  #$F0
+       BEQ   C@
+       LSRB
+       LSRB
+       LSRB
+       LSRB
+       ADDB  #48
+       JSR   PR1CH
+       BRA   G@
+C@     JSR   DZERO
+       LDY   #$A000+48-8+44
+       LDB   SCR+1
+       ANDB  #$0F
+       BEQ   D@
+       ADDB  #48
+       JSR   PR1CH
+       BRA   G@
+D@     JSR   DZERO
+       LDY   #$A000+48-12+44
+       LDB   SCR+1
+       ANDB  #$F0
+       BEQ   E@
+       LSRB
+       LSRB
+       LSRB
+       LSRB
+       ADDB  #48
+       JSR   PR1CH
+       BRA   G@
+E@     JSR   DZERO
+       LDY   #$A000+48-16+44
+       LDB   SCR
+       ANDB  #$0F
+       BEQ   F@
+       ADDB  #48
+       JSR   PR1CH
+       BRA   G@
+F@     JSR   DZERO
+       LDY   #$A000+48-20+44
+       LDB   SCR
+       LSRB
+       LSRB
+       LSRB
+       LSRB
+       ADDB  #48
+       JSR   PR1CH
+G@     RTS
+
+*DO SHIELD
+FRFUEL LDA   #$3C
+       STA   $FFA5
+       LDA   SHLD
+       CMPA  SHIELD
+       BEQ   I@
+       BLO   J@
+       DECA
+       SKIP1
+J@     INCA
+I@     STA   SHLD
+       LDX   #$A200+48+20*4
+       LSRA
+       LEAX  A,X
+       BCC   H@
+       LDA   #$FF
+       SKIP2
+H@     LDA   #$F0
+       CLRB
+       STD   ,X
+       STD   +2*256,X
+       STD   +4*256,X
+       LDA   SHLD
+       BNE   ?RTS
+       CLR   ,X
+       CLR   +2*256,X
+       CLR   +4*256,X
+       IFEQ  INVINCIBLE
+       JMP   SBLOW
+       ELSE
+       RTS
+       ENDC
+
+SHAKE
+ FCB 152,157,159,160,158,156
+ FCB 152,149,147,147,147,148
+ FCB 150,152,154,155,155,154
+ FCB 153,151,150,149,149,149
+ FCB 150,151,152,153,154,154
+ FCB 153,152,151,150,150,150
+ FCB 150,151,152,153,153,153
+ FCB 153,152,151,151,150,150
+ FCB 150,151,151,152,152,153
+ FCB 153,152,152,151,151,150
+ FCB 150,151,151,152
+SHAKEND
+ FCB 0

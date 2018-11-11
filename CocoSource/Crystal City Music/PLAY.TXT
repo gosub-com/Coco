@@ -1,0 +1,34 @@
+       ORG   $FF
+       FCB   0
+
+       ORG   $9A6D
+       CMPA  #'R
+       BNE   S@
+       LDB   $FF
+       BSR   $9AC0
+       STB   $FF
+       RTS
+S@     BRA   $9A8B
+ MSG *," MUST BE < $9A8B"
+
+
+
+       ORG   $9B32
+       JMP   TRANSPOSE
+
+       ORG   $FB00
+TRANSPOSE
+       LDA   $DE
+       LDB   ,S
+       ADDB  $FF
+       CMPB  #12
+       BLO   Z@
+A@     INCA
+       SUBB  #12
+       BCC   A@
+       ADDB  #12
+       DECA
+Z@     STB   ,S
+       CMPA  #1
+       JMP   $9B36
+

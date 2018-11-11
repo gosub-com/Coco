@@ -1,0 +1,324 @@
+*ENTRY:
+*  Y ^ PLACE TO STORE
+*  A= 0=DIRECT
+*     1=INHERENT
+*     2=EXTENDED
+*     3=INDEXED
+*     4=RELATIVE 1
+*     5=RELATIVE 2
+*     6=IMMED 1
+*     7=IMMED 2
+*     8-NOTHING
+*     9=PSH
+*    10=PUL
+*    11=EXG/TFR
+*  X= OPERAND
+*DP CONTAINS DP
+*PRNUM PRINTS NUMBERS
+
+T@     LBRA  DIRECT
+       NOP
+       RTS   *INHERENT
+       BSZ   3
+       LBRA  EXTENDED
+       NOP
+       LBRA  INDEXED
+       NOP
+       LBRA  RELATIVE1
+       NOP
+       LBRA  RELATIVE2
+       NOP
+       LBRA  IMMED1
+       NOP
+       LBRA  IMMED2
+       NOP
+       RTS
+       BSZ   3
+       LBRA  PSH
+       NOP
+       LBRA  PUL
+       NOP
+       LBRA  EXGR
+OPER   LEAU  T@,PCR
+       LSLA
+       LSLA
+       JMP   A,U
+
+DIRECT LDA   #'<
+       STA   ,Y+
+       LDA   DP
+       LDB   ,X+
+       LBRA  PRNUMU
+
+EXTENDED
+       LDA   #'>
+       STA   ,Y+
+       LDD   ,X++
+       LBRA  PRNUMU
+
+RELATIVE1
+       LDA   #'<
+       STA   ,Y+
+       LDA   ,X+
+       LEAU  A,X *X=PC
+       TFR   U,D
+       LBRA  PRNUMU
+
+RELATIVE2
+       LDA   #'>
+       STA   ,Y+
+       LDD   ,X++
+       LEAU  D,X *X=PC
+       TFR   U,D
+       LBRA  PRNUMU
+
+IMMED1
+       LDA   #'#
+       STA   ,Y+
+       LDB   ,X
+       CLRA
+       LBSR  PRNUMU
+       LDB   ,X+
+       CMPB  #32
+       BLO   ?RTS
+       CMPB  #$7E *TILDE
+       BHI   ?RTS
+       LDA   #32
+       STD   ,Y++
+       RTS
+
+IMMED2
+       LDA   #'#
+       STA   ,Y+
+       LDD   ,X
+       LBSR  PRNUMU
+       LDD   ,X++
+       CMPA  #32
+       BLO   ?RTS
+       CMPA  #$7E *TILDE
+       BHI   ?RTS
+       CMPB  #32
+       BLO   ?RTS
+       CMPB  #$7E *TILDE
+       BHI   ?RTS
+       STD   +1,Y
+       LDA   #32
+       STA   ,Y
+       LEAY  +3,Y
+       RTS
+
+REGSP  FCC "PCUSY X DPB A CC"
+REGSPP
+
+PSH    LDA   ,X+
+       PSHS  X
+       LEAU  REGSP,PCR
+       LDB   #8
+B@     LDX   ,U++
+       LSLA
+       BCC   A@
+       STX   ,Y++
+       PSHS  A
+       LDA   #32
+       STA   ,Y+
+       PULS  A
+A@     DECB
+       BNE   B@
+       PULS  X,PC
+
+PUL    LDA   ,X+
+       PSHS  X
+       LEAU  REGSPP,PCR
+       LDB   #8
+B@     LDX   ,--U
+       LSRA
+       BCC   A@
+       STX   ,Y++
+       PSHS  A
+       LDA   #32
+       STA   ,Y+
+       PULS  A
+A@     DECB
+       BNE   B@
+       PULS  X,PC
+
+
+REGST  FCC "D X Y U S PC????"
+       FCC "A B CCDP????????"
+
+EXGR   LEAU  REGST,PCR
+       LDA   ,X
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   EX@
+       LDD   #',*256+32
+       STD   ,Y++
+       LDA   ,X+
+       ANDA  #%00001111
+EX@    LSLA
+       LDD   A,U
+       STD   ,Y++
+       RTS
+
+IREGS  FCC   "XYUS"
+INDEXED
+       LEAU  IREGS,PCR
+       LDA   ,X
+       ROLA
+       ROLA
+       ROLA
+       ROLA
+       ANDA  #3
+       LDA   A,U
+       PSHS  A *REGISTER!
+       LDB   ,X+
+       BMI   A@
+*5 BIT OFFSET
+       LDU   #'<*256+'<
+       STU   ,Y++
+       LSLB
+       LSLB
+       LSLB
+       SEX
+       ASRB
+       ASRB
+       ASRB
+       LBSR  PRNUM
+       PULS  B
+       LDA   #',
+       STD   ,Y++
+       RTS
+*REGISTER AT ,S
+A@     BITB  #%00010000
+       BEQ   B@
+       LDA   #'[
+       STA   ,Y+
+       BSR   I@
+       LDA   #']
+       STA   ,Y+
+       PULS  A,PC
+B@     BSR   I@
+       PULS  A,PC
+*REGISTER AT +2,S
+*[] ALREADY DONE
+*B=OP CODE
+IND@   LBRA  I0@
+       LBRA  I1@
+       LBRA  I2@
+       LBRA  I3@
+       LBRA  I4@
+       LBRA  I5@
+       LBRA  I6@
+       LBRA  I7@
+       LBRA  I8@
+       LBRA  I9@
+       LBRA  IA@
+       LBRA  IB@
+       LBRA  IC@
+       LBRA  ID@
+       LBRA  IE@
+       LBRA  IF@
+I@     LEAU  IND@,PCR
+       ANDB  #%00001111
+       LDA   #3
+       MUL
+       JMP   B,U
+I0@    LDA   #',
+       LDB   +2,S
+       STD   ,Y++
+       LDA   #'+
+       STA   ,Y+
+       RTS
+I1@    LDA   #',
+       LDB   +2,S
+       STD   ,Y++
+       LDD   #'+*256+'+
+       STD   ,Y++
+       RTS
+I2@    LDD   #',*256+'-
+       STD   ,Y++
+       LDB   +2,S
+       STB   ,Y+
+       RTS
+I3@    LDD   #',*256+'-
+       STD   ,Y++
+       STB   ,Y+
+       LDB   +2,S
+       STB   ,Y+
+       RTS
+I4@    LDB   +2,S
+       LDA   #',
+       STD   ,Y++
+       RTS
+I5@    LDD   #'B*256+',
+       STD   ,Y++
+       LDB   +2,S
+       STB   ,Y+
+       RTS
+I6@    LDD   #'A*256+',
+       STD   ,Y++
+       LDB   +2,S
+       STB   ,Y+
+       RTS
+IE@
+IA@
+I7@    LDD   #',*256+'?
+       STD   ,Y++
+       STB   ,Y+
+       RTS
+I8@    LDA   #'<
+       STA   ,Y+
+       LDB   ,X+
+       SEX
+       JSR   PRNUM
+       LDA   #',
+       LDB   +2,S
+       STD   ,Y++
+       RTS
+I9@    LDA   #'>
+       STA   ,Y+
+       LDD   ,X++
+       JSR   PRNUM
+       LDA   #',
+       LDB   +2,S
+       STD   ,Y++
+       RTS
+IB@    LDD   #'D*256+',
+       STD   ,Y++
+       LDB   +2,S
+       STB   ,Y+
+       RTS
+IC@    LDA   #'<
+       STA   ,Y+
+       LDB   ,X+
+       SEX
+       JSR   PRNUM
+       LDA   #',
+       STA   ,Y+
+       LDD   #'PC
+       STD   ,Y++
+       RTS
+ID@    LDA   #'>
+       STA   ,Y+
+       LDD   ,X++
+       JSR   PRNUM
+       LDA   #',
+       STA   ,Y+
+       LDD   #'PC
+       STD   ,Y++
+       RTS
+IF@    LDA   #'>
+       STA   ,Y+
+       LDD   ,X++
+       JSR   PRNUM
+       LDD   #',0
+       STD   ,Y++
+       RTS
+
+
+
+
+
+

@@ -1,0 +1,787 @@
+ID     FDB   1000
+
+LSLD   MACR
+       LSLB
+       ROLA
+       ENDM
+
+NEGD   MACR
+       COMA
+       COMB
+       SUBD  #1
+       ENDM
+
+
+*ENTRY:D=MULTIPLIER
+*      X=MULTIPLIER
+*EXIT :(D:X)=PRODUCT!!
+MULT   PSHS  D,X
+       PSHS  D,X
+       LDA   3,S
+       LDB   1,S
+       MUL
+       STD   6,S
+       LDA   2,S
+       LDB   ,S
+       MUL
+       STD   4,S
+       LDA   3,S
+       LDB   ,S
+       MUL
+       ADDD  5,S
+       STD   5,S
+       LDA   4,S
+       ADCA  #0
+       STA   4,S
+       LDD   1,S
+       MUL
+       ADDD  5,S
+       STD   5,S
+       LDA   4,S
+       ADCA  #0
+       STA   4,S
+       PULS  X,D
+       PULS  X,D,PC
+
+*ENTRY: (D:X)=MULTIPLIER
+*     : (Y:U)=MULTIPLIER
+*EXIT : (D:X:Y:U)=PRODUCT!!!!
+BMULT  PSHS  X,Y,U,D
+       PSHS  X,Y,U,D
+       LDD   #0
+       STD   8,S
+       STD   10,S
+       STD   12,S
+       STD   14,S
+       LDD   6,S
+       BSR   MULT
+       STD   12,S
+       STX   14,S
+       LDD   ,S
+       LDX   4,S
+       BSR   MULT
+       STD   8,S
+       STX   10,S
+       LDD   ,S
+       LDX   6,S
+       BSR   MULT
+       STD   ,S
+       TFR   X,D
+       ADDD  12,S
+       STD   12,S
+       LDA   1,S
+       ADCA  11,S
+       STA   11,S
+       LDA   ,S
+       ADCA  10,S
+       STA   10,S
+       LDA   #0
+       ADCA  9,S
+       STA   9,S
+       LDA   #0
+       ADCA  8,S
+       STA   8,S
+       LDD   4,S
+       LDX   2,S
+       BSR   MULT
+       STD   ,S
+       TFR   X,D
+       ADDD  12,S
+       STD   12,S
+       LDA   1,S
+       ADCA  11,S
+       STA   11,S
+       LDA   ,S
+       ADCA  10,S
+       STA   10,S
+       LDA   #0
+       ADCA  9,S
+       STA   9,S
+       LDA   #0
+       ADCA  8,S
+       STA   8,S
+       PULS  X,Y,U,D
+       PULS  X,Y,U,D,PC
+
+NORMIT PSHS  D,X
+       LDU   #0
+       BSR   BMULT
+       CMPY  #$8000
+       BLO   A@
+       LEAX  +1,X
+A@     TFR   X,Y
+       PULS  D,X,PC
+
+*ENTRY/EXIT:D.X=D/X
+DIVIDE LEAS  -16,S
+       STD   ,S
+       STX   4,S
+       LDD   #1
+       STD   8,S
+       CLRB
+       STD   10,S
+       STD   6,S
+       STD   2,S
+       STD   12,S
+       STD   14,S
+A@     LSL   11,S
+       ROL   10,S
+       ROL   9,S
+       ROL   8,S
+       LSL   5,S
+       ROL   4,S
+       BCC   A@
+       ROR   4,S
+       ROR   5,S
+       LSR   8,S
+       ROR   9,S
+       ROR   10,S
+       ROR   11,S
+B@     LDD   4,S
+       CMPD  ,S
+       BHI   D@
+       BLO   C@
+       LDD   6,S
+       CMPD  2,S
+       BHI   D@
+C@     LDD   2,S
+       SUBD  6,S
+       STD   2,S
+       LDD   ,S
+       SBCB  #0
+       SBCA  #0
+       SUBD  4,S
+       STD   ,S
+       LDD   12,S
+       ORA   8,S
+       ORB   9,S
+       STD   12,S
+       LDD   14,S
+       ORA   10,S
+       ORB   11,S
+       STD   14,S
+D@     LSR   4,S
+       ROR   5,S
+       ROR   6,S
+       ROR   7,S
+       LSR   8,S
+       ROR   9,S
+       ROR   10,S
+       ROR   11,S
+       BCC   B@
+       LEAS  +12,S
+       PULS  D,X,PC
+
+FINDEDGE MACR
+A@     BITA  ,U *W FOR HILL
+       BNE   A@
+B@     BITA  ,U *W FOR HOLE
+       BEQ   B@
+       ENDM
+
+TIMEHOLE MACR
+       LDX   #0
+A@     ABX         *TIME HOLE
+       BITA  ,U
+       BNE   A@
+       ENDM
+
+TIMEDISK MACR
+       LDX   #0
+A@     ABX
+       BITA  ,U
+       BEQ   A@
+       ENDM
+
+*X ^ CALLED FUNCTION
+*Y ^ PLACE TO STORE DATA
+*    MUST BE 12 BYTES
+*B=0 FOR OK, OTHERWISE, NOT OK
+DTIME  PSHS  X,U,A,CC
+       ORCC  #$50
+
+       LDA   #8
+       PSHS  A
+
+       LDU   #$63CD
+       LEAU  +$9B7B,U *U=$FF48
+       LDD   #$0201
+
+A@     FINDEDGE
+       TIMEHOLE
+       CMPX  #600
+       BHI   G@    *BIG HOLE?
+       DEC   ,S
+       BNE   A@
+*NO BIG HOLE FOUND - BACKUP
+Z@     LEAS  +1,S
+       LDB   #255
+       PULS  X,U,A,CC,PC
+*BIG HOLE FOUND, FIND SMALL HOLE
+G@     DEC   ,S
+       BEQ   Z@
+       FINDEDGE
+       TIMEHOLE
+       CMPX  #600
+       BHS   G@
+S@     STX   +10,Y
+
+       TIMEDISK
+       STX   8,Y
+
+       TIMEHOLE
+       STX   6,Y
+
+       TIMEDISK
+       STX   4,Y
+
+       TIMEHOLE
+       STX   2,Y
+
+       TIMEDISK
+       STX   ,Y
+
+       LEAS  +1,S
+       CLRB
+       PULS  X,U,A,CC,PC
+
+
+*X ^ CALLED FUNCTION
+*Y ^ DISK DATA - 12 BYTES
+*U ^ ANSWER
+DTIMEM LDD   ,Y
+       LSLD
+       ADDD  2,Y
+       ADDD  10,Y
+       STD   ,U
+
+       LDD   4,Y
+       LSLD
+       ADDD  2,Y
+       ADDD  6,Y
+       STD   2,U
+
+       LDD   8,Y
+       LSLD
+       ADDD  6,Y
+       ADDD  10,Y
+       STD   4,U
+
+       LDD   ,U
+       ADDD  2,U
+       ADDD  4,U
+
+       RTS
+
+*ENTRY: X=FUNCTION CALLED
+*          B=0 DO NOTHING
+*          B=$FF BACKUP
+*          ANYTHING ELSE = FAIL
+GETID
+DSKTME PSHS  X
+       LEAS  -6,S
+       LEAU  ,S
+       LEAS  -12,S
+       LEAY  ,S
+       LBSR  DTIME
+       TSTB
+       BEQ   A@
+       JSR   PRINT
+ FCC "THIS IS A BACKUP!!!",13,0
+       LEAS  +6+12,S
+       LDD   #0
+       PULS  X,PC
+A@     BSR   DTIMEM
+       LEAS  +12,S
+*,U=DATA - ,S=DATA - D=TOTAL
+       TFR   D,X
+       LDD   #$FFFF
+       LBSR  DIVIDE
+       LDY   ,S
+       LBSR  NORMIT
+       STY   DISKID1
+       LDY   +2,S
+       LBSR  NORMIT
+       STY   DISKID2
+       LDY   +4,S
+       LBSR  NORMIT
+       STY   DISKID3
+*,S=FINAL DISK DATA
+       LDX   +6,S
+       LEAY  ,S
+       LEAS  -6,S
+       LEAU  ,S
+       LEAS  +12,S
+       PSHS  X,Y,U,D
+       LDD   DISKID1
+       BSR   PRHEXD
+       BSR   SPACE
+       LDD   DISKID2
+       BSR   PRHEXD
+       BSR   SPACE
+       LDD   DISKID3
+       BSR   PRHEXD
+       LDA   #13
+       JSR   [$A002]
+       PULS  X,Y,U,D
+       PULS  X,PC
+
+SPACE  LDA   #32
+       JSR   [$A002]
+       RTS
+
+PRHEXD
+       BSR   PRHEXA
+       TFR   B,A
+
+PRHEXA PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   PRHEXDIGIT
+       PULS  A
+       ANDA  #$0F
+
+PRHEXDIGIT
+       CMPA  #9
+       BHI   A@
+       ADDA  #'0
+       JSR   [$A002]
+       RTS
+A@     ADDA  #-10+'A
+       JSR   [$A002]
+       RTS
+
+CRCNUM BSZ   3
+OLDADD FDB   0
+CRCU   FDB   0
+CRCB   FDB   0
+PROGRAMLENGTH FDB 0
+SECT   BSZ   257
+DISKID
+DISKID1      FDB 0
+DISKID2      FDB 0
+DISKID3      FDB 0
+
+PROGNAM FCB 16
+ FCC "ZENIX   BIN"
+ FCB 2,0,0,0,255
+
+CANICRC FCB  0
+
+BLT    CMPX  #$4000
+       BLO   ?RTS
+       LEAX  -$2000,X
+       INCB
+       STB   $FFA1
+       INCB
+       STB   $FFA2
+       DECB
+       BRA   BLT
+
+GROUT
+ FCB 1,3,5,7,9
+ FCB 2,4,6,8,0
+
+*X ^ BUFFER
+*$EC = TRACK
+WRGRAN PSHS  X,Y,U,D
+       LEAX  -256,X
+       LDY   #GROUT
+       CLRB
+       BRA   E@
+A@     STA   $ED *SECTOR
+       LEAU  D,X
+       STU   $EE
+       JSR   [$C004]
+       TST   $F0
+       LBNE  DERR
+E@     LDA   ,Y+
+       BNE   A@
+       PULS  X,Y,U,D,PC
+
+RAND   LEAS  -2,S
+       LDA   ID+1
+       LDB   #$55
+       MUL
+       STD   ,S
+       LDA   ID+1
+       LDB   #$62
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDA   ID
+       LDB   #$55
+       MUL
+       ADDB  ,S
+       STB   ,S
+       LDD   #13849
+       ADDD  ,S++
+       STD   ID
+       RTS
+
+*EXTRY:
+* A = BYTE TO CRC
+* U ^ CRC
+*PRESERVED:X,Y,U
+* A IS ADDED TO THE CRC AT U
+CRCA   PSHS  D
+       EORA  ,U
+       PSHS  A
+       LDD   1,U
+       STD   ,U
+       CLRA
+       LDB   ,S
+       LSLB
+       ROLA
+       EORA  1,U
+       STD   1,U
+       CLRB
+       LDA   ,S
+       LSRA
+       RORB
+       LSRA
+       RORB
+       EORA  1,U
+       EORB  2,U
+       STD   1,U
+       LDA   ,S
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       EORA  ,S+
+       BPL   E@
+       LDD   #$8021
+       EORA  ,U
+       STA   ,U
+       EORB  2,U
+       STB   2,U
+E@     PULS  D,PC
+
+PRINT  PSHS  X,A
+       LDX   +3,S
+       LDA   ,X+
+A@     JSR   [$A002]
+       LDA   ,X+
+       BNE   A@
+       STX   +3,S
+       PULS  X,A,PC
+
+ENCODELEN    FDB 0
+ENCODEBLOCKS FCB 0
+
+EXEC   CLR   65497
+       CLR   $6F
+       JSR   PRINT
+ FCC "COPYING ZENIX "
+ FCC "INTO MEMORY",13,0
+       LDA   #1
+       STA   $6F
+       LDB   #$20
+B@     STB   $FFA1
+       LDX   #$2000
+A@     JSR   $C5C4
+       STA   ,X+
+       CMPX  #$4000
+       BLO   A@
+       INCB
+       CMPB  #$29
+       BLO   B@
+       CLR   $6F
+*ZENIX IS LOADED
+*MUST MODIFY ACCORDING TO
+*DISK ID
+       JSR   PRINT
+ FCC "READING DISK ID",13,0
+
+       PSHS  X,Y,U,D
+       CLR   $EA
+       LDA   #2
+       STA   $EB
+       JSR   [$C004]
+       ORCC  #$50
+       CLR   65496
+       LDX   #0
+A@     LEAX  -1,X
+       BNE   A@
+       JSR   GETID
+       CLR   65497
+       PULS  X,Y,U,D
+
+       LDB   #$1F
+       LDX   #$4000+2304
+       JSR   BLT
+       PSHS  B
+       LDD   ID
+       STD   $2000+5
+*X ^ FIRST GRAN -
+*SKIP ORG'S TIL
+* ORG $FE00-2, FDB $7FE0 FOUND
+O@     LDB   ,S
+       JSR   BLT
+       STB   ,S
+       LDA   ,X+
+       BEQ   B@
+       JSR   PRINT
+ FCC "ERROR1 - HUNG",13,0
+LOOP@  BRA   LOOP@
+B@     LDD   ,X++ *LENGTH
+       LDU   ,X++ *ADDRESS
+       CMPU  OLDADD
+       BNE   S@
+*ADDRESSES MATCH, NORMAL ORG
+N@     LEAX  D,X *X ^ NEXT ORG
+       LEAU  D,U *U ^ NEXT ADDR
+       STU   OLDADD
+       BRA   O@
+*SPECIAL ORG
+S@     LDY   ,X
+       CMPY  #$7FE0
+       BNE   N@ *SKIP THIS ONE
+       CMPU  #$FE00-2
+       BNE   N@
+*SPECIAL ORG FOUND!
+*CRC GOES HERE.
+       JSR   PRINT
+ FCC "CRCING ZENIX",13,0
+
+       CLR   CANICRC
+       LEAX  -5,X  *X ^ ORG
+       LEAU  +5+2,X *U ^ CRC
+       STU   CRCU
+       LDB   ,S
+       STB   CRCB
+       INCB
+       STB   CRCB+1
+       LEAX  +1,X
+       LDY   ,X++ *Y = LENGTH
+       LDD   ,X++ *D = ADDRESS
+       LEAU  ,Y
+       LEAU  D,U *U = END ADDR
+       STU   OLDADD
+       LEAX  +7,X *SKIP CRC/GRAN
+       LEAY  -7,Y *Y=LENGTH
+*CRC PROGRAM TIL END
+       LDD   #$FFFF
+       STD   CRCNUM
+       STB   CRCNUM+2
+A@     CMPX  #$6000
+SHIT@  BHS   SHIT@
+       LDB   ,S
+       JSR   BLT
+       STB   ,S
+       LDU   #CRCNUM
+       CMPY  #0
+       BEQ   NL@
+B@     LDD   ,X+
+       CMPD  #$11AC
+       BNE   CRC@
+*TEST FOR CMPS $XXXX,U
+       PSHS  X,Y,U,D
+       LDD   +1,X
+       CMPD  #$C9CD
+       BNE   CR@
+       JSR   PRINT
+       FCC   "X",0
+       LDU   #DISKID
+       LDA   +3,X
+       LDA   A,U
+       STA   +3,X
+CR@    PULS  X,Y,U,D
+CRC@   LDB   CANICRC
+       BNE   NCRC@
+       JSR   CRCA
+NCRC@  LEAY  -1,Y
+       BNE   B@
+NL@    LDA   ,X+
+       BEQ   C@
+*DONE
+       JSR   PRINT
+       FCB   13,0
+       BRA   NEXT@
+C@     LDY   ,X++ *Y=LENGTH
+       LDU   ,X++ *U=ADDRESS
+       CMPU  OLDADD
+       BNE   D@
+N@     TFR   Y,D
+       LEAU  D,U *END ADDRESS
+       STU   OLDADD
+       BRA   A@
+*NEW ADDRESS
+D@     LEAY  -2,Y
+       LEAU  +2,U
+       LDD   ,X++
+       BNE   N@
+       COM   CANICRC
+       LDB   ,S
+       JSR   BLT
+       STB   ,S
+       STX   ENCODELEN
+       STB   ENCODEBLOCKS
+       JSR   PRINT
+       FCB   13
+ FCC "STOPPED CRCING",13,0
+       BRA   N@
+NEXT@
+
+       LEAX  +8,X
+       PULS  B
+       JSR   BLT
+       TFR   B,A
+*A=# OF BLOCKS TO WRITE
+       SUBA  #$20
+       LDB   #32
+       MUL
+       EXG   X,D
+*X=# OF SECTORS
+       SUBD  #$2000
+*D=WHAT BYTE TO END ON
+       TFR   A,B *B=SECTOR
+       CLRA
+       INCB
+       LEAX  D,X
+*X=# OF SECTORS TO WRITE
+       LDD   CRCB
+       STD   $FFA1
+       LDU   CRCU
+       LDD   CRCNUM
+       STD   ,U++
+       LDA   CRCNUM+2
+       STA   ,U+
+
+*CRC IS IN ZENIX
+*LENGTH OF PROG IN X
+       PSHS  X,Y,U,D
+
+*CALCULATE ENCODE LENGTH
+       LDA   ENCODEBLOCKS
+       SUBA  #$20
+       LDB   #32
+       MUL
+       TFR   D,X
+       LDD   ENCODELEN
+       SUBA  #$20
+       INCA
+       LEAX  A,X
+       LEAX  -9,X * -1 GRAN
+       PSHS  X
+
+       JSR   PRINT
+ FCC "ENCODING ZENIX",13,0
+       LDX   #$4000+2304
+       LDB   #$1F
+       PSHS  B
+A@     LDB   ,S
+       JSR   BLT
+       STB   ,S
+       JSR   RAND
+       LDY   #128
+       LDA   ID
+B@     EORA  ,X
+       LDB   ,X
+       STA   ,X+
+       EORB  ,X
+       LDA   ,X
+       STB   ,X+
+       LEAY  -1,Y
+       BNE   B@
+       LDY   +1,S
+       LEAY  -1,Y
+       STY   +1,S
+       BNE   A@
+
+       PULS  A,X
+
+*BUILD FAT TABLE
+       PULS  X,Y,U,D
+       LDD   #$80CF
+       LDU   #SECT
+       PSHS  A
+       LDA   #$FF
+A@     STD   ,U++
+       DEC   ,S
+       BNE   A@
+       PULS  A
+
+       LDD   #0
+       EXG   X,D
+*D=# OF SECTORS
+A@     LEAX  +1,X
+       SUBD  #9
+       BCC   A@
+*X=# OF GRANULES
+       EXG   X,D
+       EXG   A,B
+*A=# OF GRANULES
+       LDX   #SECT
+       CLRB
+       PSHS  A
+*MAKE FAT
+B@     ADDB  #2
+       STB   ,X++
+       DECA
+       BNE   B@
+       LEAX  -2,X
+       LDB   #$C9
+       STB   ,X
+       LDA   #3
+       STA   $EA
+       LDA   #2
+       STA   $EB
+       LDD   #$1102
+       STD   $EC
+       LDD   #SECT
+       STD   $EE
+       JSR   [$C004]
+       LDA   $F0
+       BEQ   C@
+DERR   JSR   PRINT
+       FCC   "IO ERROR",13,0
+D@     BRA   D@
+C@     INC   $ED *SECTOR=3
+       LDX   #SECT
+       LDD   #$FF00
+E@     STA   ,X+
+       DECB
+       BNE   E@
+       LDX   #SECT
+       LDU   #PROGNAM
+       LDB   ,U+
+F@     LDA   ,U+
+       STA   ,X+
+       DECB
+       BNE   F@
+       JSR   [$C004]
+       LDA   $F0
+       LBNE  DERR
+       CLR   $EC *TRACK=0
+       LDB   #$1F
+       LDX   #$4000
+G@     JSR   BLT
+       CLR   $ED *SECTOR=0
+       LDA   $EC
+       CMPA  #17
+       BNE   H@
+       INC   $EC
+H@     JSR   WRGRAN
+       INC   $EC
+       LEAX  +2304,X
+       DEC   ,S
+       BNE   G@
+       PULS  A,PC
+
+ MSG "END @",*
+
+
+
+
+       END   EXEC

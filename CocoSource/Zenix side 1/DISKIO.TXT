@@ -1,0 +1,796 @@
+       ORG   $2800
+*THIS IS THE DISK SYSTEM
+       LBRA  DISKINIT
+       LBRA  RESET
+       LBRA  DISKREAD
+       LBRA  DISKWRITE
+       LBRA  DISKDEINIT
+       LBRA  CRC
+       LBRA  COPYPROTECT
+       LBRA  LOADSCORES
+       LBRA  SAVESCORES
+       LBRA  LOADPLANET
+
+BUFFER1 BSZ 256
+BUFFER2 BSZ 256
+
+*ENTRY:
+* U ^ CRC
+* X ^ BYTES TO CRC
+* Y = # OF BYTES TO CRC
+*ALL REGISTERS PRESERVED
+* THE CRC AT U IS MODIFIED
+CRC    PSHS  D,X,Y
+A@     LDA   ,X+
+*CRC BEGIN
+*ENTRY:
+* A = BYTE TO CRC
+* U ^ CRC
+*PRESERVED:X,Y,U
+* A IS ADDED TO THE CRC AT U
+CRCA   EORA  ,U
+       PSHS  A
+       LDD   1,U
+       STD   ,U
+       CLRA
+       LDB   ,S
+       LSLB
+       ROLA
+       EORA  1,U
+       STD   1,U
+       CLRB
+       LDA   ,S
+       LSRA
+       RORB
+       LSRA
+       RORB
+       EORA  1,U
+       EORB  2,U
+       STD   1,U
+       LDA   ,S
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       EORA  ,S
+       STA   ,S
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       EORA  ,S+
+       BPL   E@
+       LDD   #$8021
+       EORA  ,U
+       STA   ,U
+       EORB  2,U
+       STB   2,U
+E@
+*CRC END
+       CMPX  ,S
+       BLO   A@
+R@     PULS  D,Y,X,PC
+
+
+
+DRVON  FCB   0
+DSKDRV FCB   0
+DSKTRK FCB   0
+DSKSEC FCB   0
+DSKBUF FDB   0
+DSKSTA FCB   0
+SLOW   FCB   0
+RAMIM  FCB   0
+RW     FCB   0
+HEAD   FCB   $FF
+NMIGOTO FDB  0
+NMIOK  FCB   0
+
+*ENTRY: A=TRACK
+*       B=SECTOR
+*       U=BUFFER
+*EXIT:  BNE ERROR
+DISKREAD
+       PSHS  X,Y,U,D
+       CLR   65496
+       STD   DSKTRK
+       STU   DSKBUF
+       LDU   #READ
+       BSR   DOIT
+       PULS  X,Y,U,D,PC
+DISKWRITE
+       PSHS  X,Y,U,D
+       CLR   65496
+       STD   DSKTRK
+       STU   DSKBUF
+       LDU   #WRITE
+       BSR   DOIT
+       PULS  X,Y,U,D,PC
+
+*THIS CALLS THE FUNCTION
+*TWICE, THEN RESETS THE HEAD,
+*AND TRIES AGAIN.
+DOIT   PSHS  U
+       JSR   [,S]
+       LDA   DSKSTA
+       BEQ   O@
+       ANDA  #%01000000
+       BNE   O@ *WP ERROR
+       JSR   [,S]
+       LDA   DSKSTA
+       BEQ   O@
+       LDB   #5
+       PSHS  B
+A@     JSR   RESET
+       JSR   [+1,S]
+       LDA   DSKSTA
+       BEQ   E@
+       DEC   ,S
+       BNE   A@
+       LDA   #1
+E@     PULS  B
+O@     PULS  U,PC
+
+DRVGO
+       PSHS  X,Y,U,D
+       CLR   65496
+       LDA   #1+8+$20
+       LDB   DSKTRK
+       CMPB  #22
+       BLO   C@
+       ORA   #$10
+C@     STA   RAMIM
+       STA   $FF40
+       CLR   DSKSTA
+       EXG   A,A
+       EXG   A,A
+       BSR   READY
+DSKRTS PULS  X,Y,U,D,PC
+
+DISKINIT
+       LDX   $FFFC
+       LDA   #$7E
+       STA   ,X
+       LDU   #NMISER
+       STU   +1,X
+       BSR   DRVGO
+       RTS
+
+DEINIT PSHS  X,Y,U,D
+       BRA   D@
+DISKDEINIT
+       PSHS  X,Y,U,D
+       BSR   DISKINIT
+       LDA   HEAD
+       BPL   OK@
+       CLRA
+OK@    LDB   #8
+       LDU   #BUFFER1
+       JSR   DISKREAD
+D@     LDD   #$3B3B
+       STD   [$FFFC]
+       CLR   $FF40
+       CLR   65497
+       PULS  X,Y,U,D,PC
+
+RESET  CLR   65496
+       CLR   HEAD
+       LDA   #3
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       BSR   READY
+       BSR   WAIT
+       ANDA  #$10
+       STA   DSKSTA
+TRTS   RTS
+
+LWAIT  PSHS  X
+       LDX   #0
+A@     LEAX  -1,X
+       BNE   A@
+B@     LEAX  -1,X
+       BNE   B@
+       PULS  X,PC
+
+WAIT   LDY   #8750
+A@     LEAY  -1,Y
+       BNE   A@
+       RTS
+
+READY  LDY   #0
+R@     LEAY  -1,Y
+       BEQ   FRCINT
+       LDA   $FF48
+       BITA  #1
+       BNE   R@
+       RTS
+FRCINT LDA   #$D0
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       LDA   $FF48
+       LDA   #$80
+       STA   DSKSTA
+       RTS
+
+SEEK   LDB   HEAD
+       CMPB  DSKTRK
+       BNE   FSEEK
+       STB   $FF49
+       EXG   A,A
+       RTS
+
+FSEEK  PSHS  X,Y,U,D
+       LDB   HEAD
+       STB   $FF49
+       COM   HEAD
+       BNE   N@
+       BSR   RESET
+N@     LDA   DSKTRK
+       STA   $FF4B
+       STA   HEAD
+       LDA   #$17
+       STA   $FF48
+       EXG   A,A
+       EXG   A,A
+       BSR   READY
+       BNE   O@
+       BSR   WAIT
+       ANDA  #$18
+       STA   DSKSTA
+O@     PULS  X,Y,U,D,PC
+
+READ   LDA   #$80
+       FCB   $8C
+WRITE  LDA   #$A0
+       CLR   DSKSTA
+       PSHS  CC
+       PSHS  A *READ/WRITE
+       BSR   SEEK
+       LDA   DSKSTA
+       BEQ   ONTRK
+       PULS  A
+       PULS  CC,PC
+ONTRK  LDA   DSKSEC
+       STA   $FF4A
+       LDX   #NMIVEC
+       STX   NMIGOTO
+       LDX   DSKBUF
+       LDA   $FF48
+       LDA   RAMIM
+       ORA   #$80
+       PULS  B *READ/WRITE
+       LDY   #0
+       LDU   #$FF48
+       COM   NMIOK
+       ORCC  #$50
+       STB   $FF48
+       EXG   A,A
+       EXG   A,A
+       CMPB  #$80
+       BEQ   RSEC
+       BRA   WSEC
+
+JMPTBL FDB   RESET
+       FDB   TRTS
+       FDB   READ
+       FDB   WRITE
+
+NMISER LDA   NMIOK
+       BEQ   NMIOUT
+       LDX   NMIGOTO
+       STX   10,S
+       CLR   NMIOK
+NMIOUT RTI
+
+WSEC   LDB   #2
+A@     BITB  ,U
+       BNE   B@
+       LEAY  -1,Y
+       BNE   A@
+       CLR   NMIOK
+       PULS  CC
+       JMP   FRCINT
+B@     LDB   ,X+
+       STB   $FF4B
+       STA   $FF40
+       BRA   B@
+
+RSEC   LDB   #2
+A@     BITB  ,U
+       BNE   B@
+       LEAY  -1,Y
+       BNE   A@
+       CLR   NMIOK
+       PULS  CC
+       JMP   FRCINT
+B@     LDB   $FF4B
+       STB   ,X+
+       STA   $FF40
+       BRA   B@
+
+NMIVEC LDA   $FF48
+       PULS  CC
+       ANDA  #$7C
+       STA   DSKSTA
+       RTS
+
+
+LSLD   MACR
+       LSLB
+       ROLA
+       ENDM
+
+NEGD   MACR
+       COMA
+       COMB
+       SUBD  #1
+       ENDM
+
+
+
+FINDEDGE MACR
+A@     BITA  ,U *W FOR HILL
+       BNE   A@
+B@     BITA  ,U *W FOR HOLE
+       BEQ   B@
+       ENDM
+
+TIMEHOLE MACR
+       LDX   #0
+A@     ABX         *TIME HOLE
+       BITA  ,U
+       BNE   A@
+       ENDM
+
+TIMEDISK MACR
+       LDX   #0
+A@     ABX
+       BITA  ,U
+       BEQ   A@
+       ENDM
+
+COPYPROTECT
+       LEAU  ,X
+       LDA   #3
+       LDX   #$FFFF
+       PSHS  X,Y,U,A
+       JSR   DRVGO
+       JSR   [,U]
+A@     LDA   HEAD
+       BPL   OK@
+       CLRA
+OK@    LDB   #8
+       LDU   #BUFFER1
+       JSR   DISKREAD
+       LDB   #10
+       JSR   DISKREAD
+       LDU   #BUFFER2
+       JSR   DISKREAD
+       LDD   BUFFER1
+       SUBD  BUFFER2
+       BNE   B@
+C@     DEC   ,S
+       BNE   A@
+       CLRB
+       PULS  X,Y,U,A,PC *BACKUP
+B@     CMPD  #$0202
+       BNE   C@
+       PULS  X,Y,U,A
+       CLRA
+       TFR   D,X
+       JSR   [+10,U]
+       RTS
+
+
+SC     LDU   #$400
+SDCODE BSR   SCODE
+       BSR   SCODE
+SCODE  PSHS  X,U,D
+       LDB   #64
+       PSHS  B
+A@     LDD   ,U
+       EXG   A,B
+       EORA  ,S
+       EORA  #%10010011
+       EORB  ,S
+       EORB  #%01101101
+       STD   ,U++
+       LDD   ,U
+       EORA  #%00010101
+       EORB  ,S
+       COMB
+       STD   ,U++
+       DEC   ,S
+       BNE   A@
+       PULS  B
+       PULS  X,U,D,PC
+
+STUFFG BSZ   4
+STUFF  FCC   "STUFF$  DAT"
+SCRN   FCC   "SCORES  BIN"
+SCRV
+       FCB   $87,$CD,$2
+       FCC   "ZENIX"
+       FDB   $8F18
+
+REG.U  SET   6
+REG.Y  SET   4
+REG.X  SET   2
+REG.D  SET   0
+
+SAVESCORES
+       PSHS  X,Y,U,D
+       LDA   SCORETRACK
+       BMI   O@
+       LDB   #1
+       CLR   ,U
+       JSR   DISKREAD
+       BNE   O@
+       LEAX  ,U
+       LDY   #SCRV
+       LDA   #10
+       JSR   EQUIL
+       BNE   O@
+*SAVE SCORES!!!
+       LDU   REG.X,S
+       JSR   SCODE
+       LDA   SCORETRACK
+       LDB   #4
+       JSR   DISKWRITE
+       JSR   SDCODE
+       LEAX  ,U
+       LDU   REG.U,S
+       LDD   #$FFFF
+       STD   ,U
+       STA   +2,U
+       TFR   X,D
+       ADDD  #256
+       JSR   CRC
+       LEAX  +128,U
+       LDY   REG.D,S
+       LDB   #64
+A@     LDA   ,Y+
+       STA   ,X+
+       DECB
+       BNE   A@
+       LDA   SCORETRACK
+       LDB   #8
+       JSR   DISKWRITE
+O@     PULS  X,Y,U,D,PC
+
+
+*LOAD SCORES - CALLED ONCE
+*IF ON DISK: GET TRACK, AND
+*  LOAD IF OK
+*IF NOT ON DISK, PUT ON DISK
+*  AND GET TRACK
+*X ^ SCORES
+*U ^ 1K FREE MEMORY
+*Y ^ ERROR HANDLER
+*    0 = IO ERROR
+*    2 = DF ERROR
+*    4 = WP ERROR
+*    6 = PLACE ZENIX DISK
+*        IN DRIVE 0
+SCORETRACK FCB 0
+CRCH   BSZ   3
+LOADSCORES
+       PSHS  X,Y,U,D
+       LDD   #17*256+2
+       JSR   DISKREAD *GET FAT
+       BNE   IOERR@
+*******************
+*CHECK FAT TABLE FOR $CF
+       LEAY  +1,U
+       LDB   #20
+CA@    LDA   ,Y++
+       CMPA  #$CF
+       BEQ   CB@
+       PULS  X,Y,U,D
+       JSR   [+8,Y]
+       RTS
+CB@    DECB
+       BNE   CA@
+********************
+       LEAU  +256,U
+       LDD   #17*256+3
+       JSR   DISKREAD  *DIR
+       BEQ   AA@
+IOERR@ BSR   BS@
+       PULS  X,Y,U,D
+       JSR   [,Y]
+       RTS
+AA@    LDY   #SCRN
+       JSR   SCANDIR
+       BNE   NFND@ *X ^ FILE
+       LDB   +13,X
+       JSR   GTOT
+       STB   SCORETRACK
+       JMP   FOUND@
+*FILE NOT FOUND
+*PUT ON DISK
+NFND@  LDY   REG.U,S *Y ^ FAT
+       LEAU  +256,Y  *U ^ DIR
+       LDX   #SCRN
+       JSR   PUTFIL
+       TSTB
+       BPL   B@
+DFERR@ BSR   BS@
+       PULS  X,Y,U,D
+       JSR   [+2,Y] *DF
+       RTS
+BS@    CLR   SCORETRACK
+       COM   SCORETRACK
+       RTS
+*FILE ON DIR & FAT -
+*SAVE DIR & FAT
+B@     STB   SCORETRACK
+       LDU   REG.U,S *U ^ FAT
+       LDD   #17*256+2
+       JSR   DISKWRITE
+       LDA   DSKSTA
+       BITA  #%01000000
+       BEQ   OK@
+WPERR@ BSR   BS@
+       PULS  X,Y,U,D
+       JSR   [+4,Y]
+       RTS
+OK@    TSTA
+      LBNE   IOERR@
+       LEAU  +256,U
+       LDD   #17*256+3
+       JSR   DISKWRITE
+      LBNE   IOERR@
+*FILE WRITTEN TO DISK
+*SINCE IT WAS NOT ON DISK,
+*THERE IS NO NEED TO CHECK
+*TO SEE IF IT IS ALREADY THERE
+       JMP   DONE@
+*SCORETRACK = TRACK
+FOUND@
+       LDU   REG.U,S
+       LDX   #SCRV
+       LDB   #10
+CP@    LDA   ,X+
+       STA   ,U+
+       DECB
+       BNE   CP@
+       LDU   REG.U,S
+       LDA   SCORETRACK
+       LDB   #1
+       JSR   DISKWRITE
+       LDA   DSKSTA
+       BITA  #%01000000
+       LBNE  WPERR@
+       TSTA
+       LBNE  IOERR@
+       LDA   SCORETRACK
+       LDB   #4
+       JSR  DISKREAD *GET SCORES
+       LBNE  IOERR@
+       LEAU  +256,U *U ^ CRC
+       LDB   #8
+       JSR   DISKREAD *GET CRC
+       LBNE  IOERR@
+       PSHS  U
+       LDU   REG.U+2,S
+       JSR   SDCODE
+       LEAX  ,U
+       LDU   #CRCH
+       LDD   #$FFFF
+       STD   ,U
+       STA   +2,U
+       TFR   X,D
+       ADDD  #256
+       JSR   CRC
+       PULS  Y  *Y ^ CRC
+       LDX   ,Y
+       CMPX  ,U++
+       BNE   DONE@
+       LDA   +2,Y
+       CMPA  ,U
+       BNE   DONE@
+*LOAD SCORES
+       LDU   REG.U,S *U^ LSCORES
+       LDX   REG.X,S *X ^ SCORES
+       CLRA
+A@     LDB   ,U+
+       STB   ,X+
+       DECA
+       BNE   A@
+*LOAD COLOR SET
+       LEAY  +128,Y
+       LDX   REG.D,S
+       LDA   #64
+C@     LDB   ,Y+
+       STB   ,X+
+       DECA
+       BNE   C@
+DONE@  PULS  X,Y,U,D,PC
+
+*U ^ DIR
+*Y ^ NAME
+*EXIT:
+*BEQ - X ^ NAME BNE (NO NAME)
+SCANDIR
+       LDA   #11
+       LDB   #7
+A@     PSHS  D
+       LDA   #32
+       MUL
+       LEAX  D,U
+       PULS  D
+       BSR   EQUIL
+       BEQ   ?RTS
+       DECB
+       BPL   A@
+       RTS
+
+*X ^ NAME
+*Y ^ NAME
+*A = LENGTH
+*COMPARE ,X WITH ,Y
+*BEQ IF EQUIL
+EQUIL  PSHS  X,Y,U,D
+A@     LDB   ,X+
+       CMPB  ,Y+
+       BNE   O@
+       DECA
+       BNE   A@
+O@     PULS  X,Y,U,D,PC
+
+*X ^ NAME
+*Y ^ FAT
+*U ^ DIR
+*PLACE A ONE GRANULE FILE
+*ON DISK
+*EXIT:B=TRACK, OR -
+PUTFIL
+       LDB   #8
+A@     LDA   ,U
+       BEQ   FAT@
+       COMA
+       BEQ   FAT@
+       LEAU  +32,U
+       DECB
+       BNE   A@
+DF@    LDB   #$FF
+       RTS
+*CHECK FAT - U ^ NAME
+FAT@   CLRB
+B@     LDA   ,Y++
+       COMA
+       BEQ   PUT@
+       ADDB  #2
+       CMPB  #68
+       BLO   B@
+       BRA   DF@
+PUT@   LEAY  -2,Y
+*B = GRANULE
+       STB   +13,U
+       LDA   #2
+       STA   +11,U
+       CLR   +12,U
+       CLR   +14,U
+       LDA   #$C9
+       STA   ,Y *FAT
+*COPY NAME
+       PSHS  B
+       LDB   #11
+AB@    LDA   ,X+
+       STA   ,U+
+       DECB
+       BNE   AB@
+       PULS  B
+       BSR   GTOT
+       RTS
+
+
+*GRANULE TO TRACK
+*B=GRANULE
+GTOT
+       LSRB
+       CMPB  #17
+       BLO   O@
+       INCB
+O@     RTS
+
+*D=2 GRANULES
+*U ^ 1 SECTOR OF FREE MEMORY
+*Y ^ PICTURE
+*EXIT:A=ERROR
+ MSG "VARS COMEING"
+VAR    SET   7
+REG.U  SET   VAR+4
+REG.Y  SET   VAR+2
+REG.D  SET   VAR
+REG.A  SET   REG.D
+REG.B  SET   REG.D+1
+ MSG "VARS PASSED"
+LOADPLANET
+       EXG   A,B
+       BSR   GTOT
+       EXG   A,B
+       BSR   GTOT
+*D=TRACKS TO LOAD
+       PSHS  D,U,Y
+       LEAS  -VAR,S *VARS
+       JSR   DISKINIT
+       LDX   #0
+T1@    LEAX  -1,X
+       BNE   T1@
+T2@    LEAX  -1,X
+       BNE   T2@
+       LDB   #68 *# OF LINES
+       STB   +2,S
+       LDB   #35 *# OF BYTES
+       STB   +3,S
+       LDU   REG.U,S
+       LEAX  +256,U
+       STX   +4,S *END OF SECTOR
+       LDA   REG.A,S *GRANULE
+       LDB   #1
+       STD   ,S *SECTOR/TRACK
+       JSR   DISKREAD
+       BEQ   A@
+IO@    JSR   DEINIT
+       LEAS  VAR,S
+       PULS  D,U,Y
+       LDA   #1 *IO ERROR
+       RTS
+A@     LEAX  ,U
+       LDY   #SCRV
+       LDA   #10
+       JSR   EQUIL
+       BEQ   B@
+NE@    JSR   DISKDEINIT
+       LEAS  VAR,S
+       PULS  D,U,Y
+       LDA   #2 *NOT FOUND
+       RTS
+*CORRECT SECTOR
+B@     LEAX  +14+11,U
+*WE ARE READY TO GO!
+LINE@  JSR   VSYNC
+       LDY   REG.Y,S
+       LEAY  +256,Y
+       STY   REG.Y,S
+       LEAX  +2,X
+R@     CMPX  +4,S *END OF SECTOR
+       BLO   C@
+*NEXT SECTOR!
+       LEAX  -256,X
+       LDD   ,S *SECTOR/TRACK
+       INCB
+       CMPB  #10
+       BLO   D@
+       LDA   REG.B,S *NEXT GRAN
+       LDB   #1
+D@     STD   ,S *SECTOR/TRACK
+       JSR   DISKREAD
+       BNE   IO@
+C@     LDA   ,X+
+       STA   ,Y+
+       DEC   +3,S *BYTES
+       BNE   R@
+*NEXT LINE
+       LDA   #35
+       STA   +3,S *BYTES
+       DEC   +2,S *LINES
+       BNE   LINE@
+       JSR   DISKDEINIT
+       LEAS  VAR,S
+       PULS  D,Y,U
+       CLRA
+       RTS
+
+VSYNC  TST   $FF02
+A@     TST   $FF03
+       BPL   A@
+       RTS
+
+       END   SC
+ MSG "END $",*

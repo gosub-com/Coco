@@ -1,0 +1,26 @@
+A@
+B@
+
+C@
+
+EXEC   ORCC  #$50
+       LDA   #$FF
+       LDX   #$400
+A@     STA   ,X+
+       CMPX  #$600
+EXEC   NOP
+CLS    SET   32
+       BNE   A@
+       LDX   #$400
+C@     DEC   ,X
+       BNE   C@
+       DEC   +1,X
+       BRA   X@
+       BNE   C@
+       DEC   +2,X
+       BNE   C@
+       DEC   +3,X
+       BNE   C@
+       DEC   +4,X
+       BNE   C@
+

@@ -1,0 +1,499 @@
+BYTES  FDB   0
+CYCLES FDB   0
+
+PRDEQ  PSHS  X,Y,U,D
+       JSR   PRINT
+       FCC   " *D=",0
+       JSR   PRHEXN
+       JSR   PRINT
+       FCB   13,0
+       PULS  X,Y,U,D,PC
+
+*X = X POSITION
+*Y = Y POSITION
+HPOINT PSHS  U,X,Y,CC
+       ORCC  #$50
+       LDU   #$3031
+       STU   $FFA4
+       LDU   #$3233
+       STU   $FFA6
+       TFR   Y,D
+       LDA   #160
+       MUL
+       TFR   D,Y
+       TFR   X,D
+       LSRA
+       RORB
+       LEAY  D,Y
+       LDA   $8000,Y
+       BCS   A@
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+A@     ANDA  #$0F
+       LDU   #$3C3D
+       STU   $FFA4
+       LDU   #$3E3F
+       STU   $FFA6
+Z@     PULS  U,X,Y,CC,PC
+
+PRINT  PSHS  X,D
+       LDX   +4,S
+       LDA   ,X+
+A@     JSR   [$A002]
+       LDA   ,X+
+       BNE   A@
+       STX   +4,S
+       PULS  X,D,PC
+
+PRABX  PSHS  D
+       JSR   PRINT
+ FCC " ABX",13,0
+       LDD   CYCLES
+       ADDD  #3
+       STD   CYCLES
+       LDD   BYTES
+       ADDD  #1
+       STD   BYTES
+       PULS  D,PC
+
+PRABXINI PSHS D
+       JSR   PRINT
+ FCC " LDD  #255",13
+ FCC " LDU  #0",13
+ FCC " LEAX ",0
+       LDD   CYCLES
+       ADDD  #10
+       STD   CYCLES
+       LDD   BYTES
+       ADDD  #8
+       STD   BYTES
+       PULS  D,PC
+
+PRSTA  PSHS  D
+       JSR   PRINT
+ FCC " STA  ",0
+       LDD   CYCLES
+       ADDD  #4 *INDEXED ONLY
+       STD   CYCLES
+       LDD   BYTES
+       ADDD  #2
+       STD   BYTES
+       PULS  D,PC
+
+PRSTB  PSHS  D
+       JSR   PRINT
+ FCC " STB  ",0
+       LDD   CYCLES
+       ADDD  #4 *INDEXED ONLY
+       STD   CYCLES
+       LDD   BYTES
+       ADDD  #2
+       STD   BYTES
+       PULS  D,PC
+
+PRSTD  PSHS  D
+       JSR   PRINT
+ FCC " STD  ",0
+       LDD   CYCLES
+       ADDD  #5 *INDEXED ONLY
+       STD   CYCLES
+       LDD   BYTES
+       ADDD  #2
+       STD   BYTES
+       PULS  D,PC
+
+PRSTU  PSHS  D
+       JSR   PRINT
+ FCC " STU  ",0
+       LDD   CYCLES
+       ADDD  #5 *INDEXED ONLY
+       STD   CYCLES
+       LDD   BYTES
+       ADDD  #2
+       STD   BYTES
+       PULS  D,PC
+
+*D = OFFSET
+*INDEXED RELATIVE TO ,X
+*ALSO DOES CYCLES
+PRIDX  PSHS  D,X
+       JSR   PRHEXN
+       JSR   PRINT
+ FCC ",X",13,0
+       LDX   ,S
+       CMPX  #0
+       BEQ   Z@
+       CMPX  #16
+       BLO   A@
+       CMPX  #-16
+       BLO   B@
+*5 BIT OFFSET
+A@     LDD   CYCLES
+       ADDD  #1
+       STD   CYCLES
+Z@     PULS  X,D,PC
+B@     CMPX  #128
+       BLO   C@
+       CMPX  #-128
+       BLO   D@
+*8 BIT OFFSET
+C@     LDD   BYTES
+       ADDD  #1
+       STD   BYTES
+       BRA   A@
+*16 BIT OFFSET
+D@     LDD   BYTES
+       ADDD  #2
+       STD   BYTES
+       LDD   CYCLES
+       ADDD  #4
+       STD   CYCLES
+       PULS  X,D,PC
+
+PRHEXN PSHS  A
+       LDA   #'$
+       JSR   [$A002]
+       PULS  A
+
+PRHEXD BSR   PRHEXA
+       TFR   B,A
+
+PRHEXA PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   PRHEXDIGIT
+       PULS  A
+       ANDA  #$0F
+
+PRHEXDIGIT
+       CMPA  #9
+       BLS   A@
+       ADDA  #-10+'A
+       JMP   [$A002]
+A@     ADDA  #'0
+       JMP   [$A002]
+
+PRINCA PSHS  D
+       JSR   PRINT
+ FCC " INCA",0
+ADDCYC LDD   BYTES
+       ADDD  #1
+       STD   BYTES
+       LDD   CYCLES
+       ADDD  #2
+       STD   CYCLES
+       PULS  D,PC
+PRINCB PSHS  D
+       JSR   PRINT
+ FCC " INCB",0
+       BRA   ADDCYC
+PRDECA PSHS  D
+       JSR   PRINT
+ FCC " DECA",0
+       BRA   ADDCYC
+PRDECB PSHS  D
+       JSR   PRINT
+ FCC " DECB",0
+       BRA   ADDCYC
+
+*B=#
+PRLDBIM PSHS D
+       JSR   PRINT
+ FCC " LDB  #$",0
+       TFR   B,A
+       JSR   PRHEXA
+LDIMC  LDD   BYTES
+       ADDD  #2
+       STD   BYTES
+       LDD   CYCLES
+       ADDD  #2
+       STD   CYCLES
+       PULS  D,PC
+
+*B=#
+PRLDAIM PSHS D
+       JSR   PRINT
+ FCC " LDA  #$",0
+       TFR   B,A
+       JSR   PRHEXA
+       BRA   LDIMC
+
+PRLDDIM PSHS D
+       JSR   PRINT
+ FCC " LDD  #$",0
+       JSR   PRHEXD
+       LDD   CYCLES
+       ADDD  #3
+       STD   CYCLES
+       LDD   BYTES
+       ADDD  #3
+       STD   BYTES
+       PULS  D,PC
+
+
+MAKEDLIST
+       PSHS  X,Y,U,D
+A@     LDD   +6,X
+       SUBD  #2
+       BNE   B@
+       LDD   ,S
+       CMPD  +8,X
+       BNE   B@
+       JSR   PRSTD
+       LDA   +5,X
+       LDB   +3,X
+       JSR   PRIDX
+       LDD   #0
+       STD   +6,X
+B@     LDX   ,X
+       LDU   ,X
+       BNE   A@
+       PULS  X,Y,U,D,PC
+
+MAKEBLIST
+       PSHS  X,Y,U,D
+A@     LDD   +6,X
+       SUBD  #1
+       BNE   B@
+       LDB   +1,S
+       CMPB  +8,X
+       BNE   B@
+       JSR   PRSTB
+       LDA   +5,X
+       LDB   +3,X
+       JSR   PRIDX
+       LDD   #0
+       STD   +6,X
+B@     LDX   ,X
+       LDU   ,X
+       BNE   A@
+       PULS  X,Y,U,D,PC
+
+MAKEALIST
+       PSHS  X,Y,U,D
+A@     LDD   +6,X
+       SUBD  #1
+       BNE   B@
+       LDB   ,S
+       CMPB  +8,X
+       BNE   B@
+       JSR   PRSTA
+       LDA   +5,X
+       LDB   +3,X
+       JSR   PRIDX
+       LDD   #0
+       STD   +6,X
+B@     LDX   ,X
+       LDU   ,X
+       BNE   A@
+       PULS  X,Y,U,D,PC
+
+ISTHERE PSHS X,Y,U,D
+A@     LDU   +6,X
+       CMPU  #2
+       BNE   B@
+       CMPD  +8,X
+       BEQ   IS@
+B@     LDX   ,X
+       LDU   ,X
+       BNE   A@
+       LDA   #1
+IS@    PULS  X,Y,U,D,PC
+
+NEWD   PSHS  X,Y,U,D
+A@     LDU   +6,X
+       CMPU  #2
+       BNE   B@
+*CAN WE LDB?
+       LDB   ,S *GET A
+       CMPB  +8,X *SAME A
+       BNE   C@
+       LDB   +9,X
+       STB   +1,S
+       JSR   PRLDBIM
+       LDD   ,S
+       JSR   PRDEQ
+       BRA   IS@
+*CAN WE LDA?
+C@     LDB   +1,S *GET B
+       CMPB  +9,X *SAME B?
+       BNE   D@
+       LDB   +8,X
+       STB   ,S
+       JSR   PRLDAIM
+       LDD   ,S
+       JSR   PRDEQ
+IS@    CLRB
+       PULS  X,Y,U,D,PC
+D@
+B@     LDX   ,X
+       LDU   ,X
+       BNE   A@
+       LDB   #1
+       PULS  X,Y,U,D,PC
+
+PC     SET   4
+LIST   SET   PC+2
+DREG   SET   0
+WORDLIST SET 2
+MAKE.CODE
+       LEAS  -PC,S
+       LDD   LIST,S
+       STD   WORDLIST,S
+*COME HERE WHEN NO POSSIBILITYS
+A@     LDX   WORDLIST,S
+B@     LDU   ,X
+       BEQ   Z@
+       LDD   +6,X
+       CMPD  #2
+       BEQ   C@
+       LDX   ,X
+       BRA   B@
+*HAVE NEXT WORD
+C@     STX   WORDLIST,S
+       LDD   +8,X
+       STD   DREG,S
+       JSR   PRLDDIM
+       JSR   PRDEQ
+D@     LDD   DREG,S
+       LDX   LIST,S
+       JSR   MAKEDLIST
+       JSR   MAKEALIST
+       JSR   MAKEBLIST
+*************************
+*FIND ANOTHER DREG
+***********************
+       LDD   DREG,S
+       INCA
+       JSR   ISTHERE
+       BNE   E@
+       STD   DREG,S
+       JSR   PRINCA
+       JSR   PRDEQ
+       BRA   D@
+E@     LDD   DREG,S
+       DECA
+       JSR   ISTHERE
+       BNE   F@
+       STD   DREG,S
+       JSR   PRDECA
+       JSR   PRDEQ
+       BRA   D@
+F@     LDD   DREG,S
+       INCB
+       JSR   ISTHERE
+       BNE   G@
+       STD   DREG,S
+       JSR   PRINCB
+       JSR   PRDEQ
+       BRA   D@
+G@     LDD   DREG,S
+       DECB
+       JSR   ISTHERE
+       BNE   H@
+       STD   DREG,S
+       JSR   PRDECB
+       JSR   PRDEQ
+       BRA   D@
+*IS THERE A LDB?
+H@     LDD   DREG,S
+       JSR   NEWD
+       BNE   I@
+       STD   DREG,S
+       BRA   D@
+I@
+****NO POSSIBILITIES LEFT
+       BRA   A@
+Z@     LDX   LIST,S
+
+ZA@    LDU   +6,X
+       CMPU  #1
+       BNE   ZB@
+       LDD   DREG,S
+       LDB   +8,X
+       JSR   PRLDBIM
+       JSR   PRINT
+       FCB   13,0
+       JSR   MAKEBLIST
+ZB@    LDX   ,X
+       LDU   ,X
+       BNE   ZA@
+
+       JSR   PRINT
+ FCC "*BYTES: ",0
+       LDD   BYTES
+       JSR   PRHEXN
+       JSR   PRINT
+       FCB   13
+ FCC "*CYCLES: ",0
+       LDD   CYCLES
+       JSR   PRHEXN
+       JSR   PRINT
+       FCB   13,0
+       LEAS  PC,S
+       RTS
+
+ABX.SEARCH
+       PSHS  X,U
+A@     CMPU  +4,X
+       BNE   B@
+       LDD   +6,X *LENGTH
+       CMPD  #1
+       BEQ   C@
+       CMPD  #2
+       BNE   B@
+       JSR   PRSTU
+       BRA   D@
+C@     JSR   PRSTA
+D@     TFR   U,D
+       SUBD  #15
+       ADDD  +2,X *X POS
+       JSR   PRIDX
+       LDD   #0
+       STD   +6,X
+B@     LDX   ,X
+       LDY   ,X
+       BNE   A@
+       PULS  U,X,PC
+
+
+ADDUPLIST PSHS X,U
+       LDD   #0
+       BRA   B@
+A@     ADDD  +6,X
+       LDX   ,X
+B@     LDU   ,X
+       BNE   A@
+       PULS  U,X,PC
+
+MAKE.ABX
+       JSR   PRABXINI
+       LDD   #15 *ADD 15
+       JSR   PRIDX
+       LDX   +2,S *GET LIST
+       LDU   #0  *LINE ON
+       BRA   B@
+A@     JSR   PRABX
+B@     JSR   ABX.SEARCH
+       LEAU  +1,U
+       JSR   ADDUPLIST
+       SUBD  #0
+       BNE   A@
+
+       JSR   PRINT
+ FCC "*BYTES: ",0
+       LDD   BYTES
+       JSR   PRHEXN
+       JSR   PRINT
+       FCB   13
+ FCC "*CYCLES: ",0
+       LDD   CYCLES
+       JSR   PRHEXN
+       JSR   PRINT
+       FCB   13,0
+       RTS
+

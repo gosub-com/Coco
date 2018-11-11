@@ -1,0 +1,65 @@
+       ORG   $E00
+DISAT  FDB   0
+ENDAT  FDB   0
+PUTAT  BSZ   40
+DP     FCB   0
+
+PRNUM  TSTA
+       BPL   PRNUMU
+       COMA
+       COMB
+       ADDD  #1
+       PSHS  A
+       LDA   #'-
+       STA   ,Y+
+       PULS  A
+PRNUMU PSHS  A
+       LDA   #'$
+       STA   ,Y+
+       PULS  A
+       BSR   PRNUMA
+       TFR   B,A
+PRNUMA PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       BSR   PRDIG
+       PULS  A
+       ANDA  #%00001111
+PRDIG  ADDA  #'0
+       CMPA  #'9
+       BHI   PRLET
+       STA   ,Y+
+       RTS
+PRLET  ADDA  #7
+       STA   ,Y+
+       RTS
+
+       INCL  COMDATA
+       INCL  OPERAND
+       INCL  OPCODE
+
+EXEC   LDX   DISAT
+       LDY   #PUTAT
+       LDA   #$20
+       STA   ,Y+
+       TFR   X,D
+       LBSR  PRNUMU
+       LDA   #$20
+       STA   ,Y+
+       LBSR  OPCODE *DO OPCODE
+       LDU   #$2020
+       STU   ,Y++
+       LBSR  OPER
+       CLR   ,Y
+       STX   ENDAT
+       LDY   #PUTAT
+A@     LDA   ,Y+
+       JSR   [$A002]
+       TSTA
+       BNE   A@
+       RTS
+       END   EXEC
+
+

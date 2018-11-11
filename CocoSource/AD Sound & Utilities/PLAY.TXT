@@ -1,0 +1,50 @@
+       ORG   $E00
+       BSZ   100
+STACK  FDB   0
+       FDB   0
+
+INITIT MACR
+       LDY   #$1F
+       CLR   $FFA1
+       ENDM
+
+HITKEY PSHS  DP
+       CLRA
+       TFR   A,DP
+       CLR   $FFDE
+A@     JSR   [$A000]
+       BEQ   A@
+       CLR   $FFDF
+       PULS  DP,PC
+
+EXEC   ORCC  #$50
+       SETDP $FF
+       LDA   #$FF
+       TFR   A,DP
+       LDS   #STACK
+       LDA   #180
+       STA   $FF01
+       LDA   #53
+       STA   $FF03
+       LDA   #63
+       STA   $FF23
+       CLR   65497
+R@     BSR   HITKEY
+       INITIT
+       LDX   #$2000
+G@     TFR   A,A
+       TFR   A,A
+H@     LDD   $FF50 *TIMING
+       LDB   ,X+
+       STB   $FF20
+       LDA   #1
+       CMPX  #$4000
+       BLO   G@
+       INC   $FFA1
+       LDX   #$2000
+       LEAY  -1,Y
+       BNE   H@
+       BRA   R@
+
+       END   EXEC
+

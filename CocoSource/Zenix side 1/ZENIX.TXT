@@ -1,0 +1,221 @@
+SKIP1  MACR
+       FCB   $85
+       ENDM
+
+SKIP2  MACR
+       FDB   $2002
+       ENDM
+
+MOVE   MACR
+       LD\2  \0
+       ST\2  \1
+       ENDM
+
+NEGD   MACR
+       COMA
+       COMB
+       SUBD  #-1
+       ENDM
+
+       BINFO BLOAD:3
+
+       ORG   $400
+       FDB   $7608
+
+ FCC "   GOSUB SOFTWARE"
+ FCC " PRESENTS..."
+
+       ORG   $FE00-2
+       FDB   $7FE0
+CMPCRC CMPS  $2000,X
+GRN    EQU   *-2
+CRCS0
+       FDB   0
+
+COPY   PULS  X
+       LDU   ,X++
+       LDB   ,X+
+A@     LDA   ,X+
+       STA   ,U+
+       DECB
+       BNE   A@
+       JMP   ,X
+
+VSYNC  TST   $FF02
+A@     TST   $FF03
+       BPL   A@
+       RTS
+
+PARAMT BSZ   35
+
+RESET  ORCC  #$50
+       LDX   #$FFB0
+       LDA   #16
+       BSR   VSYNC
+A@     CLR   ,X+
+       DECA
+       BNE   A@
+       LDB   #45
+B@     BSR   VSYNC
+       DECB
+       BNE   B@
+       LDA   #%00001110
+       STA   $FF90
+       CLR   $FFDE *ROM
+       CLR   65496
+       JMP   [$FFFE]
+
+PALETTES
+       BSZ   64
+
+ MSG *," !MUST BE UNDER $FED0!"
+ MSG "     !AND OVER $FE80"
+
+SWIGO  LEAU  ,S
+       LDX   +10,U
+       LDB   ,X+
+       STX   +10,U
+       LDY   $FFA1
+       LDA   $FFA7
+       PSHS  Y,A
+       LDA   #$3F
+       STA   $FFA7
+       JSR   SWIEX
+       PULS  Y,A
+       STA   $FFA7
+       STY   $FFA1
+       RTI
+CRCE0
+
+       ORG   $0000-2
+       FDB   $7C00
+*BINARY INCLUDE SOUND HERE
+CRCS1
+       BINF  SOUND
+CRCE1
+
+       ORG   $8000-2
+       FDB   $7A00
+*BINARY INCLUDE SONG HERE
+
+A@
+CRCS2
+PITCH
+       BINF  PITCH
+BUMBLE
+       BINF  BUMBLE
+STORM
+       BINF  STORM
+LOAN
+       BINF  LOAN
+CRCE2
+ MSG "FREE SONG ",$2000-(*-A@)
+
+       ORG   $D200-2
+       FDB   $7920
+
+A@
+CRCS3
+       INCL  MENU1
+       INCL  MENU2
+CRCE3
+ MSG "MENU END @",*
+ MSG "FREE MENU ",$E00-*+A@-110
+
+       ORG   $E000-2
+       FDB   $7E00
+
+A@
+CRCS4
+       INCL  GAME1
+       INCL  GAME2
+       INCL  SQSETUP
+PR1CH  EQU   *
+SWIEX  EQU   *+3
+       BINF  SWI
+ELSTS  BSZ   4
+WLSTS  BSZ   4
+*YOUR SHIP IS SENTINAL NODE!
+WLSTE  BSZ   4
+       BSZ   OBLEN+2
+CRCE4
+ MSG "FREE GAME ",$1E00-*+A@
+
+       ORG   $2000-2
+       FDB   $6000
+
+A@
+CRCS5
+RBUG
+OBUG   EQU   *+256
+*THIS MUST STAY AT ZERO
+*RBUG1, RBUG2, RCBUG
+*OBUG1, OBUG2, OCBUG
+       BINF  SBUGS
+       FDB   0
+CRCE5
+ MSG "FREE PICTURE ",$6000-*+A@
+
+       ORG   $2800-2
+       FDB   $7C80
+A@
+CRCS6
+DISKINIT     EQU *+3*0
+DISKRESET    EQU *+3*1
+*DISKREAD     EQU *+3*2
+*DISKWRITE    EQU *+3*3
+DISKDEINIT   EQU *+3*4
+CRCIT        EQU *+3*5
+COPYPROTECT  EQU *+3*6
+LOADSCORES   EQU *+3*7
+SAVESCORES   EQU *+3*8
+LOADPLANET   EQU *+3*9
+       BINF  DISKIO
+CRCE6
+ MSG "FREE DISKIO ",$800-*+A@
+
+       ORG   $0000-2
+       FDB   $6600
+A@
+CRCS7
+       INCL  BUGS
+       INCL  BLOWUP
+       INCL  TRACKS
+       INCL  ATTACK
+       INCL  DRYSHIP
+       INCL  ATRACK
+       INCL  SQUADS
+       INCL  DRAGON
+       INCL  BUGPLANE
+       INCL  BLOB
+       INCL  STARS
+       INCL  EXPLTBL
+SQORDER
+       INCL  SQUADSET
+DRBUGPLANE
+       BINF  BUGPLANE
+DRDRAG
+       BINF  DRAGON
+DRBLOB
+       BINF  BLOB
+CRCE7
+ MSG "FREE TRACKS ",$4000-*+A@
+
+
+       ORG   $0000
+       FDB   $0000 *END OF FILE
+       FDB   $7920 *WARE TO GO
+
+ MSG "MUST CHECK FGOTO"
+       FGOTO 2304*28-5
+*ELIGN TO GRANULE
+       FCB   $87,$CD,$2
+       FCC   "ZENIX"
+       FDB   $8F18
+
+*THIS IS THE EXTENDED FILE
+*FOR PICTURE DATA (NOT LOADED)
+       BINF  PLANET
+
+       END   $1920
+

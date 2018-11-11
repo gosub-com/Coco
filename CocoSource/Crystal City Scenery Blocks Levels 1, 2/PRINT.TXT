@@ -1,0 +1,507 @@
+LSRD   MACR
+       LSRA
+       RORB
+       ENDM
+
+LSLD   MACR
+       LSLB
+       ROLA
+       ENDM
+
+NOPRINT FDB  0
+
+PTAB
+ FCB 0,0,0,0
+ FCB 3,2,2,1
+ FCB 1,2,3,3
+ FCB 0,1,2,3
+
+RPOINT PSHS  X
+       BSR   POINT
+       LDX   #PTAB
+       LDA   A,X
+       PULS  X,PC
+
+*X= X POSITION
+*Y= Y POSITION
+POINT  PSHS  X,Y,U,B
+       PSHS  Y
+       LDD   #192
+       SUBD  ,S++
+       TFR   D,Y
+       TFR   X,D
+       LSRD
+       LSRD
+       LSRD
+       LSRD
+       PSHS  D
+       LSLD
+       LSLD
+       LSLD
+       ADDD  ,S
+       ADDD  ,S
+       ADDD  ,S
+       ADDD  ,S++
+       PSHS  D
+       TFR   Y,D
+       LSRD
+       LSRD
+       LSRD
+       LSRD
+       ADDD  ,S++ *D ^ BYTE
+*GET GRAPHICS BLOCK
+       PSHS  D
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ADDA  #1
+       STA   $FFA2
+       PULS  D
+       ANDA  #%00011111
+       LDU   #$4000
+       LDA   D,U *A=BLOCK #
+*A = GRAPHICS BLOCK
+       CLR   $FFA2
+       PSHS  A
+       ANDA  #$7F
+       CLRB
+       LSRD
+       LDU   #$4000
+       LEAU  D,U *U ^ BLOCK
+       TFR   Y,D
+       CLRA
+       ANDB  #%0001111
+       TST   ,S+
+       BPL   N@
+       PSHS  D
+       LDD   #15
+       SUBD  ,S++ *D=Y POS
+N@     LSLD
+       LSLD
+       LSLD
+       LEAU  D,U *U ^ LINE
+       TFR   X,D
+       CLRA
+       ANDB  #%00001111
+       LSRD
+       LDA   D,U *A = BYTE
+       BCC   A@
+       ANDA  #%00001111
+       PULS  X,Y,U,B,PC
+A@     LSRA
+       LSRA
+       LSRA
+       LSRA
+       PULS  X,Y,U,B,PC
+
+XX     FDB   0
+YY     FDB   0
+
+LINK   MACR
+       LDU   ,X
+       BEQ   A@
+       STY   +2,U
+A@     STU   ,Y
+       STX   +2,Y
+       STY   ,X
+       ENDM
+
+UNLINK MACR
+       LDX   +2,Y
+       LDU   ,Y
+       BEQ   A@
+       STX   +2,U
+A@     STU   ,X
+       ENDM
+
+ELST   BSZ   4
+WLST   BSZ   4
+
+CHARS  BSZ   2000
+
+       FCB   255
+LINEOUT BSZ 400
+
+WH     FCB   %000
+       FCB   %000
+       FCB   %000
+       FCB   %001
+       FCB   %010
+       FCB   %100
+       FCB   %101
+       FCB   %010
+       FCB   %101
+       FCB   %111
+       FCB   %111
+       FCB   %111
+WH2    FCB   %000000
+       FCB   %000000
+       FCB   %000000
+       FCB   %001000
+       FCB   %010000
+       FCB   %100000
+       FCB   %101000
+       FCB   %010000
+       FCB   %101000
+       FCB   %111000
+       FCB   %111000
+       FCB   %111000
+
+NEWCHAR
+       BSZ   6
+
+*A=COLOR
+POINTX PSHS  D
+       LDB   #3
+       MUL
+       LDX   #WH
+       LEAX  B,X
+       PULS  D,PC
+
+POINTU PSHS  D
+       LDB   #3
+       MUL
+       LDU   #WH2
+       LEAU  B,U
+       PULS  D,PC
+
+*A=CHAR TO MAKE
+*B=CHAR TO PRINT
+MAKECHARPRINT
+       PSHS  B
+       INC   $400
+       BSR   MAKECHAR
+       PULS  B
+       LDA   #27
+       JSR   [$A002]
+       LDA   #'*
+       JSR   [$A002]
+       LDA   #1
+       JSR   [$A002]
+       TFR   B,A
+       JSR   [$A002]
+       JSR   [$A002]
+       LDA   #128+16+11
+       JSR   [$A002]
+       LDX   #NEWCHAR
+       BSR   PR@
+       BSR   PR@
+       BSR   PR@
+       BSR   PR@
+       BSR   PR@
+       LDA   ,X+
+       JSR   [$A002]
+       RTS
+PR@    LDA   ,X+
+       JSR   [$A002]
+       LDA   #0
+       JSR   [$A002]
+       RTS
+
+*A=CHAR
+MAKECHAR
+       PSHS  A
+       ANDA  #3
+      LBSR   POINTX
+       LDA   ,S
+       LSRA
+       LSRA
+       ANDA  #3
+      LBSR   POINTU
+       LDB   ,X+
+       ORB   ,U+
+       STB   NEWCHAR+3
+       LDB   ,X+
+       ORB   ,U+
+       STB   NEWCHAR+4
+       LDB   ,X+
+       ORB   ,U+
+       STB   NEWCHAR+5
+       LDA   ,S
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ANDA  #3
+      LBSR   POINTX
+       LDA   ,S+
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+      LBSR   POINTU
+       LDB   ,X+
+       ORB   ,U+
+       STB   NEWCHAR+0
+       LDB   ,X+
+       ORB   ,U+
+       STB   NEWCHAR+1
+       LDB   ,X+
+       ORB   ,U+
+       STB   NEWCHAR+2
+       RTS
+
+
+PRINT.INIT
+       LDD   #0
+       STD   WLST
+       STD   WLST+2
+       STD   ELST
+       STD   ELST+2
+       LDD   #$FEFE
+A@     LDY   #CHARS
+       LDX   #WLST
+B@     LINK
+       STA   +4,Y
+       STB   +5,Y
+       PSHS  X,Y,U,D
+       JSR   MAKECHARPRINT
+       PULS  X,Y,U,D
+       LEAY  +10,Y
+       DECA
+       DECB
+       BMI   B@
+       RTS
+
+*+4,Y=PRINT CODE (CONSTANT)
+*+5,Y=OUR NEW CODE
+*A=CHAR
+PRINTCHAR
+       PSHS  X,Y,U,D
+       LDY   WLST
+A@     CMPA  +5,Y
+       BNE   B@
+*WE FOUND OUR CHAR
+       LDA   +4,Y
+       JSR   [$A002]
+       UNLINK
+       LDX   #WLST
+       LINK
+       PULS  X,Y,U,D,PC
+B@     LEAU  ,Y
+       LDY   ,Y
+       BNE   A@
+*NOT FOUND, MAKE
+       LEAY  ,U
+       UNLINK
+       LDX   #WLST
+       LINK
+       LDB   +4,Y
+       STA   +5,Y
+       PSHS  B
+       JSR   MAKECHARPRINT
+       PULS  A
+       JSR   [$A002]
+       PULS  X,Y,U,D,PC
+
+
+TSEC   FCB   0
+SECONDS FCC "0000"
+
+*01
+*23
+BLOCKS
+ FCB 224,225,227,231
+ FCB 226,233,230,235
+ FCB 228,229,234,236
+ FCB 232,237,238,239
+
+GORTS  RTS
+
+PRINTSUB FDB 0
+
+EXEC   CLR   65497
+       LDD   $A002
+       STD   PRINTSUB
+       LDA   #7
+       STA   150
+       LDA   #254
+       STA   $6F
+       JSR   PRINT.INIT
+       LDA   #27
+       JSR   [$A002]
+       LDA   #'$
+       JSR   [$A002]
+       LDA   #'1
+       JSR   [$A002]
+       LDA   #27
+       JSR   [$A002]
+       LDA   #'B
+       JSR   [$A002]
+       LDA   #2
+       JSR   [$A002]
+       LDA   #27
+       JSR   [$A002]
+       LDA   #'A
+       JSR   [$A002]
+       LDA   #6
+       JSR   [$A002]
+
+       LDX   #0
+       LDY   #0
+       LDD   NOPRINT
+       BEQ   GODOIT
+
+       LDD   #GORTS
+       STD   PRINTSUB
+
+A@     LDD   #0 *D=LENGTH
+       JSR   PRINTHEADER
+       LDD   SECONDS
+       STD   $420
+       LDD   SECONDS+2
+       STD   $422
+       LEAX  +2,X
+       CMPX  NOPRINT
+       BLO   A@
+
+GODOIT LDD   $A002
+       STD   PRINTSUB
+
+
+A@     LDD   #0 *D=LENGTH
+       BSR   GETLINE *IN U
+       BSR   PRINTLINE
+       LDD   SECONDS
+       STD   $420
+       LDD   SECONDS+2
+       STD   $422
+       LEAX  +2,X
+       CMPX  #44000 *3 MIN
+       BLO   A@
+       RTS
+
+GETLINE
+       PSHS  X,Y,D
+       LDA  #96-3
+       LDU   #LINEOUT
+       STU   ,S
+       PSHS  A
+B@     JSR  DODOT
+       STA   ,U+
+       BEQ   A@
+       STU   +1,S
+A@     LEAY  +2,Y
+       DEC   ,S
+       BNE   B@
+       LEAS  +1,S
+       LDD   ,S++
+       SUBD  #LINEOUT
+       ADDD  #1
+       CLR   ,U+
+       CLR   ,U+
+       PULS  X,Y,PC
+
+PRINTLINE
+       PSHS  X,Y,U,D
+       BSR   PRINTHEADER
+       LDU   #LINEOUT
+A@     LDA   ,U+
+       PSHS  U,D
+       JSR   PRINTCHAR
+       PULS  U,D
+       SUBD  #1
+       BCC   A@
+       LDA   #13
+       JSR   [$A002]
+       PULS  X,Y,U,D,PC
+
+PRINTHEADER
+       PSHS  X,Y,U,D
+       LDB   TSEC
+       BNE   A@
+       LDA   SECONDS
+       JSR   [PRINTSUB]
+       BRA   O2@
+A@     DECB
+       BNE   B@
+       LDA   SECONDS+1
+       JSR   [PRINTSUB]
+       BRA   O2@
+B@     DECB
+       BNE   C@
+       LDA   SECONDS+2
+       JSR   [PRINTSUB]
+       BRA   O2@
+C@     DECB
+       BNE   D@
+       LDA   #'.
+       JSR   [PRINTSUB]
+       BRA   O2@
+D@     DECB
+       BNE   E@
+       LDA   SECONDS+3
+       JSR   [PRINTSUB]
+       BRA   O2@
+E@     DECB
+       BNE   H@
+       LDD   SECONDS+2
+       INCB
+       CMPB  #'9+1
+       BNE   F@
+       LDB   #'0
+       INCA
+       CMPA  #'9+1
+       BNE   F@
+       LDA   #'0
+       PSHS  D
+       LDD   SECONDS
+       INCB
+       CMPB  #'9+1
+       BNE   G@
+       LDB   #'0
+       INCA
+G@     STD   SECONDS
+       PULS  D
+F@     STD   SECONDS+2
+       BRA   O@
+H@     LDB   TSEC
+       CMPB  #10
+       BLS   O@
+       CLR   TSEC
+       DEC   TSEC
+O@     LDA   #32
+       JSR   [PRINTSUB]
+O2@    INC   TSEC
+       LDA   #32
+       JSR   [PRINTSUB]
+       PULS  X,Y,U,D,PC
+
+DODOT  INC   $401
+       PSHS  U,X,Y,B
+       JSR   RPOINT
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       PSHS  A
+       LEAX  +1,X
+       JSR   RPOINT
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       PSHS  A
+       LEAX  -1,X
+       LEAY  +1,Y
+       JSR   RPOINT
+       LSLA
+       LSLA
+       PSHS  A
+       LEAX  +1,X
+       JSR   RPOINT
+       ORA   ,S+
+       ORA   ,S+
+       ORA   ,S+
+       STA   $402
+       PULS  U,X,Y,B,PC
+
+ MSG "END @ $",*
+
+       END   EXEC

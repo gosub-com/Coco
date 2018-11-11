@@ -1,0 +1,158 @@
+SKIP1  MACR
+       FCB   $85
+       ENDM
+
+SKIP2  MACR
+       FDB   $2002
+       ENDM
+
+NEGD   MACR
+       COMA
+       COMB
+       SUBD  #-1
+       ENDM
+
+LSRD   MACR
+       LSRA
+       RORB
+       ENDM
+
+LSLD   MACR
+       LSLB
+       ROLA
+       ENDM
+
+
+*ENTRY:D = X,Y
+*      \0 = REGISTER X/Y/U
+*EXIT:D ^ PLACE, \0 = 0
+SCREEN MACR
+       PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ANDA  #%00001110
+       LD\0  #SCREENBLOCKS
+       LD\0  A,\0
+       PULS  A
+       ANDA  #%00011111
+       ENDM
+
+*ENTRY:D=X,Y POS
+*      \0=REGISTER \X\Y\U
+*      \1=MEMORY OF ACCA
+FSCREEN MACR
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ANDA  #%00001110
+       LD\0  #SCREENBLOCKS
+       LD\0  A,\0
+       LDA   \1
+       ANDA  #%00011111
+       ENDM
+
+
+
+*Y ^ CURRENT LINKED MODULE
+UNLINK MACR
+       LDX   +2,Y *6
+       LDU   ,Y   *5
+       BEQ   A@
+       STX   +2,U *6
+A@     STU   ,X   *5
+       ENDM
+
+*Y ^ USEABLE MEMORY
+*X ^ LINKE SPOT (LINKED AFTER)
+LINK   MACR
+       LDU   ,X
+       BEQ   A@
+       STY   +2,U
+A@     STU   ,Y
+       STX   +2,Y
+       STY   ,X
+       ENDM
+
+NEWLINK MACR
+       LDY  ELST
+Q@     UNLINK
+       LDX   WLSE+2 *LAST
+       LINK
+       CLR   STATUS,Y
+       CLR   GROUND,Y
+       CLR   POINTS,Y
+       CLR   RFUEL,Y
+       ENDM
+
+RETURN MACR
+*      JMP   NEXTNODE
+       RTS
+       ENDM
+
+*SIZEABEL RASTER
+SRASTER MACR
+Q@     LDA   NEWPOS,Y
+       LDB   #58
+       MUL
+       SUBA  HLINE
+       ADDA  #2-42+\1 *REMOVE?
+       CMPA  #\0
+       BHS   Y@
+       LDX   REPRINT
+       STY   ,X++
+       LDU   #Q@
+       STU   ,X++
+       STX   REPRINT
+       RTS
+Y@
+       ENDM
+
+RASTER MACR
+       SRASTER 10,0
+       ENDM
+
+
+ISDEAD MACR
+       SUBA   ,S
+       CMPA  \1 *SIZE Y
+       BHS   A@
+N@     JMP   ,U *NOT HIT!
+A@     SUBB  +1,S
+       SUBB  #3
+       CMPB  \0 *SIZE X
+       BLO   N@
+       ENDM
+
+*ENABLE AND DISABLE USE THE
+*STACK, SO THEY MUST BE USED
+*IN PAIRS WITHIN THE SAME
+*STACK FRAME.
+
+ENABLE MACR
+       JSR   VSYNC
+       PULS  CC
+       ENDM
+
+DISABLE MACR
+       JSR   VSYNC
+       PSHS  CC
+       ORCC  #$50
+       ENDM
+
+*ENTRY: A=HOW MUCH TO ADD
+ADDSCR MACR
+       ADDA  CURSCORE+2
+       DAA
+       STA   CURSCORE+2
+       LDA   CURSCORE+1
+       ADCA  #0
+       DAA
+       STA   CURSCORE+1
+       LDA   CURSCORE
+       ADCA  #0
+       DAA
+       STA   CURSCORE
+       ENDM

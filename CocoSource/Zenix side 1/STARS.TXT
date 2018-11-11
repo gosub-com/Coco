@@ -1,0 +1,200 @@
+BSTARF MACR
+       LDD   ,U++
+       LDX   \0,S
+       ABX
+       CMPA  ,X
+       BNE   B@
+       CLR   ,X
+B@     LEAX  +256,X
+       LDB   ,X
+       BNE   C@
+       STA   ,X
+C@
+       ENDM
+
+BIGSTARCOLOR
+ FCB $66,$11,$22,$33,$44,$55
+ FCB $66,$77
+ FCB $88,$99,$CC,$55,$CC,$DD
+ FCB $EE,$44
+SMALLSTARCOLOR
+ FCB $6,$1,$2,$3,$4,$5,$6,$7
+ FCB $8,$9,$C,$5,$C,$D,$E,$4
+
+*BIG STARS
+STARS  LDA   BSTBAS
+       ADDA  #$80
+       CLRB
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       LDU   #BSTARS
+       LDY   #STBLK
+       LDD   ,Y++
+L@     STD   $FFA4
+       BSTARF 6
+       BSTARF 4
+       BSTARF 2
+       BSTARF
+I@     LDD   ,Y++
+       BNE   L@
+       LEAS  +8,S
+       LDA   STARSTOP
+       BEQ   K@
+       INC   BSTBAS
+       LDA   BSTBAS
+       CMPA  #7
+       BLS   K@
+       CLR   BSTBAS
+       LDA   #14
+       LDX   #BSTARS+2*2*2*7-2
+J@     LDU   ,--X
+       STU   +2,X
+       LDU   ,--X
+       STU   +2,X
+       DECA
+       BNE   J@
+       JSR   ARB
+       STA   BSTARS+1
+M@     JSR   ARB
+       ANDA  #$0F
+       LDX   #BIGSTARCOLOR
+       LDA   A,X
+N@     PSHS  A
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ORA   ,S+
+       STA   BSTARS
+K@
+
+SSTARF MACR
+       LDB   A,Y
+       INCA
+       LDX   \0,S
+       ABX
+       LDB   A,Y
+       ADDA  #3
+       CMPB  ,X
+       BNE   B@
+       CLR   ,X
+B@     LEAX  +256,X
+       TST   ,X
+       BNE   C@
+       STB   ,X
+C@
+       ENDM
+
+
+       LDA   OFRAME
+       LBMI  OSTAR
+       LDA   SSTBAS1
+       ADDA  #$80
+       CLRB
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       LDU   #STBLK
+       LDD   ,U++
+       STD   $FFA4
+       LDY   #SSTAR
+       LDA   SSTP1
+A@     SSTARF 6
+       SSTARF 4
+       SSTARF 2
+       SSTARF
+       LDX   ,U++
+       BEQ   V@
+       STX   $FFA4
+       JMP   A@
+V@     LEAS  +8,S
+       LDA   STARSTOP
+       BEQ   Z@
+       INC   SSTBAS1
+       LDA   SSTBAS1
+       CMPA  #7
+       BLS   Z@
+       CLR   SSTBAS1
+S@     LDA   SSTP1
+       SUBA  #4
+       STA   SSTP1
+T@     PSHS  A
+       PSHS  A
+       JSR   ARB
+       CMPA  #160
+       BLO   U@
+       SUBA  #128
+U@     ADDA  #48
+       PULS  B
+       STA   B,Y
+X@     JSR   ARB
+       ANDA  #$0F
+       LDX   #SMALLSTARCOLOR
+       LDA   A,X
+W@     PULS  B
+       INCB
+       STA   B,Y
+Z@     PULS  Y,D,PC
+
+OSTAR  LDA   SSTBAS2
+       ADDA  #$80
+       CLRB
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       ADDA  #$08
+       PSHS  D
+       LDU   #STBLK
+       LDD   ,U++
+       STD   $FFA4
+       LDY   #SSTAR
+       LDA   SSTP2
+A@     SSTARF 6
+       SSTARF 4
+       SSTARF 2
+       SSTARF
+       LDX   ,U++
+       BEQ   V@
+       STX   $FFA4
+       JMP   A@
+V@     LEAS  +8,S
+       LDA   STARSTOP
+       BEQ   Z@
+       INC   SSTBAS2
+       LDA   SSTBAS2
+       CMPA  #7
+       BLS   Z@
+       CLR   SSTBAS2
+S@     LDA   SSTP2
+       SUBA  #4
+       STA   SSTP2
+T@     PSHS  A
+       PSHS  A
+       JSR   ARB
+       CMPA  #160
+       BLO   U@
+       SUBA  #128
+U@     ADDA  #48
+       PULS  B
+       STA   B,Y
+X@     JSR   ARB
+       ANDA  #$0F
+       LDX   #SMALLSTARCOLOR
+       LDA   A,X
+W@     PULS  B
+       INCB
+       STA   B,Y
+Z@     PULS  Y,D,PC
+
+

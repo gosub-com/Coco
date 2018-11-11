@@ -1,0 +1,182 @@
+HOST   CLR   65497
+       JSR   BIN *READ/WRITE
+       CMPB  #2
+       BEQ   XXX
+       CMPB  #3
+       BNE   HOST
+XXX    STB   $EA
+       JSR   BIN *DRIVE
+       CMPB  #3
+       BHI   HOST
+       STB   $EB
+       JSR   BIN *TRACK
+       CMPB  #35
+       BHI   HOST
+       STB   $EC
+       JSR   BIN *SECTOR
+       TSTB
+       BEQ   HOST
+       CMPB  #18
+       BHI   HOST
+       STB   $ED
+       LDU   #$400
+       LEAU  +256,U
+       PSHS  U
+       LDB   $EA
+       CMPB  #2
+       BEQ   READ
+*THIS COMPUTER READS DATA
+WRITE  LDU   #$400
+A@     JSR   BIN
+       STB   ,Y+
+       CMPU  ,S
+       BLO   A@
+       JSR   [$C004]
+       ORCC  #$50
+       CLR   65497
+STAT   LEAS  +2,S
+       EXG   A,A
+       LDB   $F0
+       JSR   BOUT
+       BRA   HOST
+READ   JSR   [$C004]
+       ORCC  #$50
+       CLR   65497
+       LDU   #$400
+B@     LDB   ,U+
+       JSR   BOUT
+       CMPU  ,S
+       BLO   B@
+       BRA   STAT
+
+
+*FOLLOWING CODE IS AT $400
+CODE   ORCC  #$50
+       CLR   65497 *FAST
+       LDU   #$C000
+A@     BSR   BIN
+       STB   ,U+
+       INC   $400
+       CMPU  #$E000
+       BLO   A@
+       CLR   113
+       LDU   #$D75F
+*PATCH DSKON
+B@     COM   $400
+       BSR   BIN
+       STB   ,U+
+       CMPU  #$D85F
+       BLO   B@
+       JMP   $A027
+
+*ENTRY B=BYTEIN
+BIN    ORCC  #$50
+       PSHS  B
+       LDX   #$FF22
+       LDA   #1
+A@     BITA  ,X
+       BNE   A@
+       LDB   #8
+       TFR   A,A
+       BRN   A@
+       NOP
+       BRN   A@
+       EXG   A,A
+B@     LDA   ,X *4
+       LSRA     *2
+       ROR   ,S *6
+       TFR   A,A *6
+       DECB     *2
+       BNE   B@ *3
+       PULS  B,PC
+
+PATCH  PSHS  X,Y,U,D,CC
+       ORCC  #$50
+       CLR   65497
+       LDB   $EA
+       LBSR  OUT
+       EXG   A,A
+       EXG   A,A
+       LDB   $EB
+       LBSR  OUT
+       EXG   A,A
+       EXG   A,A
+       LDB   $EC
+       LBSR  OUT
+       EXG   A,A
+       EXG   A,A
+       LDB   $ED
+       LBSR  OUT
+       EXG   A,A
+       EXG   A,A
+       LDU   $EE
+       LEAU  +256,U
+       PSHS  U
+       LDU   $EE
+       LDB   $EA
+       CMPB  #2
+       BEQ   DREAD
+DWRITE LDB   ,U+
+       LBSR  OUT
+       CMPU  ,S
+       BLO   DWRITE
+DSTAT  BSR   IN
+       STB   $F0
+       LEAS  +2,S
+       PULS  X,Y,U,D,CC,PC
+DREAD  BSR   IN
+       STB   ,U+
+       CMPU  ,S
+       BLO   DREAD
+       BRA   DSTAT
+
+*ENTRY:B=BYTE OUT
+*      RS232 = 1
+BOUT
+OUT   ORCC  #$50
+       PSHS  B
+       LDX   #$FF20
+       LDA   ,X
+       EORA  #2
+       STA   ,X  *4
+       LDB   #8
+R@     LSR   ,S  *6
+       BCS   A@  *3
+       ANDA  #%11111101
+       BRA   C@  *3
+A@     ORA   #2
+       BRN   A@
+C@     STA   ,X  *4
+       DECB      *2
+       BNE   R@  *3
+       EXG   A,A
+       EXG   A,A
+       EXG   A,A
+       ORA   #2
+       STA   ,X
+       PULS  B,PC
+
+*ENTRY B=BYTEIN
+IN    ORCC  #$50
+       PSHS  B
+       LDX   #$FF22
+       LDA   #1
+A@     BITA  ,X
+       BNE   A@
+       LDB   #8
+       TFR   A,A
+       BRN   A@
+       NOP
+       BRN   A@
+       EXG   A,A
+B@     LDA   ,X *4
+       LSRA     *2
+       ROR   ,S *6
+       TFR   A,A *6
+       DECB     *2
+       BNE   B@ *3
+ENDER  PULS  B,PC
+
+ MSG ENDER-PATCH
+
+       END   HOST

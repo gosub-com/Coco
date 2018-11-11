@@ -1,0 +1,15 @@
+EXEC   LDB   $400
+       LSRB
+       LSLB
+       NEGB
+       ADDB  $400
+       STB   $401
+       RTS
+
+
+
+
+
+
+
+

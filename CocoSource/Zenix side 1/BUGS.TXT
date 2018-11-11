@@ -1,0 +1,203 @@
+DRAWRET
+X@     PSHS  Y,D
+STDSQD LDA   NEWPOS,Y
+       LDB   #58
+       MUL
+       SUBA  HLINE
+       CMPA  #6
+       BLO   Y@
+       LDX   #RBUG
+       LDB   OFFSET,Y
+       BPL   A@
+       LDX   #OBUG *OBUG
+A@     LDB   TYPE,Y
+       BPL   C@
+       LDU   #TRNTBL
+       ANDB  #%01110000
+       LDA   ANGLE,Y
+       LSLA
+       LSLA
+       LSLA
+       LSLA
+       ORA   CANGLE,Y
+       ORB   A,U
+       LDA   A,U
+       STA   CANGLE,Y
+C@     LSLB
+       ABX
+       LDA   NEWPOS,Y
+       LSRA
+       LSRA
+       LSRA
+       LSRA
+       ANDA  #%00001110
+       LDU   #GRBLK
+       LDU   A,U
+       LDD   NEWPOS,Y
+       ANDA  #%00011111
+       ADDA  #$80
+       EXG   U,D
+*D=BLOCK
+*X[]=PLACE TO JUMP
+*U=PLACE TO PUT IT
+       PSHS  X,U,D
+       LDD   #$3031
+       STD   $FFA1
+       LDA   #$32
+       STA   $FFA3
+       LDD   IBLOCK,Y
+       BEQ   B@
+       LDX   IJUMP,Y
+       LDU   IPOS,Y
+       STD   $FFA4
+*CLEAR MUST PRESERVE Y
+       JSR   [+512,X]
+B@     PULS  X,U,D
+       STD   IBLOCK,Y
+       BEQ   Z@
+       STX   IJUMP,Y
+       STU   IPOS,Y
+       STD   $FFA4
+       JSR   [,X]
+Z@     LDD   #$3334
+       STD   $FFA0
+       PULS  Y,D,PC
+Y@     LDX   FIFOP
+       STY   ,X++
+       LDD   #X@
+       STD   ,X++
+       STX   FIFOP
+       PULS  Y,D,PC
+
+*THIS FUNCTION CLEARS A SHIP
+*IT IS COPYIED FROM ABOVE!
+STDCLS LDD   #$3031
+       STD   $FFA1
+       LDA   #$32
+       STA   $FFA3
+       LDD   IBLOCK,Y
+       BEQ   A@
+       LDX   IJUMP,Y
+       BEQ   A@
+       LDU   IPOS,Y
+       BEQ   A@
+       STD   $FFA4
+       JSR   [+512,X]
+A@     LDD   #$3334
+       STD   $FFA0
+       RTS
+
+*D=FROM
+*X=TO
+FANGLE PSHS  D,X
+       LDA   +1,S
+       SUBA  +3,S
+       BCS   RIGHT
+*LEFT
+       LDB   ,S
+       SUBB  +2,S
+       BCS   Q3
+       PSHS  A
+       CMPB  ,S+
+       BCC   Q22
+       LDX   #Q21T
+       BRA   ANX
+Q22    LDX   #Q22T
+       BRA   ANY
+RIGHT  NEGA
+       LDB   ,S
+       SUBB  +2,S
+       BCS   Q4
+       PSHS  A
+       CMPB  ,S+
+       BCS   Q12
+       LDX   #Q11T
+       BRA   ANY
+Q12    LDX   #Q12T
+       BRA   ANX
+Q4     NEGB
+       PSHS  B
+       CMPA  ,S+
+       BCS   Q42
+       LDX   #Q41T
+       BRA   ANX
+Q42    LDX   #Q42T
+       BRA   ANY
+Q3     NEGB
+       PSHS  A
+       CMPB  ,S+
+       BCS   Q32
+       LDX   #Q31T
+       BRA   ANY
+Q32    LDX   #Q32T
+       BRA   ANX
+
+ANY    PSHS  A
+       SUBB  ,S
+       SUBB  ,S
+       BCC   A@
+       ADDB  ,S
+       LSR   ,S
+       SUBB  ,S
+       BCC   F@
+       LEAS  +5,S
+       LDA   ,X
+       RTS
+A@     SUBB  ,S
+       BCC   B@
+F@     LEAS  +5,S
+       LDA   +1,X
+       RTS
+B@     SUBB  ,S
+       BCC   C@
+       LEAS  +5,S
+       LDA   +1,X
+       RTS
+C@     SUBB  ,S
+       BCC   D@
+       LEAS  +5,S
+       LDA   +1,X
+       RTS
+D@     LEAS  +5,S
+       LDA   +2,X
+       RTS
+
+ANX    PSHS  B
+       SUBA  ,S
+       SUBA  ,S
+       BCC   A@
+       ADDA  ,S
+       LSR   ,S
+       SUBA  ,S
+       BCC   F@
+       LEAS  +5,S
+       LDA   ,X
+       RTS
+A@     SUBA  ,S
+       BCC   B@
+F@     LEAS  +5,S
+       LDA   +1,X
+       RTS
+B@     SUBA  ,S
+       BCC   C@
+       LEAS  +5,S
+       LDA   +1,X
+       RTS
+C@     SUBA  ,S
+       BCC   D@
+       LEAS  +5,S
+       LDA   +1,X
+       RTS
+D@     LEAS  +5,S
+       LDA   +2,X
+       RTS
+Q11T   FCB   2,1,0
+Q12T   FCB   2,3,4
+Q41T   FCB   6,5,4
+Q42T   FCB   6,7,8
+Q31T   FCB   10,9,8
+Q32T   FCB   10,11,12
+Q21T   FCB   14,13,12
+Q22T   FCB   14,15,0
+       END   EXEC
+

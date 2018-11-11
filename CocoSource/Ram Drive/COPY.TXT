@@ -1,0 +1,11 @@
+       ORG   $E00
+COPY   LDX   #$C000
+       LDU   #$2000
+A@     LDA   ,X+
+       STA   ,U+
+       CMPX  #$DFFF
+       BLS   A@
+       RTS
+       END   COPY
+
+
